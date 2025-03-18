@@ -401,7 +401,7 @@ const CoachingApp = () => {
   return (
     <div className="h-screen flex flex-col bg-slate-900 text-slate-100">
       <div className="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-800">
-        <h1 className="text-2xl font-bold text-emerald-400">DrillHub</h1>
+        <h1 className="text-2xl font-bold text-emerald-400">DrillShare</h1>
         <Button onClick={() => setShowAddForm(true)} className="bg-emerald-600 hover:bg-emerald-700 text-white">+ Add Content</Button>
       </div>
       

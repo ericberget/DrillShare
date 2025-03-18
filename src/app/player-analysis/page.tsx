@@ -382,7 +382,7 @@ const PlayerAnalysisPage = () => {
                 <path d="m12 19-7-7 7-7"/>
                 <path d="M19 12H5"/>
               </svg>
-              <span className="font-medium">Back to DrillHub</span>
+              <span className="font-medium">Back to DrillShare</span>
             </Link>
             <div className="text-right">
               <h1 className="text-2xl font-bold text-emerald-400">Player Analysis</h1>

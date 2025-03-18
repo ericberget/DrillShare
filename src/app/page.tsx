@@ -1255,7 +1255,7 @@ const CoachingApp = () => {
 
               <img 
                 src="/logo.png" 
-                alt="DrillHub" 
+                alt="DrillShare" 
                 className="h-16 animate-fade-in"
               />
             </div>

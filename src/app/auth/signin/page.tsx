@@ -9,7 +9,7 @@ export default function SignIn() {
     <div className="min-h-screen flex items-center justify-center bg-slate-950/90">
       <Card className="w-[400px] bg-slate-900/95 border-slate-800/30">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold text-emerald-400">Welcome to DrillHub</CardTitle>
+          <CardTitle className="text-2xl font-bold text-emerald-400">Welcome to DrillShare</CardTitle>
           <CardDescription className="text-slate-400">Sign in to your account</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

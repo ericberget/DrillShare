@@ -7,7 +7,7 @@ import SessionProvider from "@/components/providers/SessionProvider";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "DrillHub - Baseball Training Videos",
+  title: "DrillShare - Baseball Training Videos",
   description: "Curate and organize baseball training videos",
 };
 
