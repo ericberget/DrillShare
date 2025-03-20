@@ -8,20 +8,33 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 
-export default function SignIn() {
+export default function SignUp() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
 
-  const handleEmailSignIn = async (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
 
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      setIsLoading(false);
+      return;
+    }
+
     try {
+      // Create the user in Firebase
+      await createUserWithEmailAndPassword(auth, email, password);
+      
+      // Sign in the user
       const result = await signIn('credentials', {
         email,
         password,
@@ -29,12 +42,18 @@ export default function SignIn() {
       });
 
       if (result?.error) {
-        setError('Invalid email or password');
+        setError('Error signing in after account creation');
       } else {
         router.push('/');
       }
-    } catch (error) {
-      setError('An error occurred during sign in');
+    } catch (error: any) {
+      if (error.code === 'auth/email-already-in-use') {
+        setError('An account with this email already exists');
+      } else if (error.code === 'auth/weak-password') {
+        setError('Password should be at least 6 characters');
+      } else {
+        setError('An error occurred during sign up');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -44,11 +63,11 @@ export default function SignIn() {
     <div className="min-h-screen flex items-center justify-center bg-slate-950/90">
       <Card className="w-[400px] bg-slate-900/95 border-slate-800/30">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold text-emerald-400">Welcome to DrillShare</CardTitle>
-          <CardDescription className="text-slate-400">Sign in to your account</CardDescription>
+          <CardTitle className="text-2xl font-bold text-emerald-400">Create an Account</CardTitle>
+          <CardDescription className="text-slate-400">Sign up to get started</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <form onSubmit={handleEmailSignIn} className="space-y-4">
+          <form onSubmit={handleSignUp} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email" className="text-slate-200">Email</Label>
               <Input
@@ -72,6 +91,17 @@ export default function SignIn() {
                 required
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword" className="text-slate-200">Confirm Password</Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="bg-slate-800 border-slate-700 text-slate-100"
+                required
+              />
+            </div>
             {error && (
               <div className="text-red-500 text-sm">{error}</div>
             )}
@@ -80,7 +110,7 @@ export default function SignIn() {
               className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
               disabled={isLoading}
             >
-              {isLoading ? 'Signing in...' : 'Sign in with Email'}
+              {isLoading ? 'Creating account...' : 'Sign up with Email'}
             </Button>
           </form>
 
@@ -106,9 +136,9 @@ export default function SignIn() {
         </CardContent>
         <CardFooter className="justify-center">
           <p className="text-sm text-slate-400">
-            Don't have an account?{' '}
-            <Link href="/auth/signup" className="text-emerald-400 hover:text-emerald-300">
-              Sign up
+            Already have an account?{' '}
+            <Link href="/auth/signin" className="text-emerald-400 hover:text-emerald-300">
+              Sign in
             </Link>
           </p>
         </CardFooter>

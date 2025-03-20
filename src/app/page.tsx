@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Video, VideosByCategory, VideoCategory, SkillLevel, VideoOrientation } from '@/types/video';
 import ReactPlayer from 'react-player';
+import { initialVideos } from '@/lib/initialVideos';
 
 // Add Facebook SDK type declarations at the top of the file
 declare global {
@@ -152,76 +153,6 @@ const CoachingApp = () => {
   const [isVideoLoading, setIsVideoLoading] = useState(false);
   const [videoError, setVideoError] = useState<string | null>(null);
 
-  // Initial video data
-  const initialVideos = {
-    hitting: [
-      {
-        id: 'default-1',
-        title: 'How to Make Your Swing Shorter and Quicker',
-        url: 'https://www.youtube.com/watch?v=6dfjV84ZN1g',
-        category: 'hitting',
-        skillLevel: 'highLevel',
-        teachingCue: 'longer video on shortening the swing.',
-        tags: ['mechanics'],
-        favorite: false,
-        lastViewed: Date.now(),
-        orientation: 'vertical'
-      },
-      {
-        id: 'default-2',
-        title: 'Elbow In Palm Up',
-        url: 'https://www.facebook.com/100064856274850/videos/1047037899618974',
-        category: 'hitting',
-        skillLevel: 'littleLeague',
-        teachingCue: 'Focus on keeping elbow in with palm up position',
-        tags: ['mechanics', 'fundamentals'],
-        favorite: false,
-        lastViewed: Date.now(),
-        orientation: 'vertical'
-      },
-      {
-        id: 'default-3',
-        title: 'Load Position - Chest Over Back Foot',
-        url: 'https://www.facebook.com/reel/1650842449194914',
-        category: 'hitting',
-        skillLevel: 'highLevel',
-        teachingCue: 'Load is not turn the shoulders...it\'s Chest over back foot',
-        tags: ['mechanics', 'load'],
-        favorite: false,
-        lastViewed: Date.now(),
-        orientation: 'vertical'
-      }
-    ],
-    pitching: [
-      {
-        id: 'default-5',
-        title: 'Coil Mechanics',
-        url: 'https://www.facebook.com/100064856274850/videos/1047037899618974',
-        category: 'pitching',
-        skillLevel: 'highLevel',
-        teachingCue: 'Not Tall and Fall or drop... Screw Yourself into the ground (COIL)',
-        tags: ['mechanics', 'advanced'],
-        favorite: false,
-        lastViewed: Date.now(),
-        orientation: 'vertical'
-      },
-      {
-        id: 'default-6',
-        title: 'Whip vs Push Mechanics',
-        url: 'https://www.facebook.com/100064856274850/videos/1047037899618974',
-        category: 'pitching',
-        skillLevel: 'highLevel',
-        teachingCue: 'For better velocity Make a Whip, (not a push) - and recoil',
-        tags: ['mechanics', 'velocity'],
-        favorite: false,
-        lastViewed: Date.now(),
-        orientation: 'vertical'
-      }
-    ],
-    infield: [],
-    catching: []
-  };
-
   // State declarations
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -230,15 +161,8 @@ const CoachingApp = () => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('baseballVideos');
       if (saved) {
-        const parsedData = JSON.parse(saved);
-        // Handle data migration from teamVideos to myVideos
-        if (parsedData.teamVideos && !parsedData.myVideos) {
-          parsedData.myVideos = parsedData.teamVideos;
-          delete parsedData.teamVideos;
-        }
-        return parsedData;
+        return JSON.parse(saved);
       }
-      return initialVideos;
     }
     return initialVideos;
   });
