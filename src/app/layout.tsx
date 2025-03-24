@@ -1,34 +1,27 @@
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import "./globals.css";
-import { cn } from "@/lib/utils";
-import SessionProvider from "@/components/providers/SessionProvider";
+'use client';
 
-const inter = Inter({ subsets: ["latin"] });
+import './globals.css'
+import { Inter } from 'next/font/google'
+import { Providers } from '../components/Providers'
 
-export const metadata: Metadata = {
-  title: "DrillShare - Baseball Training Videos",
-  description: "Curate and organize baseball training videos",
-};
+const inter = Inter({ subsets: ['latin'] })
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: {
+  children: React.ReactNode
+}) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" suppressHydrationWarning>
       <head>
-        <script async defer crossOrigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js"></script>
+        <title>DrillShare</title>
+        <meta name="description" content="Share and discover basketball drills" />
       </head>
-      <body className={cn(
-        inter.className,
-        "min-h-screen bg-background font-sans antialiased"
-      )}>
-        <SessionProvider>
+      <body className={inter.className}>
+        <Providers>
           {children}
-        </SessionProvider>
+        </Providers>
       </body>
     </html>
-  );
+  )
 }

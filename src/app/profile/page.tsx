@@ -1,168 +1,140 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { auth } from '@/lib/firebase';
-import { updateProfile, updateEmail, updatePassword } from 'firebase/auth';
+import { useState } from 'react';
+import { useFirebase } from '@/contexts/FirebaseContext';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { User } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { useStorage } from '@/hooks/useStorage';
+import { ImageUpload } from '@/components/ImageUpload';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
-export default function Profile() {
-  const { data: session, status } = useSession();
-  const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  
-  const [formData, setFormData] = useState({
-    displayName: '',
-    email: '',
-    newPassword: '',
-    confirmPassword: ''
-  });
+export default function ProfileSettings() {
+  const { user } = useFirebase();
+  const { updateProfile } = useAuth();
+  const { uploadFile, progress, error } = useStorage();
+  const [displayName, setDisplayName] = useState(user?.displayName || '');
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/auth/signin');
-    } else if (status === 'authenticated' && auth.currentUser) {
-      setFormData(prev => ({
-        ...prev,
-        displayName: auth.currentUser?.displayName || '',
-        email: auth.currentUser?.email || ''
-      }));
-    }
-  }, [status, router]);
-
-  const handleUpdate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError('');
-    setSuccess('');
-
+  const handleUpdateProfile = async () => {
+    if (!user) return;
+    setIsUpdating(true);
     try {
-      const user = auth.currentUser;
-      if (!user) throw new Error('No user found');
-
-      // Update display name if changed
-      if (formData.displayName !== user.displayName) {
-        await updateProfile(user, {
-          displayName: formData.displayName
-        });
-      }
-
-      // Update email if changed
-      if (formData.email !== user.email) {
-        await updateEmail(user, formData.email);
-      }
-
-      // Update password if provided
-      if (formData.newPassword) {
-        if (formData.newPassword !== formData.confirmPassword) {
-          throw new Error('Passwords do not match');
-        }
-        await updatePassword(user, formData.newPassword);
-      }
-
-      setSuccess('Profile updated successfully');
-    } catch (error: any) {
-      setError(error.message || 'An error occurred while updating profile');
+      await updateProfile({ displayName });
+    } catch (error) {
+      console.error('Error updating profile:', error);
     } finally {
-      setIsLoading(false);
+      setIsUpdating(false);
     }
   };
 
-  if (status === 'loading') {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-950/90">
-        <div className="text-emerald-400">Loading...</div>
-      </div>
-    );
-  }
+  const handleImageSelected = async (file: File) => {
+    if (!user) return;
+    setIsUploading(true);
+    
+    try {
+      // Create a unique path for the user's profile picture
+      const path = `profile-pictures/${user.uid}/${file.name}`;
+      
+      // Upload the file and get the download URL
+      const downloadURL = await uploadFile(file, path);
+      
+      // Update the user's profile with the new photo URL
+      if (downloadURL) {
+        await updateProfile({ photoURL: downloadURL });
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error);
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-950/90">
-      <Card className="w-[600px] bg-slate-900/95 border-slate-800/30">
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold text-emerald-400">Profile Settings</CardTitle>
-          <CardDescription className="text-slate-400">
-            Manage your account settings and preferences
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleUpdate} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="displayName" className="text-slate-200">Display Name</Label>
-              <Input
-                id="displayName"
-                value={formData.displayName}
-                onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
-                className="bg-slate-800 border-slate-700 text-slate-100"
-              />
-            </div>
+    <ProtectedRoute>
+      <div className="container mx-auto px-4 py-8 max-w-2xl">
+        <h1 className="text-2xl font-bold mb-6">Profile Settings</h1>
+        
+        <div className="space-y-6">
+          {/* Profile Picture Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Profile Picture</CardTitle>
+              <CardDescription>Update your profile picture</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col items-center">
+                <ImageUpload
+                  currentImageUrl={user?.photoURL}
+                  onImageSelected={handleImageSelected}
+                  uploading={isUploading}
+                  progress={progress}
+                />
+                {error && (
+                  <p className="text-sm text-red-500 mt-2">
+                    Error uploading image: {error.message}
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
 
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-slate-200">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="bg-slate-800 border-slate-700 text-slate-100"
-              />
-            </div>
-
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium text-emerald-400">Change Password</h3>
+          {/* Basic Information Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Basic Information</CardTitle>
+              <CardDescription>Update your personal information</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="newPassword" className="text-slate-200">New Password</Label>
+                <Label htmlFor="displayName">Display Name</Label>
                 <Input
-                  id="newPassword"
-                  type="password"
-                  value={formData.newPassword}
-                  onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
-                  className="bg-slate-800 border-slate-700 text-slate-100"
+                  id="displayName"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder="Enter your display name"
                 />
               </div>
-
+              
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword" className="text-slate-200">Confirm New Password</Label>
+                <Label htmlFor="email">Email</Label>
                 <Input
-                  id="confirmPassword"
-                  type="password"
-                  value={formData.confirmPassword}
-                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                  className="bg-slate-800 border-slate-700 text-slate-100"
+                  id="email"
+                  value={user?.email || ''}
+                  disabled
+                  className="bg-slate-950"
                 />
+                <p className="text-xs text-slate-400">Email cannot be changed directly. Use your authentication provider to update.</p>
               </div>
-            </div>
 
-            {error && (
-              <div className="text-red-500 text-sm p-3 bg-red-500/10 border border-red-500/20 rounded">
-                {error}
-              </div>
-            )}
-
-            {success && (
-              <div className="text-emerald-500 text-sm p-3 bg-emerald-500/10 border border-emerald-500/20 rounded">
-                {success}
-              </div>
-            )}
-
-            <div className="flex justify-end">
-              <Button
-                type="submit"
-                className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                disabled={isLoading}
+              <Button 
+                onClick={handleUpdateProfile} 
+                disabled={isUpdating || displayName === user?.displayName}
+                className="mt-4"
               >
-                {isLoading ? 'Saving...' : 'Save Changes'}
+                {isUpdating ? 'Saving...' : 'Save Changes'}
               </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+            </CardContent>
+          </Card>
+
+          {/* Account Security Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Account Security</CardTitle>
+              <CardDescription>Manage your account security settings</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button variant="outline" className="w-full justify-start text-left">
+                Change Password
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </ProtectedRoute>
   );
 } 

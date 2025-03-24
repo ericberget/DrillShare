@@ -1,42 +1,25 @@
 'use client';
 
 import { useState } from 'react';
-import { signIn } from 'next-auth/react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function SignIn() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-  const router = useRouter();
+  const { signIn, signInWithGoogle, loading, error } = useAuth();
 
   const handleEmailSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    setError('');
-
     try {
-      const result = await signIn('credentials', {
-        email,
-        password,
-        redirect: false,
-      });
-
-      if (result?.error) {
-        setError('Invalid email or password');
-      } else {
-        router.push('/');
-      }
+      await signIn(email, password);
     } catch (error) {
-      setError('An error occurred during sign in');
-    } finally {
-      setIsLoading(false);
+      // Error is handled by useAuth hook
+      console.error('Sign in error:', error);
     }
   };
 
@@ -73,14 +56,16 @@ export default function SignIn() {
               />
             </div>
             {error && (
-              <div className="text-red-500 text-sm">{error}</div>
+              <div className="text-red-500 text-sm p-3 bg-red-500/10 border border-red-500/20 rounded">
+                {error.message}
+              </div>
             )}
             <Button 
               type="submit" 
               className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
-              disabled={isLoading}
+              disabled={loading}
             >
-              {isLoading ? 'Signing in...' : 'Sign in with Email'}
+              {loading ? 'Signing in...' : 'Sign in with Email'}
             </Button>
           </form>
 
@@ -96,13 +81,23 @@ export default function SignIn() {
           <Button
             type="button"
             className="w-full bg-white hover:bg-gray-100 text-gray-900"
-            onClick={() => signIn('google', { callbackUrl: '/' })}
+            onClick={() => signInWithGoogle()}
+            disabled={loading}
           >
             <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512">
               <path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"></path>
             </svg>
             Continue with Google
           </Button>
+
+          <div className="text-center">
+            <Link 
+              href="/auth/reset-password" 
+              className="text-sm text-emerald-400 hover:text-emerald-300"
+            >
+              Forgot your password?
+            </Link>
+          </div>
         </CardContent>
         <CardFooter className="justify-center">
           <p className="text-sm text-slate-400">

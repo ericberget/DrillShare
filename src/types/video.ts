@@ -15,6 +15,10 @@ export interface Video {
   thumbnail?: string;
   orientation: VideoOrientation;
   isEditing?: boolean;
+  userId?: string;         // User ID who created the video
+  userDisplay?: string;    // User display name
+  createdAt?: number;      // Timestamp when created
+  isSample?: boolean;      // Whether this is a sample video
 }
 
 export interface VideosByCategory {
