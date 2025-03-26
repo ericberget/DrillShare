@@ -51,15 +51,15 @@ export function ContentCard({
 
   return (
     <Card 
-      className={`cursor-pointer h-full flex flex-col rounded-xl border-2 hover:border-emerald-500/30 shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-1 relative overflow-hidden ${
+      className={`cursor-pointer h-full flex flex-col rounded-xl border-2 hover:border-drillhub-500/30 shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-1 relative overflow-hidden ${
         content.isSample 
-          ? 'bg-slate-800/50 border-emerald-700/30 hover:bg-slate-700/50' 
+          ? 'bg-slate-800/50 border-drillhub-700/30 hover:bg-slate-700/50' 
           : 'bg-slate-900/30 border-slate-700/50 hover:bg-slate-800/40'
       }`}
       onClick={() => onSelect(content)}
     >
       {content.isSample && (
-        <div className="absolute -right-8 -top-8 w-16 h-16 rotate-45 bg-emerald-600 z-10"></div>
+        <div className="absolute -right-8 -top-8 w-16 h-16 rotate-45 bg-drillhub-600 z-10"></div>
       )}
       
       {/* Edit Button - only shown for user's own content */}
@@ -71,7 +71,7 @@ export function ContentCard({
             e.stopPropagation();
             onEdit(content);
           }}
-          className="absolute top-2 right-2 z-20 bg-slate-800/80 hover:bg-slate-700 text-emerald-400 hover:text-emerald-300"
+          className="absolute top-2 right-2 z-20 bg-slate-800/80 hover:bg-slate-700 text-emerald-600 hover:text-emerald-500"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -101,12 +101,12 @@ export function ContentCard({
       <CardHeader className="p-4 pb-0 flex-grow">
         <div className="flex flex-col gap-4 h-full">
           <div className="flex justify-between items-start">
-            <CardTitle className="text-lg font-bold text-emerald-400 line-clamp-2 tracking-tight">
+            <CardTitle className="text-xl font-semibold text-emerald-600 line-clamp-2 tracking-normal font-oswald">
               {content.title}
             </CardTitle>
             {content.isSample && (
               <div className="flex items-center gap-1 z-20">
-                <Badge variant="outline" className="border-emerald-700 text-emerald-400 bg-emerald-900/30 flex items-center gap-1 font-semibold">
+                <Badge variant="outline" className="border-drillhub-700 text-drillhub-400 bg-drillhub-900/30 flex items-center gap-1 font-semibold">
                   <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
                   </svg>
@@ -115,7 +115,7 @@ export function ContentCard({
               </div>
             )}
           </div>
-          <div className={`aspect-video w-full relative rounded-xl overflow-hidden ring-1 ${content.isSample ? 'ring-emerald-600/30' : 'ring-slate-700/50'}`}>
+          <div className={`aspect-video w-full relative rounded-xl overflow-hidden ring-1 ${content.isSample ? 'ring-drillhub-600/30' : 'ring-slate-700/50'}`}>
             {content.thumbnailUrl ? (
               <img 
                 src={content.thumbnailUrl}
@@ -131,7 +131,7 @@ export function ContentCard({
             ) : (
               <div className="w-full h-full relative bg-slate-800 flex items-center justify-center">
                 <div className={`w-16 h-16 rounded-full flex items-center justify-center ${
-                  content.isSample ? 'bg-emerald-600/80' : 'bg-emerald-500/80'
+                  content.isSample ? 'bg-drillhub-600/80' : 'bg-drillhub-500/80'
                 }`}>
                   <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="white" stroke="white">
                     <polygon points="5 3 19 12 5 21 5 3"></polygon>
@@ -141,7 +141,7 @@ export function ContentCard({
             )}
             <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300">
               <div className={`w-16 h-16 rounded-full flex items-center justify-center ${
-                content.isSample ? 'bg-emerald-600/80' : 'bg-emerald-500/80'
+                content.isSample ? 'bg-drillhub-600/80' : 'bg-drillhub-500/80'
               }`}>
                 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="white" stroke="white">
                   <polygon points="5 3 19 12 5 21 5 3"></polygon>
@@ -149,8 +149,8 @@ export function ContentCard({
               </div>
             </div>
             {content.isSample && (
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-emerald-900/70 to-transparent h-12 flex items-end">
-                <span className="text-xs text-emerald-200 p-2 font-medium">Sample Content</span>
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-drillhub-900/70 to-transparent h-12 flex items-end">
+                <span className="text-xs text-drillhub-200 p-2 font-medium">Sample Content</span>
               </div>
             )}
           </div>
@@ -164,7 +164,7 @@ export function ContentCard({
                 variant="secondary"
                 className={`text-xs cursor-pointer ${
                   activeTag === tag
-                    ? 'bg-emerald-900/50 text-emerald-300 hover:bg-emerald-900/70'
+                    ? 'bg-drillhub-900/50 text-drillhub-300 hover:bg-drillhub-900/70'
                     : 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-slate-200'
                 }`}
                 onClick={(e) => onTagClick(tag, e)}

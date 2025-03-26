@@ -10,24 +10,62 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from './ui/dropdown-menu'
-import { Menu, User, Settings, LogOut } from 'lucide-react'
+import { Menu, User, Settings, LogOut, Video, FolderOpen, Home } from 'lucide-react'
 import { useFirebase } from '@/contexts/FirebaseContext'
 import { useAuth } from '@/hooks/useAuth'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 
 export function Navbar() {
   const { user, loading } = useFirebase()
   const { signOut } = useAuth()
   const router = useRouter()
+  const pathname = usePathname()
 
   const handleProfileClick = () => {
     router.push('/profile')
   }
 
+  // Check if a path is active
+  const isActive = (path: string) => {
+    if (path === '/' && pathname === '/') return true;
+    if (path !== '/' && pathname.startsWith(path)) return true;
+    return false;
+  };
+
   return (
     <nav className="bg-background border-b">
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-end h-16">
+        <div className="flex items-center justify-between h-16">
+          {user && !loading && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="hover:bg-slate-800/50 border border-drillhub-600/70">
+                  <Menu className="h-7 w-7" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-56">
+                <DropdownMenuItem asChild>
+                  <Link href="/" className="cursor-pointer">
+                    <Home className="mr-2 h-4 w-4" />
+                    <span>Home</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/content" className="cursor-pointer">
+                    <Video className="mr-2 h-4 w-4" />
+                    <span>My Video Library</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/collections" className="cursor-pointer">
+                    <FolderOpen className="mr-2 h-4 w-4" />
+                    <span>Collections</span>
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+          
           {loading ? (
             <div className="h-10 w-10 rounded-full bg-slate-800 animate-pulse" />
           ) : user ? (
@@ -75,7 +113,7 @@ export function Navbar() {
                 </Button>
               </Link>
               <Link href="/auth/signup">
-                <Button className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                <Button className="bg-drillhub-600 hover:bg-drillhub-700 text-white">
                   Sign Up
                 </Button>
               </Link>

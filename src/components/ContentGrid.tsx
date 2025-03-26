@@ -154,7 +154,16 @@ export function ContentGrid({ onAddContent, onSelectContent, onEditContent }: Co
             </PopoverContent>
           </Popover>
         </div>
-        <Button onClick={onAddContent} className="w-full sm:w-auto">+ Add Content</Button>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Button onClick={onAddContent} className="w-full sm:w-auto bg-white hover:bg-slate-100 text-slate-900">+ Add Content</Button>
+          <Button 
+            variant="outline" 
+            onClick={() => window.location.href = '/collections'} 
+            className="w-full sm:w-auto border-emerald-600 text-emerald-600 hover:bg-emerald-950/50"
+          >
+            Collect & Share
+          </Button>
+        </div>
       </div>
 
       {/* Active tag display or favorites filter indication */}
@@ -203,11 +212,11 @@ export function ContentGrid({ onAddContent, onSelectContent, onEditContent }: Co
       ) : (
         <Tabs defaultValue="all" onValueChange={(value) => setActiveCategory(value as 'all' | ContentCategory)}>
           <TabsList className="w-full bg-slate-800 flex">
-            <TabsTrigger value="all" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white px-6 mx-2">All</TabsTrigger>
-            <TabsTrigger value="hitting" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white px-6 mx-2">Hitting</TabsTrigger>
-            <TabsTrigger value="infield" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white px-6 mx-2">Infield</TabsTrigger>
-            <TabsTrigger value="pitching" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white px-6 mx-2">Pitching</TabsTrigger>
-            <TabsTrigger value="catching" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white px-6 mx-2">Catching</TabsTrigger>
+            <TabsTrigger value="all" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white px-6 mx-2 font-oswald">All</TabsTrigger>
+            <TabsTrigger value="hitting" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white px-6 mx-2 font-oswald">Hitting</TabsTrigger>
+            <TabsTrigger value="infield" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white px-6 mx-2 font-oswald">Infield</TabsTrigger>
+            <TabsTrigger value="pitching" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white px-6 mx-2 font-oswald">Pitching</TabsTrigger>
+            <TabsTrigger value="catching" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white px-6 mx-2 font-oswald">Catching</TabsTrigger>
           </TabsList>
 
           <TabsContent value="all" className="mt-6">

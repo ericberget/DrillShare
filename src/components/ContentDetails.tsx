@@ -23,13 +23,13 @@ const getInitials = (userId: string) => {
 };
 
 export function ContentDetails({ content, onClose, onEdit }: ContentDetailsProps) {
-  const categoryColor = CategoryColors[content.category] || 'bg-emerald-600';
+  const categoryColor = CategoryColors[content.category] || 'bg-drillhub-600';
 
   return (
     <Dialog open={true} onOpenChange={() => onClose()}>
       <DialogContent className="max-w-5xl bg-slate-900/95 backdrop-blur-md border-slate-700 text-slate-100">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold text-emerald-400">
+          <DialogTitle className="text-xl font-bold text-drillhub-400">
             {content.title}
           </DialogTitle>
         </DialogHeader>
@@ -100,7 +100,7 @@ export function ContentDetails({ content, onClose, onEdit }: ContentDetailsProps
           )}
           <Button 
             onClick={onClose}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white"
+            className="bg-drillhub-600 hover:bg-drillhub-700 text-white"
           >
             Close
           </Button>

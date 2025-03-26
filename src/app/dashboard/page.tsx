@@ -22,7 +22,7 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-slate-950">
-        <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-16 h-16 border-4 border-drillhub-500 border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -38,15 +38,15 @@ export default function DashboardPage() {
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row items-center justify-between">
             <div className="md:w-1/2 mb-10 md:mb-0">
-              <h1 className="text-4xl md:text-5xl font-bold mb-4 text-emerald-400">
-                Welcome to <span className="text-emerald-500">DrillHub</span>
+              <h1 className="text-4xl md:text-5xl font-bold mb-4 text-drillhub-400">
+                Welcome to <span className="text-drillhub-500">DrillHub</span>
               </h1>
               <p className="text-xl text-slate-300 mb-6">
                 Your personal platform for baseball training, drill sharing, and player analysis.
               </p>
               <div className="flex flex-wrap gap-4">
                 <Button 
-                  className="bg-emerald-600 hover:bg-emerald-500 text-white"
+                  className="bg-drillhub-600 hover:bg-drillhub-700 text-white"
                   size="lg"
                   onClick={() => router.push('/content')}
                 >
@@ -55,7 +55,7 @@ export default function DashboardPage() {
                 </Button>
                 <Button 
                   variant="outline" 
-                  className="border-emerald-500 text-emerald-400 hover:bg-emerald-950"
+                  className="border-drillhub-500 text-drillhub-400 hover:bg-drillhub-950"
                   size="lg"
                   onClick={() => router.push('/player-analysis')}
                 >
@@ -67,7 +67,7 @@ export default function DashboardPage() {
               <div className="relative w-80 h-80">
                 {/* Baseball icon or logo */}
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-8xl text-emerald-500">⚾</div>
+                  <div className="text-8xl text-drillhub-500">⚾</div>
                 </div>
               </div>
             </div>
@@ -78,12 +78,12 @@ export default function DashboardPage() {
       {/* Quick Access Cards */}
       <section className="py-12">
         <div className="container mx-auto px-4">
-          <h2 className="text-2xl font-bold mb-8 text-emerald-400">Quick Access</h2>
+          <h2 className="text-2xl font-bold mb-8 text-drillhub-400">Quick Access</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* My Content Card */}
-            <Card className="bg-slate-900/30 border-slate-700/50 hover:border-emerald-500/30 hover:bg-slate-800/40 transition-all">
+            <Card className="bg-slate-900/30 border-slate-700/50 hover:border-drillhub-500/30 hover:bg-slate-800/40 transition-all">
               <CardHeader>
-                <CardTitle className="text-emerald-400 flex items-center">
+                <CardTitle className="text-drillhub-400 flex items-center">
                   <FileVideo className="mr-2 h-5 w-5" /> My Content
                 </CardTitle>
                 <CardDescription className="text-slate-400">
@@ -97,7 +97,7 @@ export default function DashboardPage() {
               </CardContent>
               <CardFooter>
                 <Button 
-                  className="w-full bg-emerald-600 hover:bg-emerald-500"
+                  className="w-full bg-drillhub-600 hover:bg-drillhub-700"
                   onClick={() => router.push('/content')}
                 >
                   Go to My Content
@@ -106,9 +106,9 @@ export default function DashboardPage() {
             </Card>
 
             {/* Upload Content Card */}
-            <Card className="bg-slate-900/30 border-slate-700/50 hover:border-emerald-500/30 hover:bg-slate-800/40 transition-all">
+            <Card className="bg-slate-900/30 border-slate-700/50 hover:border-drillhub-500/30 hover:bg-slate-800/40 transition-all">
               <CardHeader>
-                <CardTitle className="text-emerald-400 flex items-center">
+                <CardTitle className="text-drillhub-400 flex items-center">
                   <Upload className="mr-2 h-5 w-5" /> Upload New
                 </CardTitle>
                 <CardDescription className="text-slate-400">
@@ -122,7 +122,7 @@ export default function DashboardPage() {
               </CardContent>
               <CardFooter>
                 <Button 
-                  className="w-full bg-emerald-600 hover:bg-emerald-500"
+                  className="w-full bg-drillhub-600 hover:bg-drillhub-700"
                   onClick={() => {
                     router.push('/content?action=upload');
                   }}
@@ -133,9 +133,9 @@ export default function DashboardPage() {
             </Card>
 
             {/* Player Analysis Card */}
-            <Card className="bg-slate-900/30 border-slate-700/50 hover:border-emerald-500/30 hover:bg-slate-800/40 transition-all">
+            <Card className="bg-slate-900/30 border-slate-700/50 hover:border-drillhub-500/30 hover:bg-slate-800/40 transition-all">
               <CardHeader>
-                <CardTitle className="text-emerald-400 flex items-center">
+                <CardTitle className="text-drillhub-400 flex items-center">
                   <Zap className="mr-2 h-5 w-5" /> Player Analysis
                 </CardTitle>
                 <CardDescription className="text-slate-400">
@@ -149,7 +149,7 @@ export default function DashboardPage() {
               </CardContent>
               <CardFooter>
                 <Button 
-                  className="w-full bg-emerald-600 hover:bg-emerald-500"
+                  className="w-full bg-drillhub-600 hover:bg-drillhub-700"
                   onClick={() => router.push('/player-analysis')}
                 >
                   Analyze Players
@@ -163,7 +163,7 @@ export default function DashboardPage() {
       {/* Recently Viewed */}
       <section className="py-12 bg-slate-900/30">
         <div className="container mx-auto px-4">
-          <h2 className="text-2xl font-bold mb-8 text-emerald-400">Recently Viewed</h2>
+          <h2 className="text-2xl font-bold mb-8 text-drillhub-400">Recently Viewed</h2>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {/* This would be dynamically populated based on user history */}
             <Card className="bg-slate-900/30 border-slate-700/50">
@@ -179,7 +179,7 @@ export default function DashboardPage() {
           <div className="mt-6 text-center">
             <Button 
               variant="ghost" 
-              className="text-emerald-400 hover:text-emerald-300 hover:bg-slate-800"
+              className="text-drillhub-400 hover:text-drillhub-300 hover:bg-slate-800"
               onClick={() => router.push('/content')}
             >
               View All Content
@@ -192,17 +192,17 @@ export default function DashboardPage() {
       {/* Account & Settings */}
       <section className="py-12">
         <div className="container mx-auto px-4">
-          <h2 className="text-2xl font-bold mb-8 text-emerald-400">Your Account</h2>
+          <h2 className="text-2xl font-bold mb-8 text-drillhub-400">Your Account</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card className="bg-slate-900/30 border-slate-700/50 hover:border-emerald-500/30 hover:bg-slate-800/40 transition-all">
+            <Card className="bg-slate-900/30 border-slate-700/50 hover:border-drillhub-500/30 hover:bg-slate-800/40 transition-all">
               <CardHeader>
-                <CardTitle className="text-emerald-400 flex items-center">
+                <CardTitle className="text-drillhub-400 flex items-center">
                   <User className="mr-2 h-5 w-5" /> Profile
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-full bg-emerald-500 flex items-center justify-center text-white font-bold text-xl">
+                  <div className="w-16 h-16 rounded-full bg-drillhub-500 flex items-center justify-center text-white font-bold text-xl">
                     {user.displayName ? user.displayName.charAt(0).toUpperCase() : user.email?.charAt(0).toUpperCase()}
                   </div>
                   <div>
@@ -222,18 +222,18 @@ export default function DashboardPage() {
               </CardFooter>
             </Card>
 
-            <Card className="bg-slate-900/30 border-slate-700/50 hover:border-emerald-500/30 hover:bg-slate-800/40 transition-all">
+            <Card className="bg-slate-900/30 border-slate-700/50 hover:border-drillhub-500/30 hover:bg-slate-800/40 transition-all">
               <CardHeader>
-                <CardTitle className="text-emerald-400 flex items-center">
+                <CardTitle className="text-drillhub-400 flex items-center">
                   <Settings className="mr-2 h-5 w-5" /> Settings
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <ul className="space-y-2">
-                  <li className="flex items-center text-slate-300 hover:text-emerald-400 transition-colors">
+                  <li className="flex items-center text-slate-300 hover:text-drillhub-400 transition-colors">
                     <Shield className="mr-2 h-4 w-4" /> Account Security
                   </li>
-                  <li className="flex items-center text-slate-300 hover:text-emerald-400 transition-colors">
+                  <li className="flex items-center text-slate-300 hover:text-drillhub-400 transition-colors">
                     <Book className="mr-2 h-4 w-4" /> Subscription & Billing
                   </li>
                 </ul>
@@ -257,17 +257,17 @@ export default function DashboardPage() {
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="text-center md:text-left mb-4 md:mb-0">
-              <span className="text-emerald-500 font-bold text-xl">DrillHub</span>
+              <span className="text-drillhub-500 font-bold text-xl">DrillHub</span>
               <p className="text-slate-400 text-sm mt-1">© {new Date().getFullYear()} DrillHub. All rights reserved.</p>
             </div>
             <div className="flex gap-4">
-              <Link href="/help" className="text-slate-400 hover:text-emerald-400 transition-colors">
+              <Link href="/help" className="text-slate-400 hover:text-drillhub-400 transition-colors">
                 Help Center
               </Link>
-              <Link href="/privacy" className="text-slate-400 hover:text-emerald-400 transition-colors">
+              <Link href="/privacy" className="text-slate-400 hover:text-drillhub-400 transition-colors">
                 Privacy
               </Link>
-              <Link href="/terms" className="text-slate-400 hover:text-emerald-400 transition-colors">
+              <Link href="/terms" className="text-slate-400 hover:text-drillhub-400 transition-colors">
                 Terms
               </Link>
             </div>

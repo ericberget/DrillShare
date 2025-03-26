@@ -22,6 +22,19 @@ export interface ContentItem {
   lastViewed?: number;
 }
 
+export interface Collection {
+  id: string;
+  createdBy: string; // userId
+  name: string;
+  description: string; // Coach's notes
+  videos: string[]; // Array of videoIds (content item ids)
+  shareLink: string;
+  hasPassword: boolean;
+  password?: string; // Optional password (will be hashed)
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
 export interface ContentsByCategory {
   hitting: ContentItem[];
   infield: ContentItem[];
@@ -33,6 +46,9 @@ export interface ContentsByCategory {
 export type ContentCreationData = Omit<ContentItem, 'id' | 'createdAt' | 'updatedAt' | 'userId'> & {
   userId?: string;
 };
+
+// Define a type for collection creation
+export type CollectionCreationData = Omit<Collection, 'id' | 'createdAt' | 'updatedAt' | 'shareLink'>;
 
 export interface ContentContextType {
   contentItems: ContentItem[];

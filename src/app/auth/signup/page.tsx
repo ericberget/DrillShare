@@ -1,12 +1,32 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
+
+const BackgroundVideo = () => {
+  return (
+    <div className="fixed inset-0 w-full h-full">
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="absolute w-full h-full object-cover"
+        style={{ filter: 'grayscale(100%) brightness(0.5)' }}
+      >
+        <source src="/bg-catch.MOV" type="video/mp4" />
+        <source src="/bg-catch.MOV" type="video/quicktime" />
+        Your browser does not support the video tag.
+      </video>
+      <div className="absolute inset-0 bg-gradient-to-b from-slate-950/50 to-slate-950/70" />
+    </div>
+  );
+};
 
 export default function SignUp() {
   const [email, setEmail] = useState('');
@@ -39,8 +59,9 @@ export default function SignUp() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-950/90">
-      <Card className="w-[400px] bg-slate-900/95 border-slate-800/30">
+    <div className="relative min-h-screen flex items-center justify-center">
+      <BackgroundVideo />
+      <Card className="w-[400px] bg-slate-900/95 border-white/30 relative z-10 shadow-xl">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold text-emerald-400">Create an Account</CardTitle>
           <CardDescription className="text-slate-400">Sign up to get started</CardDescription>

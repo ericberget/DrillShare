@@ -1,10 +1,14 @@
 'use client';
 
 import './globals.css'
-import { Inter } from 'next/font/google'
+import { Inter, Oswald } from 'next/font/google'
 import { Providers } from '../components/Providers'
 
 const inter = Inter({ subsets: ['latin'] })
+const oswald = Oswald({ 
+  subsets: ['latin'],
+  variable: '--font-oswald'
+})
 
 export default function RootLayout({
   children,
@@ -15,9 +19,9 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <title>DrillShare</title>
-        <meta name="description" content="Share and discover basketball drills" />
+        <meta name="description" content="Share and discover baseball drills" />
       </head>
-      <body className={inter.className}>
+      <body className={`${inter.className} ${oswald.variable}`}>
         <Providers>
           {children}
         </Providers>

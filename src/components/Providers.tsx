@@ -6,6 +6,7 @@ import { ThemeProvider } from '@/components/ThemeProvider';
 import { Navbar } from '@/components/Navbar';
 import { FirebaseProvider } from '@/contexts/FirebaseContext';
 import { ContentProvider } from '@/contexts/ContentContext';
+import { CollectionProvider } from '@/contexts/CollectionContext';
 import { ToastProvider } from '@/contexts/ToastContext';
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -34,10 +35,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <ToastProvider>
         <FirebaseProvider>
           <ContentProvider>
-            <AuthProvider>
-              <Navbar />
-              {children}
-            </AuthProvider>
+            <CollectionProvider>
+              <AuthProvider>
+                <Navbar />
+                {children}
+              </AuthProvider>
+            </CollectionProvider>
           </ContentProvider>
         </FirebaseProvider>
       </ToastProvider>

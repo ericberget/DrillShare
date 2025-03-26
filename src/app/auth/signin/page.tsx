@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from 'next/link';
@@ -11,23 +11,18 @@ import { useAuth } from '@/hooks/useAuth';
 export default function SignIn() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { signIn, signInWithGoogle, loading, error } = useAuth();
+  const { signIn, loading, error } = useAuth();
 
   const handleEmailSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      await signIn(email, password);
-    } catch (error) {
-      // Error is handled by useAuth hook
-      console.error('Sign in error:', error);
-    }
+    await signIn(email, password);
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-950/90">
       <Card className="w-[400px] bg-slate-900/95 border-slate-800/30">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold text-emerald-400">Welcome to DrillShare</CardTitle>
+          <CardTitle className="text-2xl font-bold text-drillhub-400">Welcome to DrillShare</CardTitle>
           <CardDescription className="text-slate-400">Sign in to your account</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -62,7 +57,7 @@ export default function SignIn() {
             )}
             <Button 
               type="submit" 
-              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
+              className="w-full bg-drillhub-600 hover:bg-drillhub-700 text-white"
               disabled={loading}
             >
               {loading ? 'Signing in...' : 'Sign in with Email'}
@@ -93,19 +88,24 @@ export default function SignIn() {
           <div className="text-center">
             <Link 
               href="/auth/reset-password" 
-              className="text-sm text-emerald-400 hover:text-emerald-300"
+              className="text-sm text-drillhub-400 hover:text-drillhub-300"
             >
               Forgot your password?
             </Link>
           </div>
         </CardContent>
-        <CardFooter className="justify-center">
-          <p className="text-sm text-slate-400">
+        <CardFooter className="flex flex-col space-y-4">
+          <div className="text-sm text-slate-400">
             Don't have an account?{' '}
-            <Link href="/auth/signup" className="text-emerald-400 hover:text-emerald-300">
+            <Link href="/auth/signup" className="text-drillhub-400 hover:text-drillhub-300">
               Sign up
             </Link>
-          </p>
+          </div>
+          <div className="text-sm">
+            <Link href="/auth/reset-password" className="text-drillhub-400 hover:text-drillhub-300">
+              Forgot your password?
+            </Link>
+          </div>
         </CardFooter>
       </Card>
     </div>
