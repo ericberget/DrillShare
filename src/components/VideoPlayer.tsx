@@ -58,46 +58,36 @@ export default function VideoPlayer({ url, orientation = 'landscape' }: VideoPla
   }, [url]);
 
   return (
-    <div className={`relative ${orientation === 'vertical' ? 'aspect-[9/16]' : 'aspect-video'} w-full bg-slate-900 rounded-md overflow-hidden`}>
+    <div className={`relative ${orientation === 'vertical' ? 'aspect-[9/16] max-h-[80vh]' : 'aspect-video'} w-full bg-slate-900 rounded-md overflow-hidden`}>
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-slate-900/90 z-10">
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-emerald-500 border-t-transparent"></div>
         </div>
       )}
       
-      {error ? (
+      {error || videoInfo.platform === 'facebook' ? (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900 p-4">
-          <div className="mb-4 text-amber-500">
-            <AlertCircle size={32} />
-          </div>
-          <p className="text-slate-200 mb-4 text-center max-w-md">{error}</p>
-          <div className="flex gap-3">
-            {videoInfo.platform === 'facebook' && (
-              <Button
-                variant="default"
-                className="bg-blue-600 hover:bg-blue-700 flex items-center gap-2"
-                onClick={(e) => {
-                  e.preventDefault();
-                  window.open(url, '_blank');
-                }}
-              >
-                <ExternalLink size={16} />
-                Open on Facebook
-              </Button>
-            )}
-            {videoInfo.platform !== 'facebook' && (
-              <Button
-                variant="default"
-                className="bg-emerald-600 hover:bg-emerald-700 flex items-center gap-2"
-                onClick={(e) => {
-                  e.preventDefault();
-                  window.open(url, '_blank');
-                }}
-              >
-                <ExternalLink size={16} />
-                View Original
-              </Button>
-            )}
+          <div className="relative w-full h-full group cursor-pointer" onClick={(e) => {
+            e.preventDefault();
+            window.open(url, '_blank');
+          }}>
+            {/* Custom thumbnail container */}
+            <div className="absolute inset-0 bg-slate-800 flex items-center justify-center">
+              <div className="w-16 h-16 bg-emerald-600 rounded-full flex items-center justify-center transform transition-transform group-hover:scale-110">
+                <svg 
+                  className="w-8 h-8 text-white ml-1" 
+                  fill="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+              </div>
+            </div>
+            
+            {/* Hover overlay */}
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              <span className="text-white font-medium">Click to watch on Facebook</span>
+            </div>
           </div>
         </div>
       ) : (
@@ -116,7 +106,7 @@ export default function VideoPlayer({ url, orientation = 'landscape' }: VideoPla
               }
             },
             facebook: {
-              appId: '1234567890' // Replace with your Facebook App ID if you have one
+              appId: process.env.NEXT_PUBLIC_FACEBOOK_APP_ID || '1234567890'
             }
           }}
           onBuffer={() => {

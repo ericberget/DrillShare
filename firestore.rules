@@ -24,6 +24,13 @@ service cloud.firestore {
       allow update, delete: if isOwner(resource.data.createdBy);
     }
 
+    // Player Analysis rules
+    match /playerAnalysis/{analysisId} {
+      allow read: if isAuthenticated() && (resource == null || isOwner(resource.data.userId));
+      allow create: if isAuthenticated() && isOwner(request.resource.data.userId);
+      allow update, delete: if isAuthenticated() && isOwner(resource.data.userId);
+    }
+
     // User rules
     match /users/{userId} {
       allow read: if true;

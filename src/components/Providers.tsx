@@ -8,6 +8,7 @@ import { FirebaseProvider } from '@/contexts/FirebaseContext';
 import { ContentProvider } from '@/contexts/ContentContext';
 import { CollectionProvider } from '@/contexts/CollectionContext';
 import { ToastProvider } from '@/contexts/ToastContext';
+import { PlayerAnalysisProvider } from '@/contexts/PlayerAnalysisContext';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   // Seed the database with sample content on initial load
@@ -36,10 +37,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <FirebaseProvider>
           <ContentProvider>
             <CollectionProvider>
-              <AuthProvider>
-                <Navbar />
-                {children}
-              </AuthProvider>
+              <PlayerAnalysisProvider>
+                <AuthProvider>
+                  <Navbar />
+                  {children}
+                </AuthProvider>
+              </PlayerAnalysisProvider>
             </CollectionProvider>
           </ContentProvider>
         </FirebaseProvider>

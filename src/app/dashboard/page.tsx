@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useFirebase } from '@/contexts/FirebaseContext';
 import Link from 'next/link';
-import { ArrowRight, FileVideo, Upload, User, Settings, Zap, Book, Shield } from 'lucide-react';
+import { ArrowRight, FileVideo, Upload, User, Settings, Zap, Book, Shield, LineChart } from 'lucide-react';
 
 export default function DashboardPage() {
   const { user, loading } = useFirebase();
@@ -136,15 +136,15 @@ export default function DashboardPage() {
             <Card className="bg-slate-900/30 border-slate-700/50 hover:border-drillhub-500/30 hover:bg-slate-800/40 transition-all">
               <CardHeader>
                 <CardTitle className="text-drillhub-400 flex items-center">
-                  <Zap className="mr-2 h-5 w-5" /> Player Analysis
+                  <LineChart className="mr-2 h-5 w-5" /> Player Analysis
                 </CardTitle>
                 <CardDescription className="text-slate-400">
-                  Analyze player videos and track progress
+                  Analyze player performance videos
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <p className="text-slate-300">
-                  Upload player footage, analyze technique, and track improvement over time.
+                  Upload and analyze player videos for hitting and pitching mechanics.
                 </p>
               </CardContent>
               <CardFooter>
@@ -152,7 +152,7 @@ export default function DashboardPage() {
                   className="w-full bg-drillhub-600 hover:bg-drillhub-700"
                   onClick={() => router.push('/player-analysis')}
                 >
-                  Analyze Players
+                  Go to Player Analysis
                 </Button>
               </CardFooter>
             </Card>

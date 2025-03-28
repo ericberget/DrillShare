@@ -191,42 +191,34 @@ export function ContentUploader({ isOpen, onClose, onDelete, existingContent }: 
     if (!file) return;
 
     try {
-      setError(null); // Clear previous errors
-      setUseAutoThumbnail(false); // We're using custom thumbnail now
+      setError(null);
+      setUseAutoThumbnail(false);
+      setIsSubmitting(true);
       
-      // Check file type
-      const isImage = file.type.startsWith('image/');
-      if (!isImage) {
-        setError('Please upload an image file (jpg, png, etc.)');
-        return;
+      if (!file.type.startsWith('image/')) {
+        throw new Error('Please upload an image file (jpg, png, etc.)');
       }
       
-      // Check file size (5MB max)
-      const MAX_SIZE = 5 * 1024 * 1024; // 5MB in bytes
+      const MAX_SIZE = 5 * 1024 * 1024;
       if (file.size > MAX_SIZE) {
-        setError(`Image too large: ${(file.size / (1024 * 1024)).toFixed(1)}MB. Maximum size is 5MB.`);
-        return;
+        throw new Error(`Image too large: ${(file.size / (1024 * 1024)).toFixed(1)}MB. Maximum size is 5MB.`);
       }
       
-      // Preview the image
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result as string);
       };
       reader.readAsDataURL(file);
 
-      // Upload image via our API route
-      setIsSubmitting(true);
+      if (!user) {
+        throw new Error('You must be logged in to upload images');
+      }
       
-      // Use authenticated user ID if available
-      const userId = user ? user.uid : "anonymous";
-      console.log("Current user ID for upload:", userId);
-      
-      const path = `thumbnails/${userId}/${Date.now()}_${file.name}`;
-      
-      // Create a FormData object to send to our API
       const formData = new FormData();
       formData.append('file', file);
+      formData.append('userId', user.uid);
+      
+      const path = `thumbnails/${user.uid}/${Date.now()}_${file.name}`;
       formData.append('path', path);
       
       console.log("Starting upload to API route with file:", {
@@ -236,31 +228,47 @@ export function ContentUploader({ isOpen, onClose, onDelete, existingContent }: 
         path
       });
       
-      // Use the fetch API to directly call our API route
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData
-      });
-      
-      const responseData = await response.json();
-      
-      if (!response.ok) {
-        console.error("API error response:", responseData);
-        throw new Error(responseData.details || responseData.error || 'Failed to upload image');
-      }
-      
-      console.log("API upload response:", responseData);
-      
-      if (responseData.url) {
+      try {
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData
+        });
+
+        let responseData;
+        const responseText = await response.text();
+        console.log('Raw API response:', responseText);
+
+        try {
+          responseData = JSON.parse(responseText);
+        } catch (e) {
+          console.error('Failed to parse API response:', e);
+          throw new Error('Invalid response from server');
+        }
+
+        if (!response.ok) {
+          console.error('API error response:', responseData);
+          throw new Error(responseData.details || responseData.error || 'Failed to upload image');
+        }
+
+        if (!responseData.url) {
+          throw new Error('No URL returned from the API');
+        }
+
+        console.log('Upload successful:', responseData);
         setFormData(prev => ({ ...prev, thumbnailUrl: responseData.url }));
-        console.log("Thumbnail URL set successfully:", responseData.url);
-      } else {
-        throw new Error("No URL returned from the API");
+
+      } catch (uploadError: any) {
+        console.error('Upload request failed:', uploadError);
+        throw new Error(`Upload failed: ${uploadError.message}`);
       }
+
     } catch (error: any) {
-      setImagePreview(null); // Clear the preview on error
-      setError(`Failed to upload image: ${error.message}`);
       console.error('Image upload error:', error);
+      setImagePreview(null);
+      setError(`Failed to upload image: ${error.message}`);
+      if (e.target) {
+        e.target.value = '';
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -288,9 +296,12 @@ export function ContentUploader({ isOpen, onClose, onDelete, existingContent }: 
       if (!formData.description) {
         setFormData(prev => ({ 
           ...prev, 
-          description: 'This is a Facebook video. Note that Facebook videos may need to be viewed on Facebook directly.'
+          description: 'This is a Facebook video. Note that Facebook videos will open in a new tab.'
         }));
       }
+      
+      // Clear any existing thumbnail URL since we can't get one from Facebook
+      setFormData(prev => ({ ...prev, thumbnailUrl: '' }));
     }
   };
 
@@ -321,6 +332,16 @@ export function ContentUploader({ isOpen, onClose, onDelete, existingContent }: 
     if (platform === 'unknown') {
       setError('Unsupported video URL. Please use YouTube or Facebook video links.');
       return false;
+    }
+
+    // Additional validation for Facebook videos
+    if (platform === 'facebook') {
+      // Check if the URL is a valid Facebook video URL
+      const isValidFacebookUrl = /^https?:\/\/(www\.)?(facebook\.com|fb\.watch)\/.+/.test(formData.url);
+      if (!isValidFacebookUrl) {
+        setError('Please enter a valid Facebook video URL');
+        return false;
+      }
     }
     
     return true;

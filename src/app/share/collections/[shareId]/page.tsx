@@ -224,53 +224,71 @@ export default function SharedCollectionPage() {
             />
           </div>
           
-          <div className="bg-slate-800/40 border border-slate-700 rounded-xl p-8 max-w-4xl w-full">
-            <h1 className="text-2xl font-bold text-white mb-2 text-center">{collection.name}</h1>
+          <div className="bg-white/95 backdrop-blur-sm border border-slate-200 rounded-xl p-8 max-w-4xl w-full shadow-2xl">
+            <h1 className="text-3xl font-bold text-slate-900 mb-4 text-center">{collection.name}</h1>
             
             {collection.description && (
-              <div className="mb-6 p-4 bg-slate-700/30 rounded-lg">
-                <p className="text-slate-300 whitespace-pre-wrap">{collection.description}</p>
+              <div className="mb-6 p-4 bg-slate-100 rounded-lg">
+                <p className="text-slate-700 whitespace-pre-wrap">{collection.description}</p>
               </div>
             )}
             
-            <div className="text-sm text-slate-400 text-center mb-8">
+            <div className="text-sm text-slate-500 text-center mb-8">
               Shared on {formatTimestamp(collection.createdAt)}
             </div>
-            
+
+            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-6 mb-8">
+              <h2 className="text-xl font-semibold text-emerald-800 mb-4">Share This Collection</h2>
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 bg-white border border-emerald-200 rounded-lg py-3 px-4 text-slate-700 font-mono text-sm">
+                    {shareLink}
+                  </div>
+                  <Button 
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg flex items-center gap-2 transition-all duration-200 hover:shadow-lg"
+                    onClick={() => {
+                      navigator.clipboard.writeText(shareLink);
+                      // You might want to add a copied state here
+                    }}
+                  >
+                    Copy Link
+                  </Button>
+                </div>
+                <p className="text-emerald-700 text-sm">
+                  Share this link with your team, players, or parents. Anyone with this link can view the collection without signing in.
+                </p>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {isContentLoading ? (
                 <div className="col-span-full flex justify-center py-12">
                   <Loader2 className="h-8 w-8 text-emerald-500 animate-spin" />
                 </div>
               ) : collectionVideos.length === 0 ? (
-                <div className="col-span-full text-center py-8 text-slate-400">
-                  No videos found in this collection.
+                <div className="col-span-full text-center py-12">
+                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-8 inline-block">
+                    <p className="text-slate-700 mb-2">No videos found in this collection.</p>
+                    <p className="text-sm text-slate-500">Videos added to this collection will appear here.</p>
+                  </div>
                 </div>
               ) : (
-                collectionVideos.map(video => (
-                  <Card 
-                    key={video.id} 
-                    className="bg-slate-800/50 border-slate-700 hover:border-emerald-500/70 cursor-pointer transition-all duration-300 h-full flex flex-col"
+                collectionVideos.map((video) => (
+                  <div
+                    key={video.id}
+                    className="bg-slate-50 border border-slate-200 rounded-lg p-4 cursor-pointer hover:shadow-lg transition-all duration-200"
                     onClick={() => handleContentSelection(video)}
                   >
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-white text-lg leading-tight">{video.title}</CardTitle>
-                      <CardDescription className="text-slate-400">
-                        {video.category} • {video.skillLevel}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="flex-1">
-                      {video.description && (
-                        <p className="text-sm text-slate-300 line-clamp-3">{video.description}</p>
-                      )}
-                    </CardContent>
-                    <CardFooter className="pt-2 border-t border-slate-700">
-                      <div className="flex items-center text-emerald-400 text-sm">
-                        <Video className="w-3 h-3 mr-1" />
-                        Watch Video
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <Video className="w-5 h-5 text-emerald-600" />
                       </div>
-                    </CardFooter>
-                  </Card>
+                      <div>
+                        <h3 className="font-medium text-slate-900 mb-1">{video.title}</h3>
+                        <p className="text-sm text-slate-500">Added {formatTimestamp(video.createdAt)}</p>
+                      </div>
+                    </div>
+                  </div>
                 ))
               )}
             </div>

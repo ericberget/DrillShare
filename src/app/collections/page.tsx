@@ -51,7 +51,7 @@ export default function CollectionsPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-slate-950 bg-[linear-gradient(to_right,rgba(148,163,184,0.1)_2px,transparent_2px),linear-gradient(to_bottom,rgba(148,163,184,0.1)_2px,transparent_2px)] bg-[size:48px_48px] bg-[position:center]">
+      <div className="min-h-screen bg-slate-950 bg-[linear-gradient(to_right,rgb(15_23_42_/_0.2)_1px,transparent_1px),linear-gradient(to_bottom,rgb(15_23_42_/_0.2)_1px,transparent_1px)] bg-[size:24px_24px]">
         <div className="container mx-auto px-4 py-8">
           <div className="mb-10 flex flex-col items-center">
             <div className="w-[600px] mb-6">

@@ -33,6 +33,7 @@ export interface Collection {
   password?: string; // Optional password (will be hashed)
   createdAt: Timestamp;
   updatedAt: Timestamp;
+  expirationDate?: Timestamp;
 }
 
 export interface ContentsByCategory {
@@ -60,4 +61,20 @@ export interface ContentContextType {
   deleteContent: (contentId: string) => Promise<void>;
   toggleFavorite: (contentId: string) => Promise<void>;
   updateLastViewed: (contentId: string) => Promise<void>;
+}
+
+export interface PlayerAnalysisVideo {
+  id: string;
+  userId: string;
+  playerName: string;
+  category: 'hitting' | 'pitching';
+  videoType: 'upload' | 'youtube';
+  videoUrl: string;  // For uploads: Firebase Storage URL, For YouTube: YouTube URL
+  thumbnailUrl?: string;
+  notes: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  fileSize?: number;  // Only for uploaded videos
+  fileName?: string;  // Only for uploaded videos
+  youtubeVideoId?: string;  // Only for YouTube videos
 } 

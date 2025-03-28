@@ -61,7 +61,7 @@ export default function ContentPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-slate-950 bg-[radial-gradient(#1e293b_1px,transparent_1px)] bg-[size:24px_24px]">
+      <div className="min-h-screen">
         <div className="container mx-auto px-4 py-8">
           <div className="mb-10 flex flex-col items-center">
             <div className="w-[600px] mb-6">

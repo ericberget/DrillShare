@@ -10,7 +10,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from './ui/dropdown-menu'
-import { Menu, User, Settings, LogOut, Video, FolderOpen, Home } from 'lucide-react'
+import { Menu, User, Settings, LogOut, Video, FolderOpen, Home, Book, LineChart } from 'lucide-react'
 import { useFirebase } from '@/contexts/FirebaseContext'
 import { useAuth } from '@/hooks/useAuth'
 import { useRouter, usePathname } from 'next/navigation'
@@ -60,6 +60,18 @@ export function Navbar() {
                   <Link href="/collections" className="cursor-pointer">
                     <FolderOpen className="mr-2 h-4 w-4" />
                     <span>Collections</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/practice" className="cursor-pointer">
+                    <Book className="mr-2 h-4 w-4" />
+                    <span>Practice Plans</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/player-analysis" className="cursor-pointer">
+                    <LineChart className="mr-2 h-4 w-4" />
+                    <span>Player Analysis</span>
                   </Link>
                 </DropdownMenuItem>
               </DropdownMenuContent>

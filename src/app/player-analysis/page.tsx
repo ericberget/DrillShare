@@ -4,108 +4,79 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from 'next/link';
+import { PlayerAnalysisVideo } from '@/types/content';
+import { Timestamp } from 'firebase/firestore';
 
-interface VideoAnalysis {
-  id: string;
-  fileName: string;
-  fileSize: number;
-  dateUploaded: number;
-  playerName: string;
-  notes: string;
-  videoPreviewUrl?: string;
-  thumbnailUrl?: string;
-}
+// Helper function to extract YouTube video ID from URL
+const extractYouTubeId = (url: string): string | null => {
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+  const match = url.match(regExp);
+  return (match && match[2].length === 11) ? match[2] : null;
+};
 
 // Video Card Component for individual videos
 const VideoCard = ({ 
   video, 
   onDelete, 
-  onView, 
+  onView,
   formatDate 
 }: { 
-  video: VideoAnalysis, 
+  video: PlayerAnalysisVideo, 
   onDelete: (id: string) => void, 
-  onView: (video: VideoAnalysis) => void,
-  formatDate: (timestamp: number) => string
+  onView: (video: PlayerAnalysisVideo) => void,
+  formatDate: (timestamp: Timestamp) => string
 }) => {
-  const [isPlaying, setIsPlaying] = useState(false);
-  
   return (
-    <Card 
-      key={video.id} 
-      className="bg-slate-900/30 border-slate-700/50 hover:border-emerald-500/30 hover:bg-slate-800/40 transition-all cursor-pointer"
-      onClick={() => {
-        if (!isPlaying && video.videoPreviewUrl) {
-          setIsPlaying(true);
-        } else {
-          onView(video);
-        }
-      }}
-    >
-      <div className="aspect-video overflow-hidden bg-slate-800 relative">
-        {isPlaying && video.videoPreviewUrl ? (
-          <video 
-            src={video.videoPreviewUrl} 
-            controls 
-            autoPlay
-            className="w-full h-full" 
-            onError={() => setIsPlaying(false)}
-          />
-        ) : video.thumbnailUrl ? (
-          <>
-            <img 
-              src={video.thumbnailUrl} 
-              alt={video.playerName} 
-              className="w-full h-full object-cover"
+    <Card className="bg-slate-900/30 border-slate-700/50">
+      <CardContent className="p-4">
+        <div className="aspect-video bg-slate-800 rounded-lg overflow-hidden mb-4">
+          {video.videoType === 'youtube' ? (
+            <iframe
+              src={`https://www.youtube.com/embed/${video.youtubeVideoId}`}
+              className="w-full h-full"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
             />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-16 h-16 rounded-full bg-emerald-500/80 flex items-center justify-center shadow-lg">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="white" stroke="white">
-                  <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                </svg>
-              </div>
-            </div>
-          </>
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-slate-500">
-            No Preview
-          </div>
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 hover:opacity-100 transition-opacity flex items-end justify-between p-4">
+          ) : (
+            <video
+              src={video.videoUrl}
+              className="w-full h-full object-cover"
+              controls
+            />
+          )}
+        </div>
+        <div className="space-y-2">
+          <h3 className="text-lg font-semibold text-slate-100">{video.playerName}</h3>
+          <p className="text-sm text-slate-400">{video.category}</p>
+          <p className="text-sm text-slate-400">Added: {formatDate(video.createdAt)}</p>
+          {video.fileSize && (
+            <p className="text-sm text-slate-400">
+              Size: {(video.fileSize / (1024 * 1024)).toFixed(2)} MB
+            </p>
+          )}
+        </div>
+        <div className="flex gap-2 mt-4">
           <Button 
-            className="bg-emerald-600 hover:bg-emerald-500"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              onView(video);
-            }}
+            variant="outline" 
+            className="flex-1 border-slate-700 text-slate-300 hover:text-slate-100"
+            onClick={() => onView(video)}
           >
             View
           </Button>
           <Button 
-            className="bg-red-600 hover:bg-red-500"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete(video.id);
-            }}
+            variant="destructive"
+            className="flex-1"
+            onClick={() => onDelete(video.id)}
           >
             Delete
           </Button>
         </div>
-      </div>
-      <CardContent className="p-4">
-        <h3 className="font-bold text-emerald-400 mb-1 truncate">{video.playerName}</h3>
-        <div className="text-sm text-slate-400 mb-2">Uploaded {formatDate(video.dateUploaded)}</div>
-        <p className="text-slate-300 line-clamp-2 text-sm h-10 overflow-hidden">
-          {video.notes || "No analysis notes"}
-        </p>
       </CardContent>
     </Card>
   );
@@ -123,10 +94,13 @@ const PlayerAnalysisPage = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [playerName, setPlayerName] = useState('');
   const [notes, setNotes] = useState('');
-  const [savedVideos, setSavedVideos] = useState<VideoAnalysis[]>([]);
-  const [selectedVideo, setSelectedVideo] = useState<VideoAnalysis | null>(null);
-  const [thumbnail, setThumbnail] = useState<string | null>(null);
+  const [savedVideos, setSavedVideos] = useState<PlayerAnalysisVideo[]>([]);
+  const [selectedVideo, setSelectedVideo] = useState<PlayerAnalysisVideo | null>(null);
+  const [thumbnail, setThumbnail] = useState<string | undefined>(undefined);
   const [activeTab, setActiveTab] = useState<string>("myvideos");
+  const [selectedCategory, setSelectedCategory] = useState<'all' | 'hitting' | 'pitching'>('all');
+  const [videoType, setVideoType] = useState<'upload' | 'youtube'>('upload');
+  const [youtubeUrl, setYoutubeUrl] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -180,22 +154,34 @@ const PlayerAnalysisPage = () => {
     window.location.hash = value;
   };
   
-  // Capture thumbnail from video
-  const captureThumbnail = () => {
+  const captureThumbnail = (): string | undefined => {
     if (videoRef.current) {
       try {
         const canvas = document.createElement('canvas');
         canvas.width = videoRef.current.videoWidth;
         canvas.height = videoRef.current.videoHeight;
-        canvas.getContext('2d')?.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
-        setThumbnail(dataUrl);
-        return dataUrl;
-      } catch (e) {
-        console.error('Error capturing thumbnail:', e);
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(videoRef.current, 0, 0);
+          return canvas.toDataURL('image/jpeg');
+        }
+      } catch (error) {
+        console.error('Error capturing thumbnail:', error);
       }
     }
-    return null;
+    return undefined;
+  };
+
+  const handleTimeUpdate = () => {
+    if (videoRef.current && !thumbnail) {
+      const currentTime = videoRef.current.currentTime;
+      if (currentTime > 0) {
+        const newThumbnail = captureThumbnail();
+        if (newThumbnail) {
+          setThumbnail(newThumbnail);
+        }
+      }
+    }
   };
   
   const handleDragOver = (e: React.DragEvent) => {
@@ -224,7 +210,7 @@ const PlayerAnalysisPage = () => {
   const processFile = async (file: File) => {
     setError('');
     setWarning('');
-    setThumbnail(null);
+    setThumbnail(undefined);
     
     // Check file size first
     if (file.size > MAX_FILE_SIZE) {
@@ -288,8 +274,42 @@ const PlayerAnalysisPage = () => {
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      processFile(e.target.files[0]);
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile) {
+      setFile(selectedFile);
+      setError('');
+      setWarning('');
+      
+      // Create preview URL
+      const previewUrl = URL.createObjectURL(selectedFile);
+      setVideoSrc(previewUrl);
+      
+      // Check file size
+      if (selectedFile.size > 50 * 1024 * 1024) {
+        setError('File size exceeds 50MB limit');
+        setFile(null);
+        setVideoSrc('');
+        return;
+      }
+      
+      // Check file type
+      const fileType = selectedFile.type;
+      if (!fileType.startsWith('video/') && !fileType.startsWith('image/')) {
+        setError('Invalid file type. Please upload a video or image file.');
+        setFile(null);
+        setVideoSrc('');
+        return;
+      }
+      
+      // Check if conversion is needed
+      if (fileType === 'image/heic' || fileType === 'image/heif' || fileType === 'video/quicktime') {
+        setWarning('File will be converted to MP4 format');
+        setIsConverting(true);
+        // Simulate conversion
+        setTimeout(() => {
+          setIsConverting(false);
+        }, 2000);
+      }
     }
   };
 
@@ -298,14 +318,31 @@ const PlayerAnalysisPage = () => {
   };
   
   const saveVideoAnalysis = () => {
-    if (!file) {
-      setError('No video file to save');
-      return;
-    }
-    
     if (!playerName.trim()) {
       setError('Please enter a player name');
       return;
+    }
+    
+    if (!selectedCategory || selectedCategory === 'all') {
+      setError('Please select a category (Hitting or Pitching)');
+      return;
+    }
+
+    if (videoType === 'youtube') {
+      if (!youtubeUrl.trim()) {
+        setError('Please enter a YouTube URL');
+        return;
+      }
+      const videoId = extractYouTubeId(youtubeUrl);
+      if (!videoId) {
+        setError('Invalid YouTube URL');
+        return;
+      }
+    } else {
+      if (!file) {
+        setError('No video file to save');
+        return;
+      }
     }
     
     setIsSaving(true);
@@ -314,15 +351,20 @@ const PlayerAnalysisPage = () => {
     const thumbnailUrl = thumbnail || captureThumbnail();
     
     setTimeout(() => {
-      const newAnalysis: VideoAnalysis = {
+      const newAnalysis: PlayerAnalysisVideo = {
         id: Date.now().toString(),
-        fileName: file.name,
-        fileSize: file.size,
-        dateUploaded: Date.now(),
+        userId: 'user123', // This should come from your auth context
         playerName: playerName,
+        category: selectedCategory,
+        videoType: videoType,
+        videoUrl: videoType === 'youtube' ? youtubeUrl : videoSrc,
+        thumbnailUrl: thumbnailUrl === null ? undefined : thumbnailUrl,
         notes: notes,
-        videoPreviewUrl: videoSrc,
-        thumbnailUrl: thumbnailUrl || undefined
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+        fileSize: file?.size,
+        fileName: file?.name,
+        youtubeVideoId: videoType === 'youtube' ? extractYouTubeId(youtubeUrl) : undefined
       };
       
       const updatedVideos = [...savedVideos, newAnalysis];
@@ -341,7 +383,10 @@ const PlayerAnalysisPage = () => {
       setVideoSrc('');
       setPlayerName('');
       setNotes('');
-      setThumbnail(null);
+      setThumbnail(undefined);
+      setSelectedCategory('all');
+      setYoutubeUrl('');
+      setVideoType('upload');
     }, 1000);
   };
   
@@ -363,8 +408,8 @@ const PlayerAnalysisPage = () => {
     }
   };
   
-  const formatDate = (timestamp: number) => {
-    return new Date(timestamp).toLocaleDateString('en-US', {
+  const formatDate = (timestamp: Timestamp) => {
+    return new Date(timestamp.toDate()).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
@@ -392,6 +437,35 @@ const PlayerAnalysisPage = () => {
         </div>
       </header>
 
+      {/* Category Tabs */}
+      <div className="border-b border-slate-800/30 bg-slate-900/50">
+        <div className="container mx-auto px-4">
+          <div className="flex gap-4">
+            <Button
+              variant={selectedCategory === 'all' ? 'default' : 'ghost'}
+              className={`${selectedCategory === 'all' ? 'bg-emerald-600 hover:bg-emerald-700' : 'text-slate-400 hover:text-slate-300'}`}
+              onClick={() => setSelectedCategory('all')}
+            >
+              All
+            </Button>
+            <Button
+              variant={selectedCategory === 'hitting' ? 'default' : 'ghost'}
+              className={`${selectedCategory === 'hitting' ? 'bg-emerald-600 hover:bg-emerald-700' : 'text-slate-400 hover:text-slate-300'}`}
+              onClick={() => setSelectedCategory('hitting')}
+            >
+              Hitting
+            </Button>
+            <Button
+              variant={selectedCategory === 'pitching' ? 'default' : 'ghost'}
+              className={`${selectedCategory === 'pitching' ? 'bg-emerald-600 hover:bg-emerald-700' : 'text-slate-400 hover:text-slate-300'}`}
+              onClick={() => setSelectedCategory('pitching')}
+            >
+              Pitching
+            </Button>
+          </div>
+        </div>
+      </div>
+
       {/* Main content */}
       <main className="container mx-auto py-8 px-4">
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
@@ -411,91 +485,120 @@ const PlayerAnalysisPage = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div
-                    className={`p-4 border-2 border-dashed rounded-xl transition-colors flex flex-col items-center justify-center h-64 ${
-                      isDragging
-                        ? 'border-emerald-500 bg-emerald-500/10'
-                        : error
-                        ? 'border-red-500 bg-red-500/10'
-                        : isConverting
-                        ? 'border-amber-500 bg-amber-500/10'
-                        : 'border-slate-700 bg-slate-800/30 hover:bg-slate-800/50 hover:border-slate-600'
-                    }`}
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDrop={handleDrop}
-                    onClick={handleSelectFile}
-                  >
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      className="hidden"
-                      accept=".mp4,.mov,.heic,.heif,video/mp4,video/quicktime,image/heic,image/heif"
-                      onChange={handleFileChange}
-                    />
-                    
-                    {isConverting ? (
-                      <div className="text-center">
-                        <div className="w-12 h-12 border-4 border-t-transparent border-amber-400 rounded-full animate-spin mx-auto mb-4"></div>
-                        <p className="text-amber-300">Converting file format...</p>
-                      </div>
-                    ) : isUploading ? (
-                      <div className="w-full px-4">
-                        <div className="mb-2 text-center text-sm font-medium text-slate-300">
-                          Uploading: {uploadProgress}%
+                  {/* Video Upload or YouTube URL Input */}
+                  {videoType === 'upload' ? (
+                    <div
+                      className={`p-4 border-2 border-dashed rounded-xl transition-colors flex flex-col items-center justify-center h-64 ${
+                        isDragging
+                          ? 'border-emerald-500 bg-emerald-500/10'
+                          : error
+                          ? 'border-red-500 bg-red-500/10'
+                          : isConverting
+                          ? 'border-amber-500 bg-amber-500/10'
+                          : 'border-slate-700 bg-slate-800/30 hover:bg-slate-800/50 hover:border-slate-600'
+                      }`}
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      onDrop={handleDrop}
+                      onClick={handleSelectFile}
+                    >
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        className="hidden"
+                        accept=".mp4,.mov,.heic,.heif,video/mp4,video/quicktime,image/heic,image/heif"
+                        onChange={handleFileChange}
+                      />
+                      
+                      {isConverting ? (
+                        <div className="text-center">
+                          <div className="w-12 h-12 border-4 border-t-transparent border-amber-400 rounded-full animate-spin mx-auto mb-4"></div>
+                          <p className="text-amber-300">Converting file format...</p>
                         </div>
-                        <div className="w-full bg-slate-700 rounded-full h-2.5">
-                          <div 
-                            className="bg-emerald-500 h-2.5 rounded-full transition-all duration-300" 
-                            style={{ width: `${uploadProgress}%` }}
-                          ></div>
+                      ) : isUploading ? (
+                        <div className="w-full px-4">
+                          <div className="mb-2 text-center text-sm font-medium text-slate-300">
+                            Uploading: {uploadProgress}%
+                          </div>
+                          <div className="w-full bg-slate-700 rounded-full h-2.5">
+                            <div 
+                              className="bg-emerald-500 h-2.5 rounded-full transition-all duration-300" 
+                              style={{ width: `${uploadProgress}%` }}
+                            ></div>
+                          </div>
                         </div>
-                      </div>
-                    ) : file ? (
-                      <div className="text-center">
-                        <div className="text-emerald-400 text-lg font-medium mb-2">
-                          Video ready for analysis
+                      ) : file ? (
+                        <div className="text-center">
+                          <div className="text-emerald-400 text-lg font-medium mb-2">
+                            Video ready for analysis
+                          </div>
+                          <p className="text-slate-300 text-sm mb-4">
+                            {file.name} ({(file.size / (1024 * 1024)).toFixed(2)} MB)
+                          </p>
+                          <Button 
+                            className="bg-emerald-600 hover:bg-emerald-500 text-white"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              simulateUpload();
+                            }}
+                          >
+                            Start Analysis
+                          </Button>
                         </div>
-                        <p className="text-slate-300 text-sm mb-4">
-                          {file.name} ({(file.size / (1024 * 1024)).toFixed(2)} MB)
+                      ) : (
+                        <>
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="48"
+                            height="48"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="text-slate-400 mb-4"
+                          >
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="17 8 12 3 7 8" />
+                            <line x1="12" y1="3" x2="12" y2="15" />
+                          </svg>
+                          <p className="text-slate-300 mb-2 text-center">
+                            Drag & drop your video here or click to browse
+                          </p>
+                          <p className="text-slate-500 text-sm text-center">
+                            Accepts MP4, MOV videos and HEIC images up to 50MB
+                          </p>
+                        </>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="youtube-url" className="text-slate-300">YouTube URL</Label>
+                        <Input 
+                          id="youtube-url"
+                          placeholder="Paste YouTube video URL"
+                          className="bg-slate-800 border-slate-700 text-slate-100"
+                          value={youtubeUrl}
+                          onChange={(e) => setYoutubeUrl(e.target.value)}
+                        />
+                        <p className="text-sm text-slate-400 mt-1">
+                          Supports standard YouTube URLs and shortened youtu.be links
                         </p>
-                        <Button 
-                          className="bg-emerald-600 hover:bg-emerald-500 text-white"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            simulateUpload();
-                          }}
-                        >
-                          Start Analysis
-                        </Button>
                       </div>
-                    ) : (
-                      <>
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="48"
-                          height="48"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="1"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          className="text-slate-400 mb-4"
-                        >
-                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                          <polyline points="17 8 12 3 7 8" />
-                          <line x1="12" y1="3" x2="12" y2="15" />
-                        </svg>
-                        <p className="text-slate-300 mb-2 text-center">
-                          Drag & drop your video here or click to browse
-                        </p>
-                        <p className="text-slate-500 text-sm text-center">
-                          Accepts MP4, MOV videos and HEIC images up to 50MB
-                        </p>
-                      </>
-                    )}
-                  </div>
+                      {youtubeUrl && (
+                        <div className="aspect-video bg-slate-800 rounded-xl overflow-hidden">
+                          <iframe
+                            src={`https://www.youtube.com/embed/${extractYouTubeId(youtubeUrl)}`}
+                            className="w-full h-full"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
                   
                   {error && (
                     <Alert className="mt-4 bg-red-900/20 border border-red-800 text-red-300">
@@ -510,42 +613,65 @@ const PlayerAnalysisPage = () => {
                   )}
                   
                   <div className="mt-6">
-                    <h3 className="text-sm font-medium text-slate-300 mb-2">TIPS FOR BEST ANALYSIS:</h3>
-                    <ul className="text-sm text-slate-400 space-y-2 list-disc pl-5">
-                      <li>Ensure good lighting and a clean background</li>
-                      <li>Film from side angle for swing analysis</li>
-                      <li>Keep camera steady and focused on the player</li>
-                      <li>Include the full swing from setup to follow-through</li>
-                      <li>iPhone videos (MOV) and photos (HEIC) will be automatically converted</li>
-                    </ul>
+                    <Label htmlFor="category" className="text-slate-300">Category</Label>
+                    <div className="flex gap-2 mt-2">
+                      <Button
+                        variant={selectedCategory === 'hitting' ? 'default' : 'outline'}
+                        className={`${selectedCategory === 'hitting' ? 'bg-emerald-600 hover:bg-emerald-700' : 'border-slate-700 text-slate-400 hover:text-slate-300'}`}
+                        onClick={() => setSelectedCategory('hitting')}
+                      >
+                        Hitting
+                      </Button>
+                      <Button
+                        variant={selectedCategory === 'pitching' ? 'default' : 'outline'}
+                        className={`${selectedCategory === 'pitching' ? 'bg-emerald-600 hover:bg-emerald-700' : 'border-slate-700 text-slate-400 hover:text-slate-300'}`}
+                        onClick={() => setSelectedCategory('pitching')}
+                      >
+                        Pitching
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Video Preview */}
+              {/* Preview Section */}
               <Card className="bg-slate-900/30 border-slate-700/50">
                 <CardHeader>
-                  <CardTitle className="text-emerald-400">Video Preview</CardTitle>
+                  <CardTitle className="text-emerald-400">Preview</CardTitle>
                   <CardDescription className="text-slate-400">
-                    Review your uploaded video before analysis
+                    Review your video before saving
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {videoSrc ? (
-                    <div className="aspect-video bg-black rounded-xl overflow-hidden">
-                      <video 
-                        ref={videoRef}
-                        src={videoSrc} 
-                        controls 
-                        className="w-full h-full" 
-                        onLoadedData={() => captureThumbnail()}
-                        onError={() => setError('Error loading video')}
-                      />
-                    </div>
+                  {videoType === 'youtube' ? (
+                    youtubeUrl ? (
+                      <div className="aspect-video bg-slate-800 rounded-xl overflow-hidden">
+                        <iframe
+                          src={`https://www.youtube.com/embed/${extractYouTubeId(youtubeUrl)}`}
+                          className="w-full h-full"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                        />
+                      </div>
+                    ) : (
+                      <div className="aspect-video bg-slate-800 rounded-xl flex items-center justify-center">
+                        <p className="text-slate-400">Enter a YouTube URL to preview</p>
+                      </div>
+                    )
                   ) : (
-                    <div className="aspect-video bg-slate-800/50 rounded-xl flex items-center justify-center">
-                      <p className="text-slate-500">No video selected</p>
-                    </div>
+                    videoSrc ? (
+                      <video
+                        ref={videoRef}
+                        src={videoSrc}
+                        className="w-full aspect-video rounded-xl"
+                        controls
+                        onTimeUpdate={handleTimeUpdate}
+                      />
+                    ) : (
+                      <div className="aspect-video bg-slate-800 rounded-xl flex items-center justify-center">
+                        <p className="text-slate-400">Upload a video to preview</p>
+                      </div>
+                    )
                   )}
                   
                   {videoSrc && (
@@ -603,7 +729,7 @@ const PlayerAnalysisPage = () => {
               <p className="text-slate-400">View and manage your saved video analyses</p>
             </div>
             
-            {savedVideos.length === 0 ? (
+            {savedVideos.filter(video => selectedCategory === 'all' || video.category === selectedCategory).length === 0 ? (
               <div className="bg-slate-900/30 border border-slate-700/50 rounded-lg p-8 text-center">
                 <svg 
                   xmlns="http://www.w3.org/2000/svg" 
@@ -632,15 +758,17 @@ const PlayerAnalysisPage = () => {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {savedVideos.map(video => (
-                  <VideoCard 
-                    key={video.id}
-                    video={video}
-                    onDelete={deleteVideo}
-                    onView={setSelectedVideo}
-                    formatDate={formatDate}
-                  />
-                ))}
+                {savedVideos
+                  .filter(video => selectedCategory === 'all' || video.category === selectedCategory)
+                  .map(video => (
+                    <VideoCard 
+                      key={video.id}
+                      video={video}
+                      onDelete={deleteVideo}
+                      onView={setSelectedVideo}
+                      formatDate={formatDate}
+                    />
+                  ))}
               </div>
             )}
           </TabsContent>
@@ -649,77 +777,61 @@ const PlayerAnalysisPage = () => {
       
       {/* Video Detail Modal */}
       {selectedVideo && (
-        <div 
-          className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50"
-          onClick={() => setSelectedVideo(null)}
-        >
-          <div 
-            className="w-full max-w-4xl bg-slate-900 rounded-lg shadow-xl overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="p-6 border-b border-slate-700 flex justify-between items-center">
-              <h2 className="text-xl font-bold text-emerald-400">{selectedVideo.playerName}</h2>
-              <Button 
-                variant="ghost" 
-                className="text-slate-400 hover:text-slate-200"
-                onClick={() => setSelectedVideo(null)}
-              >
-                ×
-              </Button>
-            </div>
-            
-            <ScrollArea className="max-h-[calc(80vh-120px)]">
-              <div className="p-6">
-                <div className="aspect-video bg-black rounded-lg overflow-hidden mb-6">
-                  {selectedVideo.videoPreviewUrl ? (
-                    <video 
-                      src={selectedVideo.videoPreviewUrl} 
-                      controls 
-                      className="w-full h-full" 
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-slate-500">
-                      Video preview not available
-                    </div>
-                  )}
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+          <Card className="bg-slate-900/90 border-slate-700/50 max-w-4xl w-full">
+            <CardHeader>
+              <CardTitle className="text-emerald-400">{selectedVideo.playerName}</CardTitle>
+              <CardDescription className="text-slate-400">
+                {selectedVideo.category} Analysis
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="aspect-video bg-slate-800 rounded-xl overflow-hidden mb-4">
+                {selectedVideo.videoType === 'youtube' ? (
+                  <iframe
+                    src={`https://www.youtube.com/embed/${selectedVideo.youtubeVideoId}`}
+                    className="w-full h-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                ) : (
+                  <video
+                    src={selectedVideo.videoUrl}
+                    className="w-full h-full"
+                    controls
+                  />
+                )}
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-slate-300">Notes</Label>
+                  <p className="text-slate-300 mt-2">{selectedVideo.notes || 'No notes available'}</p>
                 </div>
-                
-                <div className="mb-6">
-                  <h3 className="text-sm font-medium text-slate-400 mb-1">FILE DETAILS</h3>
-                  <div className="flex flex-wrap gap-3">
-                    <Badge variant="secondary" className="bg-slate-800">
-                      {selectedVideo.fileName}
-                    </Badge>
+                <div className="flex gap-2">
+                  <Badge variant="secondary" className="bg-slate-800">
+                    {selectedVideo.category}
+                  </Badge>
+                  <Badge variant="secondary" className="bg-slate-800">
+                    {formatDate(selectedVideo.createdAt)}
+                  </Badge>
+                  {selectedVideo.fileSize && (
                     <Badge variant="secondary" className="bg-slate-800">
                       {(selectedVideo.fileSize / (1024 * 1024)).toFixed(2)} MB
                     </Badge>
-                    <Badge variant="secondary" className="bg-slate-800">
-                      {formatDate(selectedVideo.dateUploaded)}
-                    </Badge>
-                  </div>
-                </div>
-                
-                <div className="mb-6">
-                  <h3 className="text-sm font-medium text-slate-400 mb-1">ANALYSIS NOTES</h3>
-                  <div className="bg-slate-800 rounded-lg p-4 text-slate-200">
-                    {selectedVideo.notes || "No analysis notes provided"}
-                  </div>
-                </div>
-                
-                <div className="flex justify-end gap-2">
-                  <Button 
-                    className="bg-red-600 hover:bg-red-500"
-                    onClick={() => {
-                      deleteVideo(selectedVideo.id);
-                      setSelectedVideo(null);
-                    }}
-                  >
-                    Delete Analysis
-                  </Button>
+                  )}
                 </div>
               </div>
-            </ScrollArea>
-          </div>
+            </CardContent>
+            <CardFooter className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                className="border-slate-700 text-slate-300 hover:text-slate-100"
+                onClick={() => setSelectedVideo(null)}
+              >
+                Close
+              </Button>
+            </CardFooter>
+          </Card>
         </div>
       )}
     </div>

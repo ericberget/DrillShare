@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { storage, auth } from '@/lib/firebase';
 
 export interface UploadProgress {
   progress: number;
@@ -26,6 +28,7 @@ export function useStorage() {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('path', path);
+      formData.append('userId', auth.currentUser?.uid || '');
       
       // Set initial progress
       setUploadState({ progress: 10, url: null, error: null });

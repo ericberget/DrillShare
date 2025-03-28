@@ -55,7 +55,9 @@ export const authOptions: AuthOptions = {
   ],
   session: {
     strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
+  debug: process.env.NODE_ENV === 'development',
   pages: {
     signIn: "/auth/signin",
     // signOut: '/auth/signout',
@@ -71,14 +73,13 @@ export const authOptions: AuthOptions = {
       return session
     },
     async signIn({ account, credentials }) {
-      if (credentials) {
-        // Credentials sign-in was already handled in authorize callback
-        return true;
-      }
-
-      if (!account) return false;
-
       try {
+        if (credentials) {
+          return true;
+        }
+
+        if (!account) return false;
+
         if (account.provider === 'google' && account.id_token) {
           const credential = GoogleAuthProvider.credential(account.id_token);
           await signInWithCredential(auth, credential);
@@ -86,7 +87,7 @@ export const authOptions: AuthOptions = {
         }
         return false;
       } catch (error) {
-        console.error('Error signing in with Firebase:', error);
+        console.error('Error in signIn callback:', error);
         return false;
       }
     },
