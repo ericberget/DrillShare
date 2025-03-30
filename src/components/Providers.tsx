@@ -11,15 +11,18 @@ import { ToastProvider } from '@/contexts/ToastContext';
 import { PlayerAnalysisProvider } from '@/contexts/PlayerAnalysisContext';
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  // Seed the database with sample content on initial load
+  // Seed the database with sample content only in development
   useEffect(() => {
     const seedDatabase = async () => {
-      try {
-        const response = await fetch('/api/seed');
-        const data = await response.json();
-        console.log('Database seed result:', data);
-      } catch (error) {
-        console.error('Error seeding database:', error);
+      // Only seed in development mode
+      if (process.env.NODE_ENV === 'development') {
+        try {
+          const response = await fetch('/api/seed');
+          const data = await response.json();
+          console.log('Database seed result:', data);
+        } catch (error) {
+          console.error('Error seeding database:', error);
+        }
       }
     };
 
