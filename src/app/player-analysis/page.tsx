@@ -12,6 +12,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from 'next/link';
 import { PlayerAnalysisVideo } from '@/types/content';
 import { Timestamp } from 'firebase/firestore';
+import { useFirebase } from '@/contexts/FirebaseContext';
+import { collection, addDoc, deleteDoc, doc, getDocs, query, where, orderBy, updateDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
 // Helper function to extract YouTube video ID from URL
 const extractYouTubeId = (url: string): string | null => {
@@ -25,17 +28,21 @@ const VideoCard = ({
   video, 
   onDelete, 
   onView,
+  onEdit,
   formatDate 
 }: { 
   video: PlayerAnalysisVideo, 
   onDelete: (id: string) => void, 
   onView: (video: PlayerAnalysisVideo) => void,
-  formatDate: (timestamp: Timestamp) => string
+  onEdit: (video: PlayerAnalysisVideo) => void,
+  formatDate: (timestamp: Timestamp | string | number) => string
 }) => {
   return (
     <Card className="bg-slate-900/30 border-slate-700/50">
       <CardContent className="p-4">
-        <div className="aspect-video bg-slate-800 rounded-lg overflow-hidden mb-4">
+        <div className={`bg-slate-800 rounded-lg overflow-hidden mb-4 ${
+          video.orientation === 'vertical' ? 'aspect-[9/16]' : 'aspect-video'
+        }`}>
           {video.videoType === 'youtube' ? (
             <iframe
               src={`https://www.youtube.com/embed/${video.youtubeVideoId}`}
@@ -46,7 +53,7 @@ const VideoCard = ({
           ) : (
             <video
               src={video.videoUrl}
-              className="w-full h-full object-cover"
+              className={`w-full h-full ${video.orientation === 'vertical' ? 'object-contain' : 'object-cover'}`}
               controls
             />
           )}
@@ -68,6 +75,13 @@ const VideoCard = ({
             onClick={() => onView(video)}
           >
             View
+          </Button>
+          <Button 
+            variant="outline"
+            className="flex-1 border-slate-700 text-emerald-400 hover:text-emerald-300"
+            onClick={() => onEdit(video)}
+          >
+            Edit
           </Button>
           <Button 
             variant="destructive"
@@ -101,8 +115,10 @@ const PlayerAnalysisPage = () => {
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'hitting' | 'pitching'>('all');
   const [videoType, setVideoType] = useState<'upload' | 'youtube'>('upload');
   const [youtubeUrl, setYoutubeUrl] = useState('');
+  const [orientation, setOrientation] = useState<'landscape' | 'vertical'>('landscape');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const { user, firestore, storage } = useFirebase();
 
   const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB in bytes
   
@@ -110,26 +126,39 @@ const PlayerAnalysisPage = () => {
   const ACCEPTED_VIDEO_TYPES = ['video/mp4', 'video/quicktime', 'video/mov'];
   const ACCEPTED_IMAGE_TYPES = ['image/heic', 'image/heif'];
   
-  // Load saved videos from localStorage on component mount
+  // Load videos from Firestore
   useEffect(() => {
-    const loadSavedVideos = () => {
+    const loadVideos = async () => {
+      if (!user || !firestore) return;
+
       try {
-        const saved = localStorage.getItem('playerAnalysisVideos');
-        if (saved) {
-          setSavedVideos(JSON.parse(saved));
-        }
+        const videosRef = collection(firestore, 'playerAnalysisVideos');
+        const q = query(
+          videosRef,
+          where('userId', '==', user.uid),
+          orderBy('createdAt', 'desc')
+        );
+        
+        const querySnapshot = await getDocs(q);
+        const videos = querySnapshot.docs.map(doc => ({
+          ...doc.data(),
+          id: doc.id
+        })) as PlayerAnalysisVideo[];
+        
+        setSavedVideos(videos);
       } catch (err) {
-        console.error('Error loading saved videos:', err);
+        console.error('Error loading videos:', err);
+        setError('Failed to load videos');
       }
     };
-    
-    loadSavedVideos();
-  }, []);
-  
+
+    loadVideos();
+  }, [user, firestore]);
+
   // Check URL hash for tab selection
   useEffect(() => {
     // Get hash from URL (e.g., #myvideos)
-    const hash = window.location.hash?.substring(1);
+    const hash = window.location.hash?.substring(1) || '';
     
     // If hash is one of our valid tabs, set it as active
     if (hash === 'upload' || hash === 'myvideos') {
@@ -138,7 +167,7 @@ const PlayerAnalysisPage = () => {
     
     // Listen for hash changes
     const handleHashChange = () => {
-      const newHash = window.location.hash?.substring(1);
+      const newHash = window.location.hash?.substring(1) || '';
       if (newHash === 'upload' || newHash === 'myvideos') {
         setActiveTab(newHash);
       }
@@ -317,7 +346,35 @@ const PlayerAnalysisPage = () => {
     fileInputRef.current?.click();
   };
   
-  const saveVideoAnalysis = () => {
+  // Handle file upload to Firebase Storage
+  const uploadToStorage = async (file: File): Promise<string> => {
+    if (!storage || !user) {
+      throw new Error('Storage not initialized or user not logged in');
+    }
+
+    try {
+      const fileExt = file.name.split('.').pop() || 'mp4';
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const storageRef = ref(storage, `player-analysis/${user.uid}/${fileName}`);
+      
+      // Use uploadBytes instead of uploadBytesResumable for testing
+      const snapshot = await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+      return downloadURL;
+      
+    } catch (err) {
+      console.error('Error in uploadToStorage:', err);
+      throw err;
+    }
+  };
+
+  // Save video analysis to Firestore
+  const saveVideoAnalysis = async () => {
+    if (!user || !firestore) {
+      setError('You must be logged in to save videos');
+      return;
+    }
+
     if (!playerName.trim()) {
       setError('Please enter a player name');
       return;
@@ -328,57 +385,59 @@ const PlayerAnalysisPage = () => {
       return;
     }
 
-    if (videoType === 'youtube') {
-      if (!youtubeUrl.trim()) {
-        setError('Please enter a YouTube URL');
-        return;
-      }
-      const videoId = extractYouTubeId(youtubeUrl);
-      if (!videoId) {
-        setError('Invalid YouTube URL');
-        return;
-      }
-    } else {
-      if (!file) {
-        setError('No video file to save');
-        return;
-      }
-    }
-    
     setIsSaving(true);
-    
-    // Capture thumbnail if not already done
-    const thumbnailUrl = thumbnail || captureThumbnail();
-    
-    setTimeout(() => {
-      const newAnalysis: PlayerAnalysisVideo = {
-        id: Date.now().toString(),
-        userId: 'user123', // This should come from your auth context
-        playerName: playerName,
+    setError('');
+
+    try {
+      let videoUrl = '';
+      let youtubeVideoId;
+
+      if (videoType === 'youtube') {
+        if (!youtubeUrl.trim()) {
+          setError('Please enter a YouTube URL');
+          return;
+        }
+        youtubeVideoId = extractYouTubeId(youtubeUrl);
+        if (!youtubeVideoId) {
+          setError('Invalid YouTube URL');
+          return;
+        }
+        videoUrl = youtubeUrl;
+      } else {
+        if (!file) {
+          setError('No video file to save');
+          return;
+        }
+        // Upload file to Firebase Storage
+        videoUrl = await uploadToStorage(file);
+      }
+
+      // Capture thumbnail if not already done
+      const thumbnailUrl = thumbnail || captureThumbnail();
+
+      const videoData: Omit<PlayerAnalysisVideo, 'id'> = {
+        userId: user.uid,
+        playerName,
         category: selectedCategory,
-        videoType: videoType,
-        videoUrl: videoType === 'youtube' ? youtubeUrl : videoSrc,
-        thumbnailUrl: thumbnailUrl === null ? undefined : thumbnailUrl,
-        notes: notes,
+        videoType,
+        videoUrl,
+        thumbnailUrl,
+        notes,
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
         fileSize: file?.size,
         fileName: file?.name,
-        youtubeVideoId: videoType === 'youtube' ? extractYouTubeId(youtubeUrl) : undefined
+        orientation,
+        ...(videoType === 'youtube' ? { youtubeVideoId } : {})
       };
+
+      // Save to Firestore
+      const docRef = await addDoc(collection(firestore, 'playerAnalysisVideos'), videoData);
+      const newVideo = { ...videoData, id: docRef.id } as PlayerAnalysisVideo;
       
-      const updatedVideos = [...savedVideos, newAnalysis];
-      setSavedVideos(updatedVideos);
+      setSavedVideos(prev => [newVideo, ...prev]);
       
-      // Save to localStorage
-      try {
-        localStorage.setItem('playerAnalysisVideos', JSON.stringify(updatedVideos));
-      } catch (err) {
-        console.error('Error saving to localStorage:', err);
-        setError('Failed to save video. Try clearing some space in your browser storage.');
-      }
-      
-      setIsSaving(false);
+      // Reset form
       setFile(null);
       setVideoSrc('');
       setPlayerName('');
@@ -387,33 +446,119 @@ const PlayerAnalysisPage = () => {
       setSelectedCategory('all');
       setYoutubeUrl('');
       setVideoType('upload');
-    }, 1000);
-  };
-  
-  const deleteVideo = (id: string) => {
-    if (confirm('Are you sure you want to delete this video analysis?')) {
-      const updatedVideos = savedVideos.filter(video => video.id !== id);
-      setSavedVideos(updatedVideos);
+      setOrientation('landscape');
       
-      // Update localStorage
-      try {
-        localStorage.setItem('playerAnalysisVideos', JSON.stringify(updatedVideos));
-      } catch (err) {
-        console.error('Error saving to localStorage:', err);
-      }
-      
-      if (selectedVideo?.id === id) {
-        setSelectedVideo(null);
-      }
+    } catch (err) {
+      console.error('Error saving video:', err);
+      setError('Failed to save video. Please try again.');
+    } finally {
+      setIsSaving(false);
     }
   };
-  
-  const formatDate = (timestamp: Timestamp) => {
-    return new Date(timestamp.toDate()).toLocaleDateString('en-US', {
+
+  // Delete video
+  const deleteVideo = async (id: string) => {
+    if (!user || !firestore) return;
+
+    try {
+      // Get the video data first
+      const videoDoc = doc(firestore, 'playerAnalysisVideos', id);
+      const video = savedVideos.find(v => v.id === id);
+
+      if (!video) return;
+
+      // If it's an uploaded video, delete from storage
+      if (video.videoType === 'upload' && storage) {
+        try {
+          const storageRef = ref(storage, video.videoUrl);
+          await deleteObject(storageRef);
+        } catch (err) {
+          console.error('Error deleting from storage:', err);
+        }
+      }
+
+      // Delete from Firestore
+      await deleteDoc(videoDoc);
+
+      // Update state
+      setSavedVideos(prev => prev.filter(v => v.id !== id));
+
+    } catch (err) {
+      console.error('Error deleting video:', err);
+      setError('Failed to delete video');
+    }
+  };
+
+  // Update video
+  const updateVideo = async (id: string) => {
+    if (!user || !firestore) return;
+
+    try {
+      const videoDoc = doc(firestore, 'playerAnalysisVideos', id);
+      
+      // Only update if category is not 'all'
+      if (selectedCategory === 'all') {
+        setError('Please select a specific category (Hitting or Pitching)');
+        return;
+      }
+
+      const updates = {
+        playerName,
+        category: selectedCategory,
+        notes,
+        orientation,
+        updatedAt: Timestamp.now()
+      };
+
+      await updateDoc(videoDoc, updates);
+
+      // Update local state
+      setSavedVideos(prev => prev.map(v => 
+        v.id === id ? { ...v, ...updates } : v
+      ));
+
+      // Reset form
+      setFile(null);
+      setVideoSrc('');
+      setPlayerName('');
+      setNotes('');
+      setThumbnail(undefined);
+      setSelectedCategory('all');
+      setYoutubeUrl('');
+      setVideoType('upload');
+      setOrientation('landscape');
+
+    } catch (err) {
+      console.error('Error updating video:', err);
+      setError('Failed to update video');
+    }
+  };
+
+  const formatDate = (timestamp: Timestamp | string | number) => {
+    const date = timestamp instanceof Timestamp 
+      ? timestamp.toDate() 
+      : new Date(timestamp);
+      
+    return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
     });
+  };
+
+  const handleEditVideo = (video: PlayerAnalysisVideo) => {
+    setSelectedVideo(null);
+    setPlayerName(video.playerName);
+    setNotes(video.notes || '');
+    setSelectedCategory(video.category);
+    setOrientation(video.orientation || 'landscape');
+    setVideoType(video.videoType);
+    if (video.videoType === 'youtube') {
+      setYoutubeUrl(video.videoUrl);
+    } else {
+      setVideoSrc(video.videoUrl);
+    }
+    handleTabChange('upload');
   };
 
   return (
@@ -422,16 +567,30 @@ const PlayerAnalysisPage = () => {
       <header className="border-b border-slate-800/30 bg-gradient-to-b from-slate-900/95 to-slate-950/95">
         <div className="container mx-auto py-8">
           <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-4 text-emerald-400 hover:text-emerald-300 transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="m12 19-7-7 7-7"/>
-                <path d="M19 12H5"/>
-              </svg>
-              <span className="font-medium">Back to DrillShare</span>
-            </Link>
-            <div className="text-right">
-              <h1 className="text-2xl font-bold text-emerald-400">Player Analysis</h1>
-              <p className="text-slate-400">Upload and analyze player videos</p>
+            <div className="flex items-center gap-4">
+              <Link href="/" className="flex items-center gap-4 text-emerald-400 hover:text-emerald-300 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="m12 19-7-7 7-7"/>
+                  <path d="M19 12H5"/>
+                </svg>
+                <span className="font-medium">Back to DrillShare</span>
+              </Link>
+            </div>
+            <div className="flex items-center gap-6">
+              <div className="text-right">
+                <h1 className="text-2xl font-bold text-emerald-400">Player Analysis</h1>
+                <p className="text-slate-400">Upload and analyze player videos</p>
+              </div>
+              <Button 
+                onClick={() => handleTabChange('upload')}
+                className="bg-white hover:bg-slate-100 text-slate-900 flex items-center gap-2"
+                size="lg"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 5v14M5 12h14"/>
+                </svg>
+                Upload Video
+              </Button>
             </div>
           </div>
         </div>
@@ -469,11 +628,6 @@ const PlayerAnalysisPage = () => {
       {/* Main content */}
       <main className="container mx-auto py-8 px-4">
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className="w-full justify-start px-4 bg-slate-800 border-b border-slate-700 mb-6">
-            <TabsTrigger value="upload" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">Upload Video</TabsTrigger>
-            <TabsTrigger value="myvideos" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">My Videos</TabsTrigger>
-          </TabsList>
-          
           <TabsContent value="upload" className="mt-0">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Upload Section */}
@@ -590,7 +744,7 @@ const PlayerAnalysisPage = () => {
                       {youtubeUrl && (
                         <div className="aspect-video bg-slate-800 rounded-xl overflow-hidden">
                           <iframe
-                            src={`https://www.youtube.com/embed/${extractYouTubeId(youtubeUrl)}`}
+                            src={`https://www.youtube.com/embed/${extractYouTubeId(youtubeUrl) || ''}`}
                             className="w-full h-full"
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                             allowFullScreen
@@ -631,6 +785,26 @@ const PlayerAnalysisPage = () => {
                       </Button>
                     </div>
                   </div>
+
+                  <div className="mt-6">
+                    <Label htmlFor="orientation" className="text-slate-300">Video Orientation</Label>
+                    <div className="flex gap-2 mt-2">
+                      <Button
+                        variant={orientation === 'landscape' ? 'default' : 'outline'}
+                        className={`${orientation === 'landscape' ? 'bg-emerald-600 hover:bg-emerald-700' : 'border-slate-700 text-slate-400 hover:text-slate-300'}`}
+                        onClick={() => setOrientation('landscape')}
+                      >
+                        Landscape
+                      </Button>
+                      <Button
+                        variant={orientation === 'vertical' ? 'default' : 'outline'}
+                        className={`${orientation === 'vertical' ? 'bg-emerald-600 hover:bg-emerald-700' : 'border-slate-700 text-slate-400 hover:text-slate-300'}`}
+                        onClick={() => setOrientation('vertical')}
+                      >
+                        Vertical
+                      </Button>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
 
@@ -643,36 +817,42 @@ const PlayerAnalysisPage = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {videoType === 'youtube' ? (
-                    youtubeUrl ? (
-                      <div className="aspect-video bg-slate-800 rounded-xl overflow-hidden">
+                  <div className={`${
+                    videoType === 'youtube' 
+                      ? 'aspect-video' 
+                      : orientation === 'vertical' 
+                        ? 'aspect-[9/16]' 
+                        : 'aspect-video'
+                  } bg-slate-800 rounded-xl overflow-hidden`}>
+                    {videoType === 'youtube' ? (
+                      youtubeUrl ? (
                         <iframe
-                          src={`https://www.youtube.com/embed/${extractYouTubeId(youtubeUrl)}`}
+                          src={`https://www.youtube.com/embed/${extractYouTubeId(youtubeUrl) || ''}`}
                           className="w-full h-full"
                           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                           allowFullScreen
                         />
-                      </div>
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <p className="text-slate-400">Enter a YouTube URL to preview</p>
+                        </div>
+                      )
                     ) : (
-                      <div className="aspect-video bg-slate-800 rounded-xl flex items-center justify-center">
-                        <p className="text-slate-400">Enter a YouTube URL to preview</p>
-                      </div>
-                    )
-                  ) : (
-                    videoSrc ? (
-                      <video
-                        ref={videoRef}
-                        src={videoSrc}
-                        className="w-full aspect-video rounded-xl"
-                        controls
-                        onTimeUpdate={handleTimeUpdate}
-                      />
-                    ) : (
-                      <div className="aspect-video bg-slate-800 rounded-xl flex items-center justify-center">
-                        <p className="text-slate-400">Upload a video to preview</p>
-                      </div>
-                    )
-                  )}
+                      videoSrc ? (
+                        <video
+                          ref={videoRef}
+                          src={videoSrc}
+                          className={`w-full h-full ${orientation === 'vertical' ? 'object-contain' : 'object-cover'}`}
+                          controls
+                          onTimeUpdate={handleTimeUpdate}
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <p className="text-slate-400">Upload a video to preview</p>
+                        </div>
+                      )
+                    )}
+                  </div>
                   
                   {videoSrc && (
                     <div className="mt-4 space-y-4">
@@ -766,6 +946,7 @@ const PlayerAnalysisPage = () => {
                       video={video}
                       onDelete={deleteVideo}
                       onView={setSelectedVideo}
+                      onEdit={handleEditVideo}
                       formatDate={formatDate}
                     />
                   ))}

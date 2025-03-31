@@ -2,16 +2,22 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User } from 'firebase/auth';
-import { auth, onAuthStateChange } from '@/lib/firebase';
+import { auth, onAuthStateChange, storage, db } from '@/lib/firebase';
+import { Firestore } from 'firebase/firestore';
+import { FirebaseStorage } from 'firebase/storage';
 
 interface FirebaseContextType {
   user: User | null;
   loading: boolean;
+  firestore: Firestore | null;
+  storage: FirebaseStorage | null;
 }
 
 const FirebaseContext = createContext<FirebaseContextType>({
   user: null,
   loading: true,
+  firestore: null,
+  storage: null
 });
 
 export function FirebaseProvider({ children }: { children: React.ReactNode }) {
@@ -29,7 +35,12 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <FirebaseContext.Provider value={{ user, loading }}>
+    <FirebaseContext.Provider value={{ 
+      user, 
+      loading,
+      firestore: db,
+      storage
+    }}>
       {children}
     </FirebaseContext.Provider>
   );

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { ContentGrid } from '@/components/ContentGrid';
 import { ContentUploader } from '@/components/ContentUploader';
@@ -12,7 +12,8 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import { TestFirebaseButton } from '@/components/TestFirebaseButton';
 import { Button } from '@/components/ui/button';
 
-export default function ContentPage() {
+// Separate component for search params handling
+function ContentPageInner() {
   const { user } = useFirebase();
   const [showUploader, setShowUploader] = useState(false);
   const [selectedContent, setSelectedContent] = useState<ContentItem | null>(null);
@@ -60,44 +61,53 @@ export default function ContentPage() {
   };
 
   return (
-    <ProtectedRoute>
-      <div className="min-h-screen">
-        <div className="container mx-auto px-4 py-8">
-          <div className="mb-10 flex flex-col items-center">
-            <div className="w-[600px] mb-6">
-              <img 
-                src="/logo.png" 
-                alt="DrillHub Logo" 
-                className="w-full h-auto"
-              />
-            </div>
-            <p className="text-slate-400 text-center max-w-2xl">Browse and manage your baseball technique videos collection</p>
+    <div className="min-h-screen">
+      <div className="container mx-auto px-4 py-8">
+        <div className="mb-10 flex flex-col items-center">
+          <div className="w-[600px] mb-6">
+            <img 
+              src="/logo.png" 
+              alt="DrillHub Logo" 
+              className="w-full h-auto"
+            />
           </div>
-          
-          <ContentGrid 
-            onAddContent={handleAddContent}
-            onSelectContent={handleSelectContent}
-            onEditContent={handleEditContent}
-          />
-          
-          {showUploader && (
-            <ContentUploader 
-              isOpen={showUploader}
-              onClose={handleCloseUploader}
-              onDelete={handleContentDelete}
-              existingContent={editMode && selectedContent ? selectedContent : undefined}
-            />
-          )}
-          
-          {selectedContent && !editMode && !showUploader && (
-            <ContentDetails 
-              content={selectedContent}
-              onClose={handleCloseDetails}
-              onEdit={user?.uid === selectedContent.userId && !selectedContent.isSample ? handleEditContent : undefined}
-            />
-          )}
+          <p className="text-slate-400 text-center max-w-2xl">Browse and manage your baseball technique videos collection</p>
         </div>
+        
+        <ContentGrid 
+          onAddContent={handleAddContent}
+          onSelectContent={handleSelectContent}
+          onEditContent={handleEditContent}
+        />
+        
+        {showUploader && (
+          <ContentUploader 
+            isOpen={showUploader}
+            onClose={handleCloseUploader}
+            onDelete={handleContentDelete}
+            existingContent={editMode && selectedContent ? selectedContent : undefined}
+          />
+        )}
+        
+        {selectedContent && !editMode && !showUploader && (
+          <ContentDetails 
+            content={selectedContent}
+            onClose={handleCloseDetails}
+            onEdit={user?.uid === selectedContent.userId && !selectedContent.isSample ? handleEditContent : undefined}
+          />
+        )}
       </div>
+    </div>
+  );
+}
+
+// Main page component with Suspense boundary
+export default function ContentPage() {
+  return (
+    <ProtectedRoute>
+      <Suspense fallback={<div>Loading...</div>}>
+        <ContentPageInner />
+      </Suspense>
     </ProtectedRoute>
   );
 } 

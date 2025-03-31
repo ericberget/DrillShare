@@ -77,4 +77,5 @@ export interface PlayerAnalysisVideo {
   fileSize?: number;  // Only for uploaded videos
   fileName?: string;  // Only for uploaded videos
   youtubeVideoId?: string;  // Only for YouTube videos
+  orientation: 'landscape' | 'vertical';
 } 
