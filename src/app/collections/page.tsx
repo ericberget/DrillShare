@@ -71,7 +71,7 @@ export default function CollectionsPage() {
                 setCurrentCollection(null);
                 setIsCreateDialogOpen(true);
               }}
-              className="bg-emerald-600 hover:bg-emerald-700"
+              className="bg-white text-emerald-600 hover:bg-gray-50 border-2 border-emerald-600"
             >
               <Plus className="mr-2 h-4 w-4" /> Create Collection
             </Button>
@@ -91,7 +91,7 @@ export default function CollectionsPage() {
                   setCurrentCollection(null);
                   setIsCreateDialogOpen(true);
                 }}
-                className="bg-emerald-600 hover:bg-emerald-700"
+                className="bg-white text-emerald-600 hover:bg-gray-50 border-2 border-emerald-600"
               >
                 <Plus className="mr-2 h-4 w-4" /> Create Collection
               </Button>
@@ -220,12 +220,12 @@ export default function CollectionsPage() {
                       )}
                     </CardContent>
                     <CardFooter className="flex justify-between items-center">
-                      <Link href={`/collection/${collection.id}`} passHref className="text-emerald-400 text-sm flex items-center hover:text-emerald-300">
+                      <Link href={`/collection/${collection.id}`} passHref className="text-blue-400 text-sm flex items-center hover:text-blue-300">
                         <ExternalLink className="h-3 w-3 mr-1" /> Open
                       </Link>
                       <Button 
                         variant="ghost" 
-                        className={`text-sm h-8 flex items-center ${copiedLink === collection.id ? 'text-emerald-400' : 'text-slate-400'}`}
+                        className={`text-sm h-8 flex items-center ${copiedLink === collection.id ? 'text-blue-400' : 'text-slate-400'}`}
                         onClick={() => copyShareLink(collection.shareLink, collection.id)}
                       >
                         <Copy className="h-3 w-3 mr-1" />
@@ -407,9 +407,9 @@ function CollectionDialog({
               {selectedVideos.length === 0 ? (
                 <div className="bg-slate-800 border border-slate-700 rounded-md p-6 text-center">
                   <p className="text-slate-400 mb-4">No videos selected</p>
-                  <Button 
+                  <Button
                     variant="outline" 
-                    className="border-emerald-600 text-emerald-400 hover:bg-emerald-900/30"
+                    className="bg-white text-emerald-600 hover:bg-gray-50 border-2 border-emerald-600"
                     onClick={() => setShowVideoSelector(true)}
                   >
                     <Plus className="mr-2 h-4 w-4" /> Select Videos
@@ -422,7 +422,7 @@ function CollectionDialog({
                     <Button 
                       variant="outline" 
                       size="sm"
-                      className="h-8 border-emerald-600 text-emerald-400 hover:bg-emerald-900/30"
+                      className="h-8 bg-white text-emerald-600 hover:bg-gray-50 border-2 border-emerald-600"
                       onClick={() => setShowVideoSelector(true)}
                     >
                       <Edit className="mr-1 h-3 w-3" /> Edit Selection
@@ -484,7 +484,7 @@ function CollectionDialog({
             </Button>
             <Button 
               onClick={handleSubmit} 
-              className="bg-emerald-600 hover:bg-emerald-700"
+              className="bg-white text-emerald-600 hover:bg-gray-50 border-2 border-emerald-600"
               disabled={isSubmitting}
             >
               {isSubmitting ? 'Saving...' : isEdit ? 'Update Collection' : 'Create Collection'}
@@ -564,7 +564,7 @@ function CollectionDialog({
               </Button>
               <Button 
                 onClick={() => setShowVideoSelector(false)} 
-                className="bg-emerald-600 hover:bg-emerald-700"
+                className="bg-white text-emerald-600 hover:bg-gray-50 border-2 border-emerald-600"
               >
                 Confirm Selection
               </Button>

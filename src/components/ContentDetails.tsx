@@ -53,18 +53,7 @@ export function ContentDetails({ content, onClose, onEdit }: ContentDetailsProps
         )}
         
         <div className="p-6">
-          {/* Creator info section - more subtle/transparent */}
-          <div className="flex items-center mb-4 p-3 bg-slate-800/30 backdrop-blur-sm rounded-lg border border-slate-700/50">
-            <Avatar className="h-10 w-10 mr-3 bg-emerald-900/50 text-emerald-300 border border-emerald-700/30">
-              <AvatarFallback>{getInitials(content.userId)}</AvatarFallback>
-            </Avatar>
-            <div>
-              <p className="text-sm font-medium text-slate-200">
-                {content.isSample ? 'DrillHub Staff' : `User ${content.userId.substring(0, 8)}`}
-              </p>
-              <p className="text-xs text-slate-400">Uploaded {formatTimestamp(content.createdAt)}</p>
-            </div>
-          </div>
+          {/* Remove the creator info section */}
           
           <div className="rounded-md overflow-hidden mb-6">
             <VideoPlayer url={content.url} orientation={content.orientation} />

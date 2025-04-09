@@ -20,6 +20,7 @@ export interface ContentItem {
   isSample: boolean;
   favorite?: boolean;
   lastViewed?: number;
+  isTeamContent?: boolean;  // Flag to indicate if this is team content
 }
 
 export interface Collection {

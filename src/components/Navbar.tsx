@@ -10,7 +10,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from './ui/dropdown-menu'
-import { Menu, User, Settings, LogOut, Video, FolderOpen, Home, Book, LineChart } from 'lucide-react'
+import { Menu, User, Settings, LogOut, Video, FolderOpen, Home, Book, LineChart, Users } from 'lucide-react'
 import { useFirebase } from '@/contexts/FirebaseContext'
 import { useAuth } from '@/hooks/useAuth'
 import { useRouter, usePathname } from 'next/navigation'
@@ -33,13 +33,13 @@ export function Navbar() {
   };
 
   return (
-    <nav className="bg-background border-b">
+    <nav className="bg-slate-900/50 border-b border-slate-800/50 backdrop-blur-sm">
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-14">
           {user && !loading && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="hover:bg-slate-800/50 border border-drillhub-600/70">
+                <Button variant="ghost" size="icon" className="hover:bg-slate-800/50 border border-slate-700/50">
                   <Menu className="h-7 w-7" />
                 </Button>
               </DropdownMenuTrigger>
@@ -110,6 +110,10 @@ export function Navbar() {
                 <DropdownMenuItem onClick={handleProfileClick} className="cursor-pointer">
                   <Settings className="mr-2 h-4 w-4" />
                   <span>Profile Settings</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push('/profile/team')} className="cursor-pointer">
+                  <Users className="mr-2 h-4 w-4" />
+                  <span>Program Settings</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => signOut()} className="cursor-pointer text-red-600">
                   <LogOut className="mr-2 h-4 w-4" />

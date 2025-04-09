@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { useStorage } from '@/hooks/useStorage';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useFirebase } from '@/contexts/FirebaseContext';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface ContentUploaderProps {
   isOpen: boolean;
@@ -89,7 +90,8 @@ export function ContentUploader({ isOpen, onClose, onDelete, existingContent }: 
     tags: [] as string[],
     orientation: 'vertical' as ContentOrientation,
     thumbnailUrl: '',
-    isSample: false
+    isSample: false,
+    isTeamContent: false
   });
 
   // Initialize form with existing content if provided
@@ -105,7 +107,8 @@ export function ContentUploader({ isOpen, onClose, onDelete, existingContent }: 
         tags: [...existingContent.tags],
         orientation: existingContent.orientation,
         thumbnailUrl: existingContent.thumbnailUrl || '',
-        isSample: existingContent.isSample
+        isSample: existingContent.isSample,
+        isTeamContent: existingContent.isTeamContent
       });
       
       if (existingContent.thumbnailUrl) {
@@ -141,7 +144,8 @@ export function ContentUploader({ isOpen, onClose, onDelete, existingContent }: 
       tags: [],
       orientation: 'vertical',
       thumbnailUrl: '',
-      isSample: false
+      isSample: false,
+      isTeamContent: false
     });
     setImagePreview(null);
     setNewTag('');
@@ -500,6 +504,22 @@ export function ContentUploader({ isOpen, onClose, onDelete, existingContent }: 
                   <SelectItem value="highLevel">High Level</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="isTeamContent"
+                  checked={formData.isTeamContent}
+                  onCheckedChange={(checked: boolean | 'indeterminate') => 
+                    setFormData(prev => ({ ...prev, isTeamContent: checked === true }))
+                  }
+                  className="border-slate-700 bg-slate-800 text-emerald-500"
+                />
+                <Label htmlFor="isTeamContent" className="text-slate-300 cursor-pointer">
+                  Mark as Program Content
+                </Label>
+              </div>
             </div>
           </div>
 

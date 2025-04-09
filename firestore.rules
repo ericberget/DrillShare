@@ -31,6 +31,12 @@ service cloud.firestore {
       allow update, delete: if isAuthenticated() && isOwner(resource.data.userId);
     }
 
+    // Program rules
+    match /programs/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId);
+    }
+
     // User rules
     match /users/{userId} {
       allow read: if true;

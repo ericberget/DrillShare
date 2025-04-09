@@ -6,17 +6,17 @@ import { auth, onAuthStateChange, storage, db } from '@/lib/firebase';
 import { Firestore } from 'firebase/firestore';
 import { FirebaseStorage } from 'firebase/storage';
 
-interface FirebaseContextType {
+export type FirebaseContextType = {
   user: User | null;
   loading: boolean;
-  firestore: Firestore | null;
+  db: Firestore;
   storage: FirebaseStorage | null;
-}
+};
 
 const FirebaseContext = createContext<FirebaseContextType>({
   user: null,
   loading: true,
-  firestore: null,
+  db: db,
   storage: null
 });
 
@@ -38,7 +38,7 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
     <FirebaseContext.Provider value={{ 
       user, 
       loading,
-      firestore: db,
+      db: db,
       storage
     }}>
       {children}
