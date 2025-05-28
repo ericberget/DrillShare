@@ -59,10 +59,10 @@ export function ContentGrid({ onAddContent, onSelectContent, onEditContent }: Co
   const { user, db } = useFirebase();
   const { contentItems, userContentItems, sampleContentItems, isLoading, toggleFavorite, updateLastViewed } = useContent();
   const [activeCategory, setActiveCategory] = useState<'all' | ContentCategory>('all');
-  const [skillLevelFilter, setSkillLevelFilter] = useState<'all' | SkillLevel>('all');
   const [activeTag, setActiveTag] = useState<string | null>(null);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [showTeamContentOnly, setShowTeamContentOnly] = useState(false);
+  const [programSettings, setProgramSettings] = useState<any>(null);
 
   // Load program settings when component mounts
   useEffect(() => {
@@ -92,11 +92,6 @@ export function ContentGrid({ onAddContent, onSelectContent, onEditContent }: Co
     // Apply category filter
     if (activeCategory !== 'all') {
       filtered = filtered.filter(item => item.category === activeCategory);
-    }
-    
-    // Apply skill level filter
-    if (skillLevelFilter !== 'all') {
-      filtered = filtered.filter(item => item.skillLevel === skillLevelFilter);
     }
     
     // Apply favorites filter
@@ -159,21 +154,6 @@ export function ContentGrid({ onAddContent, onSelectContent, onEditContent }: Co
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
         <div className="flex gap-2 w-full sm:w-auto">
-          <Select
-            value={skillLevelFilter}
-            onValueChange={(value: typeof skillLevelFilter) => setSkillLevelFilter(value)}
-          >
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Filter by skill level..." />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Skill Levels</SelectItem>
-              <SelectItem value="beginner">Beginner</SelectItem>
-              <SelectItem value="littleLeague">Little League</SelectItem>
-              <SelectItem value="highLevel">High Level</SelectItem>
-            </SelectContent>
-          </Select>
-          
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline" className="flex items-center gap-2 bg-slate-800 border-slate-700 hover:bg-slate-700 text-slate-300">

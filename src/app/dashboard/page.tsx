@@ -14,7 +14,7 @@ export default function DashboardPage() {
         <div className="container mx-auto px-4 py-12">
           {/* Header Section */}
           <div className="mb-16 text-center">
-            <div className="w-[500px] mx-auto mb-8">
+            <div className="w-full max-w-[300px] md:max-w-[500px] mx-auto mb-8">
               <img 
                 src="/logo.png" 
                 alt="DrillShare Logo" 

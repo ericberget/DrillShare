@@ -8,8 +8,10 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowRight, Filter, Search, X } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { ArrowRight, Filter, Search, X, Plus } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -59,12 +61,12 @@ export default function DemoPage() {
       },
       {
         id: 'demo-9',
-        title: 'Advanced Hitting Techniques',
+        title: 'Youth Baseball Hitting Tips - Basic Concepts for beginner players',
         url: 'https://www.youtube.com/watch?v=tBBjgzEGfRw',
         category: 'hitting',
-        skillLevel: 'High Level',
-        teachingCue: 'Advanced hitting concepts for serious players',
-        tags: ['Advanced', 'High Level', 'Technique'],
+        skillLevel: 'Little League',
+        teachingCue: 'Basic hitting concepts and fundamentals for young players',
+        tags: ['Youth', 'Basics', 'Fundamentals'],
         favorite: false
       }
     ],
@@ -126,9 +128,43 @@ export default function DemoPage() {
   const [selectedTag, setSelectedTag] = useState('all');
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   
+  // Demo videos state
+  const [demoVideos, setDemoVideos] = useState<any[]>([]);
+  
+  // Form state for adding videos
+  const [formData, setFormData] = useState({
+    title: '',
+    url: '',
+    description: '',
+    category: '',
+    tags: [] as string[],
+    newTag: ''
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState('');
+  
   // Animation state
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [animatingTab, setAnimatingTab] = useState<string | null>(null);
+
+  // Load demo videos from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('drillshare-demo-videos');
+    if (saved) {
+      try {
+        setDemoVideos(JSON.parse(saved));
+      } catch (e) {
+        console.error('Error loading demo videos:', e);
+      }
+    }
+  }, []);
+
+  // Save demo videos to localStorage when they change
+  useEffect(() => {
+    if (demoVideos.length > 0) {
+      localStorage.setItem('drillshare-demo-videos', JSON.stringify(demoVideos));
+    }
+  }, [demoVideos]);
 
   // Handle initial load animation
   useEffect(() => {
@@ -137,6 +173,35 @@ export default function DemoPage() {
     }, 100);
     return () => clearTimeout(timer);
   }, []);
+
+  // Extract YouTube video ID from URL
+  const getYouTubeVideoId = (url: string) => {
+    if (!url) return null;
+    try {
+      const urlObj = new URL(url);
+      if (urlObj.hostname.includes('youtube.com')) {
+        return urlObj.searchParams.get('v');
+      }
+      if (urlObj.hostname === 'youtu.be') {
+        return urlObj.pathname.slice(1);
+      }
+      if (urlObj.pathname.includes('/shorts/')) {
+        return urlObj.pathname.split('/shorts/')[1];
+      }
+    } catch (e) {
+      console.error('Invalid URL:', e);
+    }
+    return null;
+  };
+
+  // Generate auto thumbnail from URL
+  const generateThumbnailUrl = (url: string): string | null => {
+    const videoId = getYouTubeVideoId(url);
+    if (videoId) {
+      return `https://img.youtube.com/vi/${videoId}/0.jpg`;
+    }
+    return null;
+  };
 
   // Handle tab change with animation
   const handleTabChange = (newTab: string) => {
@@ -159,54 +224,156 @@ export default function DemoPage() {
     }
   };
 
-  // Extract YouTube video ID from URL
-  const getYouTubeVideoId = (url: string) => {
-    if (!url) return null;
-    try {
-      const urlObj = new URL(url);
-      if (urlObj.hostname.includes('youtube.com')) {
-        return urlObj.searchParams.get('v');
-      }
-      if (urlObj.hostname === 'youtu.be') {
-        return urlObj.pathname.slice(1);
-      }
-      if (urlObj.pathname.includes('/shorts/')) {
-        return urlObj.pathname.split('/shorts/')[1];
-      }
-    } catch (e) {
-      console.error('Invalid URL:', e);
+  // Get all videos (sample + demo)
+  const getAllVideos = () => {
+    const allSampleVideos = Object.values(sampleVideos).flat();
+    return [...allSampleVideos, ...demoVideos];
+  };
+
+  // Get videos by category
+  const getVideosByCategory = (category: string) => {
+    if (category === 'all') {
+      return getAllVideos();
     }
-    return null;
+    const sampleCategoryVideos = sampleVideos[category as keyof typeof sampleVideos] || [];
+    const demoCategoryVideos = demoVideos.filter(video => video.category === category);
+    return [...sampleCategoryVideos, ...demoCategoryVideos];
   };
 
   // Get all unique tags and skill levels for filters
   const getAllTags = () => {
     const tags = new Set();
-    Object.values(sampleVideos).flat().forEach(video => {
-      video.tags?.forEach(tag => tags.add(tag));
+    getAllVideos().forEach(video => {
+      video.tags?.forEach((tag: string) => tags.add(tag));
     });
     return Array.from(tags);
-  };
-
-  const getAllSkillLevels = () => {
-    const levels = new Set();
-    Object.values(sampleVideos).flat().forEach(video => {
-      levels.add(video.skillLevel);
-    });
-    return Array.from(levels);
   };
 
   // Filter videos based on current filters
   const getFilteredVideos = (categoryVideos: any[]) => {
     return categoryVideos.filter((video: any) => {
-      const matchesSkillLevel = selectedSkillLevel === 'all' || video.skillLevel === selectedSkillLevel;
-      
       const matchesTag = selectedTag === 'all' || video.tags?.includes(selectedTag);
-      
       const matchesFavorites = !showFavoritesOnly || video.favorite === true;
-      
-      return matchesSkillLevel && matchesTag && matchesFavorites;
+      return matchesTag && matchesFavorites;
     });
+  };
+
+  // Handle closing modal
+  const handleClose = () => {
+    setFormData({
+      title: '',
+      url: '',
+      description: '',
+      category: '',
+      tags: [],
+      newTag: ''
+    });
+    setFormError('');
+    setShowAddModal(false);
+  };
+
+  // Handle form submission
+  const handleAddVideo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setFormError('');
+
+    // Validation
+    if (!formData.title.trim()) {
+      setFormError('Title is required');
+      setIsSubmitting(false);
+      return;
+    }
+    if (!formData.url.trim()) {
+      setFormError('URL is required');
+      setIsSubmitting(false);
+      return;
+    }
+    if (!formData.category) {
+      setFormError('Category is required');
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Validate URL format
+    const videoId = getYouTubeVideoId(formData.url);
+    if (!videoId) {
+      setFormError('Please enter a valid YouTube URL');
+      setIsSubmitting(false);
+      return;
+    }
+
+    try {
+      // Create new video object
+      const newVideo = {
+        id: `demo-user-${Date.now()}`,
+        title: formData.title.trim(),
+        url: formData.url.trim(),
+        category: formData.category,
+        skillLevel: 'Little League', // Default for demo
+        teachingCue: formData.description.trim() || 'User-added demo video',
+        tags: formData.tags.filter(tag => tag.trim() !== ''),
+        favorite: false,
+        isUserAdded: true
+      };
+
+      // Add to demo videos
+      setDemoVideos(prev => [...prev, newVideo]);
+
+      // Reset form and close modal
+      handleClose();
+      
+      // Show success message (optional)
+      setTimeout(() => {
+        alert('Video added to demo! Sign up to save permanently and share with your team.');
+      }, 500);
+
+    } catch (error) {
+      setFormError('Failed to add video. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Handle adding tags
+  const handleAddTag = () => {
+    const tag = formData.newTag.trim();
+    if (tag && !formData.tags.includes(tag)) {
+      setFormData(prev => ({
+        ...prev,
+        tags: [...prev.tags, tag],
+        newTag: ''
+      }));
+    }
+  };
+
+  // Handle removing tags
+  const handleRemoveTag = (tagToRemove: string) => {
+    setFormData(prev => ({
+      ...prev,
+      tags: prev.tags.filter(tag => tag !== tagToRemove)
+    }));
+  };
+
+  // Stable input handlers
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({ ...prev, title: e.target.value }));
+  };
+  
+  const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({ ...prev, url: e.target.value }));
+  };
+  
+  const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setFormData(prev => ({ ...prev, description: e.target.value }));
+  };
+  
+  const handleCategoryChange = (value: string) => {
+    setFormData(prev => ({ ...prev, category: value }));
+  };
+  
+  const handleNewTagChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({ ...prev, newTag: e.target.value }));
   };
 
   // Video card component
@@ -218,7 +385,7 @@ export default function DemoPage() {
       <Card 
         className={`bg-slate-800/50 border-slate-700/50 hover:bg-slate-800/70 cursor-pointer transition-all duration-200 hover:border-slate-600/50 hover:scale-105 hover:shadow-xl ${
           isInitialLoad ? 'animate-fade-in opacity-0' : animatingTab ? 'animate-fade-out' : 'animate-fade-in'
-        }`}
+        } ${video.isUserAdded ? 'ring-1 ring-blue-500/30' : ''}`}
         style={{ 
           animationDelay: animationDelay,
           animationFillMode: 'forwards'
@@ -241,6 +408,11 @@ export default function DemoPage() {
                 <div className="w-0 h-0 border-l-[6px] md:border-l-[8px] border-l-slate-900 border-t-[4px] md:border-t-[6px] border-t-transparent border-b-[4px] md:border-b-[6px] border-b-transparent ml-1"></div>
               </div>
             </div>
+            {video.isUserAdded && (
+              <div className="absolute top-2 left-2">
+                <Badge className="bg-blue-600 text-white text-xs">Your Video</Badge>
+              </div>
+            )}
           </div>
           <CardTitle className="text-base md:text-lg text-slate-100 line-clamp-2">{video.title}</CardTitle>
         </CardHeader>
@@ -250,25 +422,22 @@ export default function DemoPage() {
             <Badge className="bg-slate-700 text-slate-300 transition-colors duration-200 hover:bg-slate-600 text-xs">
               {video.category}
             </Badge>
-            <Badge variant="secondary" className="bg-slate-700 text-slate-300 transition-colors duration-200 hover:bg-slate-600 text-xs">
-              {video.skillLevel}
-            </Badge>
           </div>
           <div className="flex gap-1 flex-wrap">
             {video.tags?.filter((tag: string) => 
-              tag !== 'Little League' && tag !== 'Advanced'
-            ).slice(0, 2).map((tag: string) => (
+              tag !== 'Little League' && tag !== 'Advanced' && tag !== 'Intermediate' && tag !== 'High Level'
+            ).slice(0, 3).map((tag: string) => (
               <Badge key={tag} variant="secondary" className="text-xs bg-slate-700 text-slate-300 transition-colors duration-200 hover:bg-slate-600">
                 {tag}
               </Badge>
             ))}
             {video.tags && video.tags.filter((tag: string) => 
-              tag !== 'Little League' && tag !== 'Advanced'
-            ).length > 2 && (
+              tag !== 'Little League' && tag !== 'Advanced' && tag !== 'Intermediate' && tag !== 'High Level'
+            ).length > 3 && (
               <Badge variant="secondary" className="text-xs bg-slate-700 text-slate-300 transition-colors duration-200 hover:bg-slate-600">
                 +{video.tags.filter((tag: string) => 
-                  tag !== 'Little League' && tag !== 'Advanced'
-                ).length - 2}
+                  tag !== 'Little League' && tag !== 'Advanced' && tag !== 'Intermediate' && tag !== 'High Level'
+                ).length - 3}
               </Badge>
             )}
           </div>
@@ -277,27 +446,205 @@ export default function DemoPage() {
     );
   };
 
-  // Add Video Modal (Demo version)
-  const AddVideoModal = () => (
-    <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50">
-      <div className="bg-slate-800 rounded-lg w-full max-w-md p-4 md:p-6 text-center">
-        <h2 className="text-lg md:text-xl font-bold mb-3 md:mb-4 text-slate-400">Sign Up to Save Videos</h2>
-        <p className="text-slate-300 mb-4 md:mb-6 text-sm md:text-base">
-          You're using the demo version. Sign up for free to start building your own video library!
-        </p>
-        <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center">
-          <Link href="/auth/signup">
-            <Button className="bg-slate-600 hover:bg-slate-700 w-full sm:w-auto text-sm md:text-base">
-              Sign Up Free <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </Link>
-          <Button variant="outline" onClick={() => setShowAddModal(false)} className="border-slate-600 text-slate-300 w-full sm:w-auto text-sm md:text-base">
-            Continue Demo
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
+  // Add Video Modal (Demo version with full form)
+  const AddVideoModal = () => {
+    return (
+      <Dialog open={showAddModal} onOpenChange={(open) => !open && handleClose()}>
+        <DialogContent className="max-w-4xl bg-slate-900/95 backdrop-blur-md border-slate-700 text-slate-100">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-emerald-400">
+              Add Video to Demo
+            </DialogTitle>
+            <DialogDescription className="text-slate-400">
+              Add a video to your demo collection. This will be saved locally in your browser.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form 
+            className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4"
+            onSubmit={(e) => e.preventDefault()}
+          >
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="demo-title" className="text-slate-300">Title</Label>
+                <Input 
+                  id="demo-title"
+                  name="title"
+                  value={formData.title}
+                  onChange={handleTitleChange}
+                  placeholder="Enter video title"
+                  className="bg-slate-800 border-slate-700 text-slate-200 placeholder:text-slate-500"
+                  required
+                  autoComplete="off"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="demo-url" className="text-slate-300">Video URL</Label>
+                <Input 
+                  id="demo-url"
+                  name="url"
+                  value={formData.url}
+                  onChange={handleUrlChange}
+                  placeholder="YouTube URL (e.g., https://www.youtube.com/watch?v=...)"
+                  className="bg-slate-800 border-slate-700 text-slate-200 placeholder:text-slate-500"
+                  required
+                  autoComplete="off"
+                />
+                <p className="text-xs text-slate-400">Supports YouTube videos and YouTube Shorts</p>
+                
+                {/* Show video type information */}
+                {formData.url && getYouTubeVideoId(formData.url) && (
+                  <div className="mt-1">
+                    <Badge className="bg-slate-700 text-slate-300">
+                      YouTube Video Detected
+                    </Badge>
+                  </div>
+                )}
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="demo-description" className="text-slate-300">Description / Teaching Notes</Label>
+                <Textarea 
+                  id="demo-description"
+                  name="description"
+                  value={formData.description}
+                  onChange={handleDescriptionChange}
+                  placeholder="Enter teaching notes or description for this video"
+                  className="bg-slate-800 border-slate-700 min-h-24 text-slate-200 placeholder:text-slate-500"
+                  autoComplete="off"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="demo-category" className="text-slate-300">Category</Label>
+                <Select 
+                  value={formData.category} 
+                  onValueChange={handleCategoryChange}
+                >
+                  <SelectTrigger id="demo-category" className="bg-slate-800 border-slate-700 text-slate-200">
+                    <SelectValue placeholder="Select a category" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-800 border-slate-700 text-slate-200">
+                    <SelectItem value="hitting">Hitting</SelectItem>
+                    <SelectItem value="pitching">Pitching</SelectItem>
+                    <SelectItem value="infield">Infield</SelectItem>
+                    <SelectItem value="catching">Catching</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <Label className="text-slate-300">Video Preview</Label>
+                <div className="mt-2">
+                  {formData.url && getYouTubeVideoId(formData.url) ? (
+                    <div className="w-full aspect-video bg-slate-800 border border-slate-700 rounded-md overflow-hidden">
+                      <img 
+                        src={generateThumbnailUrl(formData.url) || ''} 
+                        alt="Video thumbnail" 
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIwIiBoZWlnaHQ9IjE4MCIgdmlld0JveD0iMCAwIDMyMCAxODAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIzMjAiIGhlaWdodD0iMTgwIiBmaWxsPSIjMzMzIi8+Cjx0ZXh0IHg9IjE2MCIgeT0iOTAiIGZpbGw9IiM2NjYiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+VmlkZW8gUHJldmlldyBOb3QgQXZhaWxhYmxlPC90ZXh0Pgo8L3N2Zz4K';
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-full aspect-video bg-slate-800 border border-slate-700 rounded-md flex items-center justify-center">
+                      <div className="text-center">
+                        <div className="text-3xl mb-2">🎥</div>
+                        <div className="text-sm text-slate-400">Enter a YouTube URL to see preview</div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label className="text-slate-300">Tags</Label>
+                <div className="flex gap-2">
+                  <Input 
+                    value={formData.newTag}
+                    onChange={handleNewTagChange}
+                    placeholder="Add a tag"
+                    className="bg-slate-800 border-slate-700 text-slate-200 placeholder:text-slate-500"
+                    autoComplete="off"
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddTag();
+                      }
+                    }}
+                  />
+                  <Button 
+                    type="button"
+                    onClick={handleAddTag}
+                    className="bg-slate-700 hover:bg-slate-600"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+                
+                {formData.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {formData.tags.map((tag, index) => (
+                      <Badge 
+                        key={index} 
+                        variant="secondary" 
+                        className="bg-slate-700 text-slate-300 hover:bg-slate-600"
+                      >
+                        {tag}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveTag(tag)}
+                          className="ml-2 hover:text-red-400"
+                        >
+                          ×
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+                <p className="text-xs text-slate-400">Add tags to help categorize and find your videos</p>
+              </div>
+              
+              {formError && (
+                <div className="p-3 bg-red-900/50 border border-red-700 rounded-md">
+                  <p className="text-red-300 text-sm">{formError}</p>
+                </div>
+              )}
+            </div>
+            
+            <div className="lg:col-span-2 flex justify-end gap-3 pt-4 border-t border-slate-700">
+              <Button 
+                type="button"
+                variant="outline" 
+                onClick={() => handleClose()}
+                className="border-slate-600 text-slate-300 hover:bg-slate-700"
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="button"
+                disabled={isSubmitting}
+                onClick={handleAddVideo}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+              >
+                {isSubmitting ? 'Adding...' : 'Add to Demo'}
+              </Button>
+            </div>
+          </form>
+          
+          <div className="mt-4 p-3 bg-blue-900/30 border border-blue-700/50 rounded-md">
+            <p className="text-blue-300 text-sm">
+              <strong>Demo Mode:</strong> Videos are saved locally in your browser. Sign up to save permanently and share with your team!
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  };
 
   // Signup Overlay
   const SignupOverlay = () => (
@@ -376,23 +723,6 @@ export default function DemoPage() {
         {/* Filters */}
         <div className={`mb-6 md:mb-8 ${isInitialLoad ? 'animate-fade-in opacity-0' : ''}`} style={{ animationDelay: '100ms', animationFillMode: 'forwards' }}>
           <div className="flex flex-col sm:flex-row gap-3 md:gap-4 items-center justify-between">
-            <div className="flex items-center gap-3 md:gap-4 w-full sm:w-auto">
-              <Select value={selectedSkillLevel} onValueChange={(value) => {
-                setSelectedSkillLevel(value);
-                handleFilterInteraction();
-              }}>
-                <SelectTrigger className="w-full sm:w-40 bg-slate-800 border-slate-700 transition-all duration-200 hover:border-slate-600 text-sm md:text-base">
-                  <SelectValue placeholder="All Skill Levels" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Skill Levels</SelectItem>
-                  {(getAllSkillLevels() as string[]).map((level: string) => (
-                    <SelectItem key={level} value={level}>{level}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
             {/* Demo Mode Badge and Add Content Button */}
             <div className="flex items-center gap-3 md:gap-4 w-full sm:w-auto justify-center sm:justify-end">
               <Button onClick={() => setShowAddModal(true)} className="bg-slate-600 hover:bg-slate-700 transition-all duration-200 hover:scale-105 text-sm md:text-base px-4 md:px-6 py-2 md:py-3 w-full sm:w-auto">
@@ -402,96 +732,139 @@ export default function DemoPage() {
           </div>
         </div>
 
-        {/* Category Tabs */}
-        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className={`w-full grid grid-cols-2 md:grid-cols-5 gap-2 md:gap-4 mb-6 md:mb-8 ${isInitialLoad ? 'animate-fade-in opacity-0' : ''}`} style={{ animationDelay: '150ms', animationFillMode: 'forwards' }}>
-            <TabsTrigger 
-              value="all" 
-              className="min-w-0 data-[state=active]:bg-slate-600 data-[state=active]:text-white px-2 md:px-8 font-oswald flex flex-col items-center py-2 md:py-3 text-xs md:text-base rounded-md transition-all duration-200 hover:bg-slate-700/50 text-slate-300 hover:scale-105"
-            >
-              <img src="/baseball.png" alt="Baseball" className="w-4 md:w-5 h-4 md:h-5 mb-1 md:mb-2 opacity-80" />
-              All
-            </TabsTrigger>
-            <TabsTrigger 
-              value="hitting" 
-              className="min-w-0 data-[state=active]:bg-slate-600 data-[state=active]:text-white px-2 md:px-8 font-oswald flex flex-col items-center py-2 md:py-3 text-xs md:text-base rounded-md transition-all duration-200 hover:bg-slate-700/50 text-slate-300 hover:scale-105"
-            >
-              <img src="/baseball.png" alt="Baseball" className="w-4 md:w-5 h-4 md:h-5 mb-1 md:mb-2 opacity-80" />
-              Hitting
-            </TabsTrigger>
-            <TabsTrigger 
-              value="infield" 
-              className="min-w-0 data-[state=active]:bg-slate-600 data-[state=active]:text-white px-2 md:px-8 font-oswald flex flex-col items-center py-2 md:py-3 text-xs md:text-base rounded-md transition-all duration-200 hover:bg-slate-700/50 text-slate-300 hover:scale-105"
-            >
-              <img src="/baseball.png" alt="Baseball" className="w-4 md:w-5 h-4 md:h-5 mb-1 md:mb-2 opacity-80" />
-              Infield
-            </TabsTrigger>
-            <TabsTrigger 
-              value="pitching" 
-              className="min-w-0 data-[state=active]:bg-slate-600 data-[state=active]:text-white px-2 md:px-8 font-oswald flex flex-col items-center py-2 md:py-3 text-xs md:text-base rounded-md transition-all duration-200 hover:bg-slate-700/50 text-slate-300 hover:scale-105"
-            >
-              <img src="/baseball.png" alt="Baseball" className="w-4 md:w-5 h-4 md:h-5 mb-1 md:mb-2 opacity-80" />
-              Pitching
-            </TabsTrigger>
-            <TabsTrigger 
-              value="catching" 
-              className="min-w-0 data-[state=active]:bg-slate-600 data-[state=active]:text-white px-2 md:px-8 font-oswald flex flex-col items-center py-2 md:py-3 text-xs md:text-base rounded-md transition-all duration-200 hover:bg-slate-700/50 text-slate-300 hover:scale-105"
-            >
-              <img src="/baseball.png" alt="Baseball" className="w-4 md:w-5 h-4 md:h-5 mb-1 md:mb-2 opacity-80" />
-              Catching
-            </TabsTrigger>
-          </TabsList>
+        {/* Category Selection - Mobile Dropdown / Desktop Tabs */}
+        <div className="w-full">
+          {/* Mobile Dropdown */}
+          <div className={`md:hidden mb-6 ${isInitialLoad ? 'animate-fade-in opacity-0' : ''}`} style={{ animationDelay: '150ms', animationFillMode: 'forwards' }}>
+            <Select value={activeTab} onValueChange={handleTabChange}>
+              <SelectTrigger className="w-full bg-slate-800 border-slate-700 transition-all duration-200 hover:border-slate-600 text-sm">
+                <SelectValue placeholder="Select Category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">
+                  <div className="flex items-center gap-2">
+                    <img src="/baseball.png" alt="Baseball" className="w-4 h-4 opacity-80" />
+                    All
+                  </div>
+                </SelectItem>
+                <SelectItem value="hitting">
+                  <div className="flex items-center gap-2">
+                    <img src="/baseball.png" alt="Baseball" className="w-4 h-4 opacity-80" />
+                    Hitting
+                  </div>
+                </SelectItem>
+                <SelectItem value="infield">
+                  <div className="flex items-center gap-2">
+                    <img src="/baseball.png" alt="Baseball" className="w-4 h-4 opacity-80" />
+                    Infield
+                  </div>
+                </SelectItem>
+                <SelectItem value="pitching">
+                  <div className="flex items-center gap-2">
+                    <img src="/baseball.png" alt="Baseball" className="w-4 h-4 opacity-80" />
+                    Pitching
+                  </div>
+                </SelectItem>
+                <SelectItem value="catching">
+                  <div className="flex items-center gap-2">
+                    <img src="/baseball.png" alt="Baseball" className="w-4 h-4 opacity-80" />
+                    Catching
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-          <div className="mt-8 md:mt-12">
-            {/* All Videos Tab */}
-            <TabsContent value="all" className={animatingTab === 'all' ? 'animate-fade-out' : 'animate-fade-in'}>
+          {/* Desktop Tabs */}
+          <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+            <TabsList className={`hidden md:flex w-full justify-center gap-4 mb-8 ${isInitialLoad ? 'animate-fade-in opacity-0' : ''}`} style={{ animationDelay: '150ms', animationFillMode: 'forwards' }}>
+              <TabsTrigger 
+                value="all" 
+                className="min-w-[120px] data-[state=active]:bg-slate-600 data-[state=active]:text-white px-8 font-oswald flex flex-col items-center py-3 text-base rounded-md transition-all duration-200 hover:bg-slate-700/50 text-slate-300 hover:scale-105"
+              >
+                <img src="/baseball.png" alt="Baseball" className="w-5 h-5 mb-2 opacity-80" />
+                All
+              </TabsTrigger>
+              <TabsTrigger 
+                value="hitting" 
+                className="min-w-[120px] data-[state=active]:bg-slate-600 data-[state=active]:text-white px-8 font-oswald flex flex-col items-center py-3 text-base rounded-md transition-all duration-200 hover:bg-slate-700/50 text-slate-300 hover:scale-105"
+              >
+                <img src="/baseball.png" alt="Baseball" className="w-5 h-5 mb-2 opacity-80" />
+                Hitting
+              </TabsTrigger>
+              <TabsTrigger 
+                value="infield" 
+                className="min-w-[120px] data-[state=active]:bg-slate-600 data-[state=active]:text-white px-8 font-oswald flex flex-col items-center py-3 text-base rounded-md transition-all duration-200 hover:bg-slate-700/50 text-slate-300 hover:scale-105"
+              >
+                <img src="/baseball.png" alt="Baseball" className="w-5 h-5 mb-2 opacity-80" />
+                Infield
+              </TabsTrigger>
+              <TabsTrigger 
+                value="pitching" 
+                className="min-w-[120px] data-[state=active]:bg-slate-600 data-[state=active]:text-white px-8 font-oswald flex flex-col items-center py-3 text-base rounded-md transition-all duration-200 hover:bg-slate-700/50 text-slate-300 hover:scale-105"
+              >
+                <img src="/baseball.png" alt="Baseball" className="w-5 h-5 mb-2 opacity-80" />
+                Pitching
+              </TabsTrigger>
+              <TabsTrigger 
+                value="catching" 
+                className="min-w-[120px] data-[state=active]:bg-slate-600 data-[state=active]:text-white px-8 font-oswald flex flex-col items-center py-3 text-base rounded-md transition-all duration-200 hover:bg-slate-700/50 text-slate-300 hover:scale-105"
+              >
+                <img src="/baseball.png" alt="Baseball" className="w-5 h-5 mb-2 opacity-80" />
+                Catching
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+
+        <div className="mt-8 md:mt-12">
+          {/* All Videos Tab */}
+          <div className={animatingTab === 'all' ? 'animate-fade-out' : 'animate-fade-in'} style={{ display: activeTab === 'all' ? 'block' : 'none' }}>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+              {getAllVideos().length > 0 ? (
+                getFilteredVideos(getAllVideos()).map((video: any, index: number) => (
+                  <VideoCard key={video.id} video={video} index={index} />
+                ))
+              ) : (
+                <div className="col-span-full text-center py-8 md:py-12 text-slate-400">
+                  <p className="mb-4 text-sm md:text-base">No videos available.</p>
+                  <p className="text-xs md:text-sm">Sign up to start adding your own content!</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Individual Category Tabs */}
+          {Object.keys(sampleVideos).map((category) => (
+            <div key={category} className={animatingTab === category ? 'animate-fade-out' : 'animate-fade-in'} style={{ display: activeTab === category ? 'block' : 'none' }}>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                {Object.values(sampleVideos).flat().length > 0 ? (
-                  getFilteredVideos(Object.values(sampleVideos).flat() as any[]).map((video: any, index: number) => (
+                {getFilteredVideos(getVideosByCategory(category)).length > 0 ? (
+                  getFilteredVideos(getVideosByCategory(category)).map((video: any, index: number) => (
                     <VideoCard key={video.id} video={video} index={index} />
                   ))
-                ) : (
-                  <div className="col-span-full text-center py-8 md:py-12 text-slate-400">
-                    <p className="mb-4 text-sm md:text-base">No videos available.</p>
+                ) : getVideosByCategory(category).length === 0 ? (
+                  <div className="col-span-full text-center py-8 md:py-12 text-slate-400 animate-fade-in">
+                    <p className="mb-4 text-sm md:text-base">No sample videos in this category yet.</p>
                     <p className="text-xs md:text-sm">Sign up to start adding your own content!</p>
+                  </div>
+                ) : (
+                  <div className="col-span-full text-center py-8 md:py-12 text-slate-400 animate-fade-in">
+                    <p className="text-sm md:text-base">No videos match your current filters.</p>
+                    <Button
+                      variant="outline"
+                      className="mt-4 border-slate-600 text-slate-300 transition-all duration-200 hover:scale-105 text-sm md:text-base"
+                      onClick={() => {
+                        setSelectedTag('all');
+                      }}
+                    >
+                      Clear Filters
+                    </Button>
                   </div>
                 )}
               </div>
-            </TabsContent>
-
-            {/* Individual Category Tabs */}
-            {Object.entries(sampleVideos).map(([category, categoryVideos]) => (
-              <TabsContent key={category} value={category} className={animatingTab === category ? 'animate-fade-out' : 'animate-fade-in'}>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                  {getFilteredVideos(categoryVideos as any[]).length > 0 ? (
-                    getFilteredVideos(categoryVideos as any[]).map((video: any, index: number) => (
-                      <VideoCard key={video.id} video={video} index={index} />
-                    ))
-                  ) : (categoryVideos as any[]).length === 0 ? (
-                    <div className="col-span-full text-center py-8 md:py-12 text-slate-400 animate-fade-in">
-                      <p className="mb-4 text-sm md:text-base">No sample videos in this category yet.</p>
-                      <p className="text-xs md:text-sm">Sign up to start adding your own content!</p>
-                    </div>
-                  ) : (
-                    <div className="col-span-full text-center py-8 md:py-12 text-slate-400 animate-fade-in">
-                      <p className="text-sm md:text-base">No videos match your current filters.</p>
-                      <Button
-                        variant="outline"
-                        className="mt-4 border-slate-600 text-slate-300 transition-all duration-200 hover:scale-105 text-sm md:text-base"
-                        onClick={() => {
-                          setSelectedSkillLevel('all');
-                          setSelectedTag('all');
-                        }}
-                      >
-                        Clear Filters
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </TabsContent>
-            ))}
-          </div>
-        </Tabs>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Video Details Modal */}
