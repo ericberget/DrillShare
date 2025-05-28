@@ -31,6 +31,20 @@ service cloud.firestore {
       allow update, delete: if isAuthenticated() && isOwner(resource.data.userId);
     }
 
+    // Practice Plans rules
+    match /practicePlans/{planId} {
+      allow read: if true; // Anyone can read shared practice plans
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isOwner(resource.data.userId);
+    }
+
+    // Practice Templates rules
+    match /practiceTemplates/{templateId} {
+      allow read: if isOwner(resource.data.userId); // Only owner can read templates
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isOwner(resource.data.userId);
+    }
+
     // Program rules
     match /programs/{userId} {
       allow read: if isAuthenticated();

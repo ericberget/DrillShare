@@ -13,35 +13,30 @@ interface MenuItemProps {
   gradient: string;
 }
 
-const MenuItem = ({ href, icon, title, description, gradient }: MenuItemProps) => {
+function MenuItem({ href, icon, title, description, gradient }: MenuItemProps) {
   return (
     <Link href={href} className="group">
-      <Card className="bg-slate-900/30 border-slate-700/50 hover:border-slate-500/50 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer h-full">
-        <CardContent className="p-8">
-          <div className="flex items-start gap-6">
-            {/* Icon Circle */}
-            <div className={`w-16 h-16 rounded-full ${gradient} flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300`}>
+      <Card className="h-full bg-slate-900/50 border-slate-700/50 hover:border-slate-600/50 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl">
+        <CardContent className="p-8 h-full flex flex-col">
+          <div className="flex items-center gap-4 mb-4">
+            <div className={`w-16 h-16 rounded-xl ${gradient} flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
               {icon}
             </div>
-            
-            {/* Content */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-xl font-bold text-slate-100 group-hover:text-white transition-colors">
-                  {title}
-                </h3>
-                <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-slate-300 group-hover:translate-x-1 transition-all duration-300" />
-              </div>
-              <p className="text-slate-400 group-hover:text-slate-300 transition-colors leading-relaxed">
-                {description}
-              </p>
+            <div className="flex-1">
+              <h3 className="text-xl font-bold text-slate-100 mb-2 group-hover:text-white transition-colors">
+                {title}
+              </h3>
             </div>
+            <ArrowRight className="w-6 h-6 text-slate-400 group-hover:text-slate-300 group-hover:translate-x-1 transition-all duration-300" />
           </div>
+          <p className="text-slate-400 group-hover:text-slate-300 transition-colors leading-relaxed">
+            {description}
+          </p>
         </CardContent>
       </Card>
     </Link>
   );
-};
+}
 
 export function MainMenu() {
   const menuItems = [
@@ -83,13 +78,13 @@ export function MainMenu() {
   ];
 
   return (
-    <div className="w-full max-w-4xl mx-auto">
+    <div className="w-full">
       <div className="mb-12 text-center">
         <h2 className="text-3xl font-bold text-slate-100 mb-4">Choose Your Destination</h2>
         <p className="text-slate-400 text-lg">Select a section to get started with your baseball training content</p>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
         {menuItems.map((item, index) => (
           <MenuItem
             key={item.href}

@@ -7,11 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import { useFirebase } from '@/contexts/FirebaseContext';
+import { practicePlanService, PracticeTemplate } from '@/services/practicePlanService';
 import { 
   Clock, 
   Users, 
   Plus, 
-  Mail, 
+  Share2, 
   Copy, 
   Edit3, 
   Save, 
@@ -22,7 +24,11 @@ import {
   Minus,
   Columns,
   List,
-  Star
+  Star,
+  ExternalLink,
+  BookOpen,
+  FolderOpen,
+  Trash2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -148,6 +154,7 @@ const createDefaultPhases = (): PracticePhase[] => [
 ];
 
 export default function PracticePlannerPage() {
+  const { user } = useFirebase();
   const [phases, setPhases] = useState<PracticePhase[]>(createDefaultPhases());
   const [drills, setDrills] = useState(availableDrills); // Make drills editable
   const [searchTerm, setSearchTerm] = useState('');
@@ -157,6 +164,13 @@ export default function PracticePlannerPage() {
   const [practiceDate, setPracticeDate] = useState(new Date().toISOString().split('T')[0]);
   const [practiceTitle, setPracticeTitle] = useState('Practice Plan');
   const [isSaved, setIsSaved] = useState(true); // Track if current plan is saved
+  const [isSharing, setIsSharing] = useState(false); // Track sharing state
+  const [shareUrl, setShareUrl] = useState<string | null>(null); // Store the shareable URL
+  const [templates, setTemplates] = useState<PracticeTemplate[]>([]); // Add templates state
+  const [showTemplates, setShowTemplates] = useState(false); // Show template modal
+  const [showSaveTemplate, setShowSaveTemplate] = useState(false); // Show save template modal
+  const [templateName, setTemplateName] = useState(''); // Template name input
+  const [templateDescription, setTemplateDescription] = useState(''); // Template description input
 
   // Load saved data on mount
   useEffect(() => {
@@ -358,48 +372,106 @@ export default function PracticePlannerPage() {
     return phases.reduce((total, phase) => total + phase.duration, 0);
   };
 
-  const exportPlan = () => {
-    let emailBody = `${practiceTitle} - ${new Date(practiceDate).toLocaleDateString()}\n`;
-    emailBody += `Total Time: ${getTotalTime()} minutes\n\n`;
-    
-    phases.forEach(phase => {
-      if (phase.drills.length > 0) {
-        const phaseTime = phase.drills.reduce((total, drill) => total + drill.duration, 0);
-        emailBody += `${phase.name.toUpperCase()} (${phaseTime} min)\n`;
-        emailBody += '='.repeat(phase.name.length + 10) + '\n';
-        
-        phase.drills.forEach((drill, index) => {
-          emailBody += `${index + 1}. ${drill.title} (${drill.duration} min)\n`;
-          if (drill.focus) emailBody += `   Focus: ${drill.focus}\n`;
-          if (drill.notes && drill.notes !== drill.title) emailBody += `   Notes: ${drill.notes}\n`;
-          emailBody += '\n';
-        });
-        emailBody += '\n';
-      }
-    });
+  const saveAndShare = async () => {
+    if (!user) {
+      alert('Please sign in to save and share practice plans');
+      return;
+    }
 
-    const subject = encodeURIComponent(`${practiceTitle} - ${new Date(practiceDate).toLocaleDateString()}`);
-    const body = encodeURIComponent(emailBody);
-    window.open(`mailto:?subject=${subject}&body=${body}`);
+    setIsSharing(true);
+    try {
+      // Filter out phases with no drills for cleaner sharing
+      const filteredPhases = phases.filter(phase => phase.drills.length > 0);
+      
+      const practicePlanId = await practicePlanService.savePracticePlan({
+        title: practiceTitle,
+        practiceDate,
+        phases: filteredPhases,
+        totalTime: getTotalTime(),
+        userId: user.uid,
+      });
+
+      const shareableUrl = `${window.location.origin}/practice-plan/${practicePlanId}`;
+      setShareUrl(shareableUrl);
+      
+      // Copy to clipboard
+      await navigator.clipboard.writeText(shareableUrl);
+      alert('Practice plan saved and URL copied to clipboard!');
+      
+    } catch (error) {
+      console.error('Error saving practice plan:', error);
+      alert('Failed to save practice plan. Please try again.');
+    } finally {
+      setIsSharing(false);
+    }
   };
 
-  const copyPlan = () => {
-    let planText = `${practiceTitle} - ${new Date(practiceDate).toLocaleDateString()}\n`;
-    planText += `Total: ${getTotalTime()} min\n\n`;
-    
-    phases.forEach(phase => {
-      if (phase.drills.length > 0) {
-        const phaseTime = phase.drills.reduce((total, drill) => total + drill.duration, 0);
-        planText += `${phase.name} (${phaseTime}min): `;
-        planText += phase.drills.map(drill => 
-          `${drill.title} (${drill.duration}min${drill.focus ? ` - ${drill.focus}` : ''})`
-        ).join(', ');
-        planText += '\n';
-      }
-    });
-
-    navigator.clipboard.writeText(planText);
+  // Template functions
+  const loadTemplates = async () => {
+    if (!user) return;
+    try {
+      const userTemplates = await practicePlanService.getUserTemplates(user.uid);
+      setTemplates(userTemplates);
+    } catch (error) {
+      console.error('Error loading templates:', error);
+    }
   };
+
+  const saveAsTemplate = async () => {
+    if (!user) {
+      alert('Please sign in to save templates');
+      return;
+    }
+
+    if (!templateName.trim()) {
+      alert('Please enter a template name');
+      return;
+    }
+
+    try {
+      // Filter out phases with no drills for cleaner templates
+      const filteredPhases = phases.filter(phase => phase.drills.length > 0);
+      
+      await practicePlanService.saveTemplate({
+        name: templateName,
+        description: templateDescription,
+        phases: filteredPhases,
+        totalTime: getTotalTime(),
+        userId: user.uid,
+      });
+
+      setTemplateName('');
+      setTemplateDescription('');
+      setShowSaveTemplate(false);
+      loadTemplates(); // Refresh templates list
+      alert('Template saved successfully!');
+    } catch (error) {
+      console.error('Error saving template:', error);
+      alert('Failed to save template. Please try again.');
+    }
+  };
+
+  const loadTemplate = async (templateId: string) => {
+    try {
+      const template = await practicePlanService.getTemplate(templateId);
+      if (template) {
+        setPhases(template.phases);
+        setPracticeTitle(template.name);
+        setShowTemplates(false);
+        setIsSaved(false); // Mark as unsaved since it's a new practice based on template
+      }
+    } catch (error) {
+      console.error('Error loading template:', error);
+      alert('Failed to load template. Please try again.');
+    }
+  };
+
+  // Load templates when user is available
+  useEffect(() => {
+    if (user) {
+      loadTemplates();
+    }
+  }, [user]);
 
   // Drill management functions
   const addNewDrill = () => {
@@ -451,13 +523,23 @@ export default function PracticePlannerPage() {
               />
             </div>
             <div className="flex gap-2">
-              <Button onClick={addPhase} variant="outline" size="sm" className="text-slate-800 border-slate-600 hover:bg-slate-700 hover:text-white h-9">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Phase
+              <Button 
+                onClick={() => setShowTemplates(true)} 
+                variant="ghost" 
+                size="sm" 
+                className="text-slate-500 hover:text-slate-300 hover:bg-slate-800 h-9"
+              >
+                <FolderOpen className="h-4 w-4 mr-2" />
+                Load Template
               </Button>
-              <Button onClick={copyPlan} variant="outline" size="sm" className="text-slate-800 border-slate-600 hover:bg-slate-700 hover:text-white h-9">
-                <Copy className="h-4 w-4 mr-2" />
-                Copy
+              <Button 
+                onClick={() => setShowSaveTemplate(true)} 
+                variant="ghost" 
+                size="sm" 
+                className="text-slate-500 hover:text-slate-300 hover:bg-slate-800 h-9"
+              >
+                <BookOpen className="h-4 w-4 mr-2" />
+                Save as Template
               </Button>
               <Button 
                 onClick={savePlan} 
@@ -470,12 +552,69 @@ export default function PracticePlannerPage() {
                 <Save className="h-4 w-4 mr-2" />
                 {isSaved ? 'Saved' : 'Save'}
               </Button>
-              <Button onClick={exportPlan} size="sm" className="bg-blue-600 hover:bg-blue-700 text-white h-9">
-                <Mail className="h-4 w-4 mr-2" />
-                Email Plan
+              <Button 
+                onClick={saveAndShare} 
+                disabled={isSharing}
+                size="sm" 
+                className="bg-blue-600 hover:bg-blue-700 text-white h-9"
+              >
+                {isSharing ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Share2 className="h-4 w-4 mr-2" />
+                    Save & Share
+                  </>
+                )}
               </Button>
             </div>
           </div>
+
+          {/* Share URL Display */}
+          {shareUrl && (
+            <div className="mb-6 p-4 bg-emerald-900/20 border border-emerald-500/30 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <p className="text-emerald-400 font-medium mb-1">Practice Plan Saved!</p>
+                  <p className="text-slate-300 text-sm mb-2">Share this URL with your team:</p>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={shareUrl}
+                      readOnly
+                      className="bg-slate-800 border-slate-600 text-slate-200 text-sm"
+                    />
+                    <Button
+                      onClick={() => navigator.clipboard.writeText(shareUrl)}
+                      size="sm"
+                      variant="outline"
+                      className="border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10"
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      onClick={() => window.open(shareUrl, '_blank')}
+                      size="sm"
+                      variant="outline"
+                      className="border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                <Button
+                  onClick={() => setShareUrl(null)}
+                  size="sm"
+                  variant="ghost"
+                  className="text-slate-400 hover:text-white"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
 
           <div className="text-sm text-slate-400 mb-6">
             Total Time: {getTotalTime()} minutes
@@ -655,6 +794,18 @@ export default function PracticePlannerPage() {
                                 >
                                   {phase.name}
                                   <Edit3 className="h-4 w-4 opacity-0 group-hover:opacity-50 transition-opacity" />
+                                  <Button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      removePhase(phase.id);
+                                    }}
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-6 w-6 p-0 text-slate-400 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    title="Remove this phase"
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </Button>
                                 </CardTitle>
                                 <div className="flex items-center gap-1 mt-1">
                                   <Clock className="h-3 w-3 text-slate-400" />
@@ -717,17 +868,6 @@ export default function PracticePlannerPage() {
                             >
                               <ThreeColumns className="h-4 w-4" />
                             </Button>
-                            
-                            {phase.isCustom && (
-                              <Button
-                                onClick={() => removePhase(phase.id)}
-                                size="sm"
-                                variant="ghost"
-                                className="h-8 w-8 p-0 text-red-400 hover:text-red-300 ml-1"
-                              >
-                                <Minus className="h-4 w-4" />
-                              </Button>
-                            )}
                           </div>
                         </div>
                       </CardHeader>
@@ -865,11 +1005,162 @@ export default function PracticePlannerPage() {
                       </CardContent>
                     </Card>
                   ))}
+                  
+                  {/* Add Phase Button */}
+                  <div className="flex justify-center">
+                    <Button 
+                      onClick={addPhase} 
+                      variant="outline" 
+                      size="lg" 
+                      className="text-blue-400 border-slate-600 hover:bg-slate-700 hover:text-blue-300 border-dashed"
+                    >
+                      <Plus className="h-5 w-5 mr-2" />
+                      Add Practice Phase
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
           </DragDropContext>
         </div>
+
+        {/* Load Template Modal */}
+        {showTemplates && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-slate-800 rounded-lg p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-white">Load Template</h2>
+                <Button
+                  onClick={() => setShowTemplates(false)}
+                  size="sm"
+                  variant="ghost"
+                  className="text-slate-400 hover:text-white"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              
+              {templates.length === 0 ? (
+                <div className="text-center py-8">
+                  <BookOpen className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+                  <p className="text-slate-400">No templates saved yet.</p>
+                  <p className="text-slate-500 text-sm">Create a practice plan and save it as a template to get started.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {templates.map((template) => (
+                    <div
+                      key={template.id}
+                      className="bg-slate-700 rounded-lg p-4 hover:bg-slate-600 transition-colors cursor-pointer"
+                      onClick={() => loadTemplate(template.id!)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <h3 className="font-medium text-white">{template.name}</h3>
+                          {template.description && (
+                            <p className="text-slate-400 text-sm mt-1">{template.description}</p>
+                          )}
+                          <div className="flex items-center gap-4 mt-2 text-xs text-slate-500">
+                            <span>{template.phases.length} phases</span>
+                            <span>{template.totalTime} minutes</span>
+                            <span>
+                              {template.createdAt && new Date(template.createdAt.toDate()).toLocaleDateString()}
+                            </span>
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          className="bg-blue-600 hover:bg-blue-700 text-white"
+                        >
+                          Load
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Save Template Modal */}
+        {showSaveTemplate && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-slate-800 rounded-lg p-6 w-full max-w-md">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-white">Save as Template</h2>
+                <Button
+                  onClick={() => {
+                    setShowSaveTemplate(false);
+                    setTemplateName('');
+                    setTemplateDescription('');
+                  }}
+                  size="sm"
+                  variant="ghost"
+                  className="text-slate-400 hover:text-white"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Template Name *
+                  </label>
+                  <Input
+                    value={templateName}
+                    onChange={(e) => setTemplateName(e.target.value)}
+                    placeholder="e.g., Standard Practice, Game Day Prep"
+                    className="bg-slate-700 border-slate-600"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Description (optional)
+                  </label>
+                  <Textarea
+                    value={templateDescription}
+                    onChange={(e) => setTemplateDescription(e.target.value)}
+                    placeholder="Brief description of when to use this template..."
+                    className="bg-slate-700 border-slate-600 h-20"
+                  />
+                </div>
+                
+                <div className="bg-slate-700 rounded-lg p-3">
+                  <p className="text-slate-300 text-sm mb-2">Template will include:</p>
+                  <ul className="text-slate-400 text-xs space-y-1">
+                    <li>• {phases.filter(p => p.drills.length > 0).length} phases with drills</li>
+                    <li>• {getTotalTime()} minutes total time</li>
+                    <li>• All drill configurations and layouts</li>
+                  </ul>
+                </div>
+                
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    onClick={() => {
+                      setShowSaveTemplate(false);
+                      setTemplateName('');
+                      setTemplateDescription('');
+                    }}
+                    variant="outline"
+                    className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={saveAsTemplate}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                    disabled={!templateName.trim()}
+                  >
+                    Save Template
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </ProtectedRoute>
   );

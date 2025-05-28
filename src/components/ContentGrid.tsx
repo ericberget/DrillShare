@@ -7,19 +7,53 @@ import { doc, getDoc } from 'firebase/firestore';
 import { ContentItem, ContentCategory, SkillLevel } from '@/types/content';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ContentLoader } from './ContentLoader';
 import { ContentCard } from './ContentCard';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { ChevronDown, Target, Users, Zap, Hand, Circle } from 'lucide-react';
 
 interface ContentGridProps {
   onAddContent: () => void;
   onSelectContent: (content: ContentItem) => void;
   onEditContent?: (content: ContentItem) => void;
 }
+
+// Category configuration with icons and descriptions
+const categoryConfig = {
+  all: {
+    icon: Circle,
+    title: 'All Content',
+    description: 'Browse your complete video library across all baseball skills and techniques',
+    gradient: 'from-slate-600 to-slate-700'
+  },
+  hitting: {
+    icon: Target,
+    title: 'Hitting',
+    description: 'Batting techniques, swing mechanics, and offensive strategies',
+    gradient: 'from-red-600 to-red-700'
+  },
+  infield: {
+    icon: Users,
+    title: 'Infield',
+    description: 'Fielding fundamentals, positioning, and defensive plays',
+    gradient: 'from-blue-600 to-blue-700'
+  },
+  pitching: {
+    icon: Zap,
+    title: 'Pitching',
+    description: 'Throwing mechanics, pitch types, and mound strategies',
+    gradient: 'from-green-600 to-green-700'
+  },
+  catching: {
+    icon: Hand,
+    title: 'Catching',
+    description: 'Receiving techniques, framing, and game management',
+    gradient: 'from-purple-600 to-purple-700'
+  }
+};
 
 export function ContentGrid({ onAddContent, onSelectContent, onEditContent }: ContentGridProps) {
   const { user, db } = useFirebase();
@@ -109,6 +143,17 @@ export function ContentGrid({ onAddContent, onSelectContent, onEditContent }: Co
     e.stopPropagation();
     toggleFavorite(contentId);
   };
+
+  // Get content count for each category
+  const getCategoryCount = (category: 'all' | ContentCategory) => {
+    if (category === 'all') {
+      return contentItems.length;
+    }
+    return contentItems.filter(item => item.category === category).length;
+  };
+
+  const currentCategory = categoryConfig[activeCategory];
+  const CurrentIcon = currentCategory.icon;
 
   return (
     <div className="space-y-6">
@@ -302,92 +347,90 @@ export function ContentGrid({ onAddContent, onSelectContent, onEditContent }: Co
         </div>
       )}
 
+      {/* Horizontal Category Tabs */}
+      <div className="w-full flex justify-center mb-8">
+        <div className="flex gap-4">
+          <button
+            onClick={() => setActiveCategory('all')}
+            className={`min-w-[120px] px-8 py-3 font-oswald flex flex-col items-center text-base rounded-md transition-all duration-200 ${
+              activeCategory === 'all'
+                ? 'bg-slate-600 text-white'
+                : 'hover:bg-slate-700/50 text-slate-300'
+            }`}
+          >
+            <img src="/baseball.png" alt="Baseball" className="w-5 h-5 mb-2 opacity-80" />
+            All Content
+          </button>
+          <button
+            onClick={() => setActiveCategory('hitting')}
+            className={`min-w-[120px] px-8 py-3 font-oswald flex flex-col items-center text-base rounded-md transition-all duration-200 ${
+              activeCategory === 'hitting'
+                ? 'bg-slate-600 text-white'
+                : 'hover:bg-slate-700/50 text-slate-300'
+            }`}
+          >
+            <img src="/baseball.png" alt="Baseball" className="w-5 h-5 mb-2 opacity-80" />
+            Hitting
+          </button>
+          <button
+            onClick={() => setActiveCategory('pitching')}
+            className={`min-w-[120px] px-8 py-3 font-oswald flex flex-col items-center text-base rounded-md transition-all duration-200 ${
+              activeCategory === 'pitching'
+                ? 'bg-slate-600 text-white'
+                : 'hover:bg-slate-700/50 text-slate-300'
+            }`}
+          >
+            <img src="/baseball.png" alt="Baseball" className="w-5 h-5 mb-2 opacity-80" />
+            Pitching
+          </button>
+          <button
+            onClick={() => setActiveCategory('infield')}
+            className={`min-w-[120px] px-8 py-3 font-oswald flex flex-col items-center text-base rounded-md transition-all duration-200 ${
+              activeCategory === 'infield'
+                ? 'bg-slate-600 text-white'
+                : 'hover:bg-slate-700/50 text-slate-300'
+            }`}
+          >
+            <img src="/baseball.png" alt="Baseball" className="w-5 h-5 mb-2 opacity-80" />
+            Infield
+          </button>
+          <button
+            onClick={() => setActiveCategory('catching')}
+            className={`min-w-[120px] px-8 py-3 font-oswald flex flex-col items-center text-base rounded-md transition-all duration-200 ${
+              activeCategory === 'catching'
+                ? 'bg-slate-600 text-white'
+                : 'hover:bg-slate-700/50 text-slate-300'
+            }`}
+          >
+            <img src="/baseball.png" alt="Baseball" className="w-5 h-5 mb-2 opacity-80" />
+            Catching
+          </button>
+        </div>
+      </div>
+
       {isLoading ? (
         <ContentLoader message="Loading your content..." />
       ) : (
-        <Tabs defaultValue="all" onValueChange={(value) => setActiveCategory(value as 'all' | ContentCategory)}>
-          <TabsList className="w-full flex justify-center gap-4 mb-12">
-            <TabsTrigger 
-              value="all" 
-              className="min-w-[120px] data-[state=active]:bg-slate-600 data-[state=active]:text-white px-8 font-oswald flex flex-col items-center py-3 text-base rounded-md transition-all duration-200 hover:bg-slate-700/50 text-slate-300"
-            >
-              <img src="/baseball.png" alt="Baseball" className="w-5 h-5 mb-2 opacity-80" />
-              All
-            </TabsTrigger>
-            <TabsTrigger 
-              value="hitting" 
-              className="min-w-[120px] data-[state=active]:bg-slate-600 data-[state=active]:text-white px-8 font-oswald flex flex-col items-center py-3 text-base rounded-md transition-all duration-200 hover:bg-slate-700/50 text-slate-300"
-            >
-              <img src="/baseball.png" alt="Baseball" className="w-5 h-5 mb-2 opacity-80" />
-              Hitting
-            </TabsTrigger>
-            <TabsTrigger 
-              value="infield" 
-              className="min-w-[120px] data-[state=active]:bg-slate-600 data-[state=active]:text-white px-8 font-oswald flex flex-col items-center py-3 text-base rounded-md transition-all duration-200 hover:bg-slate-700/50 text-slate-300"
-            >
-              <img src="/baseball.png" alt="Baseball" className="w-5 h-5 mb-2 opacity-80" />
-              Infield
-            </TabsTrigger>
-            <TabsTrigger 
-              value="pitching" 
-              className="min-w-[120px] data-[state=active]:bg-slate-600 data-[state=active]:text-white px-8 font-oswald flex flex-col items-center py-3 text-base rounded-md transition-all duration-200 hover:bg-slate-700/50 text-slate-300"
-            >
-              <img src="/baseball.png" alt="Baseball" className="w-5 h-5 mb-2 opacity-80" />
-              Pitching
-            </TabsTrigger>
-            <TabsTrigger 
-              value="catching" 
-              className="min-w-[120px] data-[state=active]:bg-slate-600 data-[state=active]:text-white px-8 font-oswald flex flex-col items-center py-3 text-base rounded-md transition-all duration-200 hover:bg-slate-700/50 text-slate-300"
-            >
-              <img src="/baseball.png" alt="Baseball" className="w-5 h-5 mb-2 opacity-80" />
-              Catching
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="all" className="mt-12">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {getFilteredContent().map(content => (
-                <ContentCard
-                  key={content.id}
-                  content={content}
-                  onSelect={handleContentSelection}
-                  onFavoriteToggle={handleFavoriteToggle}
-                  onTagClick={handleTagClick}
-                  activeTag={activeTag}
-                  onEdit={onEditContent}
-                />
-              ))}
-              {getFilteredContent().length === 0 && (
-                <div className="col-span-3 text-center py-12 text-slate-400">
-                  No content found. Try adjusting your filters or adding new content.
-                </div>
-              )}
-            </div>
-          </TabsContent>
-
-          {(['hitting', 'infield', 'pitching', 'catching'] as ContentCategory[]).map(category => (
-            <TabsContent key={category} value={category} className="mt-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {getFilteredContent().map(content => (
-                  <ContentCard
-                    key={content.id}
-                    content={content}
-                    onSelect={handleContentSelection}
-                    onFavoriteToggle={handleFavoriteToggle}
-                    onTagClick={handleTagClick}
-                    activeTag={activeTag}
-                    onEdit={onEditContent}
-                  />
-                ))}
-                {getFilteredContent().length === 0 && (
-                  <div className="col-span-3 text-center py-12 text-slate-400">
-                    No content found in {category}. Try adjusting your filters or adding new content.
-                  </div>
-                )}
+        <div className="mt-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {getFilteredContent().map(content => (
+              <ContentCard
+                key={content.id}
+                content={content}
+                onSelect={handleContentSelection}
+                onFavoriteToggle={handleFavoriteToggle}
+                onTagClick={handleTagClick}
+                activeTag={activeTag}
+                onEdit={onEditContent}
+              />
+            ))}
+            {getFilteredContent().length === 0 && (
+              <div className="col-span-3 text-center py-12 text-slate-400">
+                No content found{activeCategory !== 'all' ? ` in ${activeCategory}` : ''}. Try adjusting your filters or adding new content.
               </div>
-            </TabsContent>
-          ))}
-        </Tabs>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );
