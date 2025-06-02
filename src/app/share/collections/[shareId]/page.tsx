@@ -10,7 +10,7 @@ import { ContentItem } from '@/types/content';
 import { getCollectionByShareLink } from '@/services/collectionService';
 import { getContentItemsByIds } from '@/services/contentService';
 import { formatTimestamp } from '@/lib/utils';
-import { Lock, Loader2, Video, Play, ChevronLeft, ChevronRight, Copy, Check, Clock } from 'lucide-react';
+import { Lock, Loader2, Video, Play, ChevronLeft, ChevronRight, Copy, Check, Clock, ArrowRight, Eye } from 'lucide-react';
 import Image from 'next/image';
 import { ContentDetails } from '@/components/ContentDetails';
 
@@ -405,6 +405,61 @@ export default function SharedCollectionPage() {
             <p className="text-slate-500 text-xs text-center mt-2">
               Anyone with this link can view the collection without signing in.
             </p>
+          </div>
+        </div>
+
+        {/* Footer CTA for Non-Authenticated Users */}
+        <div className="relative mt-20 bg-slate-950">
+          <div className="absolute inset-0 bg-gradient-radial from-slate-800/20 via-transparent to-transparent" />
+          <div 
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-30" 
+            style={{ backgroundImage: 'url(/bgCoach.jpg)' }} 
+          />
+          <div className="relative z-10 py-16 px-4">
+            <div className="max-w-4xl mx-auto text-center">
+              <div className="mb-8">
+                <Image
+                  src="/logo.png"
+                  alt="DrillShare Logo"
+                  width={300}
+                  height={300}
+                  className="mx-auto w-full max-w-[200px] h-auto opacity-90"
+                />
+              </div>
+              <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
+                Create Your Own Training Collections
+              </h2>
+              <p className="text-lg text-slate-300 mb-8 max-w-2xl mx-auto">
+                Build, organize, and share your own drill libraries with DrillShare. 
+                Join thousands of coaches transforming their training programs.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button 
+                  size="lg" 
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white text-lg px-8 py-6 transform transition-all duration-200 hover:scale-105"
+                  asChild
+                >
+                  <a href="/">
+                    Get Started Free
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </a>
+                </Button>
+                <Button 
+                  size="lg" 
+                  variant="outline"
+                  className="border-slate-400 text-slate-200 hover:bg-slate-800/50 hover:text-white text-lg px-8 py-6"
+                  asChild
+                >
+                  <a href="/demo">
+                    Try Demo
+                    <Eye className="ml-2 h-5 w-5" />
+                  </a>
+                </Button>
+              </div>
+              <p className="text-slate-400 text-sm mt-6">
+                No credit card required • Start organizing your drills today
+              </p>
+            </div>
           </div>
         </div>
       </div>
