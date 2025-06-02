@@ -7,8 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ContentItem } from '@/types/content';
-import { useContent } from '@/contexts/ContentContext';
 import { getCollectionByShareLink } from '@/services/collectionService';
+import { getContentItemsByIds } from '@/services/contentService';
 import { formatTimestamp } from '@/lib/utils';
 import { Lock, Loader2, Video, Play, ChevronLeft, ChevronRight, Copy, Check, Clock } from 'lucide-react';
 import Image from 'next/image';
@@ -19,9 +19,10 @@ export default function SharedCollectionPage() {
   const shareId = params.shareId as string;
   const shareLink = `${window.location.origin}/share/collections/${shareId}`;
   
-  const { contentItems, isLoading: isContentLoading, updateLastViewed } = useContent();
   const [collection, setCollection] = useState<any>(null);
+  const [collectionVideos, setCollectionVideos] = useState<ContentItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isVideosLoading, setIsVideosLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPasswordRequired, setIsPasswordRequired] = useState(false);
   const [password, setPassword] = useState('');
@@ -33,6 +34,27 @@ export default function SharedCollectionPage() {
   const isCollectionExpired = (): boolean => {
     if (!collection?.expirationDate) return false;
     return new Date() > collection.expirationDate.toDate();
+  };
+
+  // Load collection videos
+  const loadCollectionVideos = async (collection: any) => {
+    if (!collection || !collection.videos || collection.videos.length === 0) {
+      setCollectionVideos([]);
+      return;
+    }
+
+    try {
+      setIsVideosLoading(true);
+      console.log('Loading videos for collection:', collection.videos);
+      const videos = await getContentItemsByIds(collection.videos);
+      console.log('Loaded videos:', videos);
+      setCollectionVideos(videos);
+    } catch (error) {
+      console.error('Error loading collection videos:', error);
+      setCollectionVideos([]);
+    } finally {
+      setIsVideosLoading(false);
+    }
   };
 
   // Fetch the collection on component mount
@@ -53,6 +75,8 @@ export default function SharedCollectionPage() {
           // Don't set the collection yet, wait for password
         } else {
           setCollection(collection);
+          // Load the videos for this collection
+          await loadCollectionVideos(collection);
         }
       } catch (error) {
         console.error('Error fetching collection:', error);
@@ -68,7 +92,7 @@ export default function SharedCollectionPage() {
   }, [shareLink]);
 
   // Handle password submission
-  const handlePasswordSubmit = () => {
+  const handlePasswordSubmit = async () => {
     if (!password.trim()) {
       setPasswordError('Please enter the password');
       return;
@@ -76,26 +100,25 @@ export default function SharedCollectionPage() {
     
     setPasswordError(null);
     
-    // Verify password
-    getCollectionByShareLink(shareLink).then(collection => {
+    try {
+      // Verify password
+      const collection = await getCollectionByShareLink(shareLink);
       if (collection && collection.password === password) {
         setCollection(collection);
         setIsPasswordRequired(false);
+        // Load the videos for this collection
+        await loadCollectionVideos(collection);
       } else {
         setPasswordError('Incorrect password');
       }
-    });
-  };
-
-  // Get content items for this collection
-  const getCollectionContentItems = (): ContentItem[] => {
-    if (!collection) return [];
-    return contentItems.filter(item => collection.videos.includes(item.id));
+    } catch (error) {
+      console.error('Error verifying password:', error);
+      setPasswordError('Error verifying password');
+    }
   };
 
   // Handle content selection
   const handleContentSelection = (content: ContentItem) => {
-    updateLastViewed(content.id);
     setSelectedContent(content);
   };
 
@@ -305,8 +328,6 @@ export default function SharedCollectionPage() {
 
   if (!collection) return null;
 
-  const collectionVideos = getCollectionContentItems();
-
   return (
     <div className="min-h-screen bg-slate-950">
       <div className="container mx-auto px-4 py-8">
@@ -337,34 +358,8 @@ export default function SharedCollectionPage() {
           </div>
         )}
 
-        {/* Share Section */}
-        <div className="max-w-2xl mx-auto mb-12">
-          <div className="bg-emerald-900/30 backdrop-blur-sm border border-emerald-700/50 rounded-2xl p-6">
-            <h2 className="text-xl font-semibold text-emerald-300 mb-4 text-center">Share This Collection</h2>
-            <div className="flex items-center gap-3">
-              <div className="flex-1 bg-slate-800/50 border border-slate-700 rounded-lg py-3 px-4 text-slate-300 font-mono text-sm">
-                {shareLink}
-              </div>
-              <Button 
-                className={`px-6 py-3 rounded-lg flex items-center gap-2 transition-all duration-200 ${
-                  copiedLink 
-                    ? 'bg-green-600 hover:bg-green-700' 
-                    : 'bg-emerald-600 hover:bg-emerald-700'
-                }`}
-                onClick={copyShareLink}
-              >
-                {copiedLink ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                {copiedLink ? 'Copied!' : 'Copy Link'}
-              </Button>
-            </div>
-            <p className="text-emerald-200/80 text-sm text-center mt-3">
-              Share this link with your team, players, or parents. Anyone with this link can view the collection without signing in.
-            </p>
-          </div>
-        </div>
-
         {/* Video Gallery */}
-        {isContentLoading ? (
+        {isVideosLoading ? (
           <div className="flex justify-center py-12">
             <div className="text-center">
               <Loader2 className="h-8 w-8 text-emerald-500 animate-spin mx-auto mb-4" />
@@ -386,6 +381,32 @@ export default function SharedCollectionPage() {
             ))}
           </div>
         )}
+
+        {/* Share Section - Moved to bottom and made more subtle */}
+        <div className="max-w-2xl mx-auto mt-16 mb-8">
+          <div className="bg-slate-800/30 backdrop-blur-sm border border-slate-700/50 rounded-xl p-4">
+            <h3 className="text-lg font-medium text-slate-300 mb-3 text-center">Share This Collection</h3>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 bg-slate-900/50 border border-slate-700/50 rounded-lg py-2 px-3 text-slate-400 font-mono text-xs">
+                {shareLink}
+              </div>
+              <Button 
+                size="sm"
+                variant="outline"
+                className={`border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white transition-all duration-200 ${
+                  copiedLink ? 'bg-slate-700 text-white' : ''
+                }`}
+                onClick={copyShareLink}
+              >
+                {copiedLink ? <Check className="w-3 h-3 mr-1" /> : <Copy className="w-3 h-3 mr-1" />}
+                {copiedLink ? 'Copied!' : 'Copy'}
+              </Button>
+            </div>
+            <p className="text-slate-500 text-xs text-center mt-2">
+              Anyone with this link can view the collection without signing in.
+            </p>
+          </div>
+        </div>
       </div>
       
       {selectedContent && (

@@ -183,6 +183,57 @@ export const getUserContent = async (userId: string): Promise<ContentItem[]> => 
   }
 };
 
+// Get specific content items by their IDs (for shared collections)
+export const getContentItemsByIds = async (contentIds: string[]): Promise<ContentItem[]> => {
+  try {
+    console.log(`Getting ${contentIds.length} content items by IDs:`, contentIds);
+    
+    if (contentIds.length === 0) {
+      return [];
+    }
+    
+    const contentRef = collection(db, CONTENT_COLLECTION);
+    
+    // Firestore has a limit of 10 items per 'in' query, so we need to batch if more than 10
+    const batchSize = 10;
+    const batches: Promise<ContentItem[]>[] = [];
+    
+    for (let i = 0; i < contentIds.length; i += batchSize) {
+      const batchIds = contentIds.slice(i, i + batchSize);
+      
+      const batchQuery = query(
+        contentRef,
+        where('__name__', 'in', batchIds)
+      );
+      
+      const batchPromise = getDocs(batchQuery).then(snapshot => 
+        snapshot.docs.map(doc => ({ 
+          id: doc.id, 
+          ...doc.data() 
+        })) as ContentItem[]
+      );
+      
+      batches.push(batchPromise);
+    }
+    
+    // Wait for all batches to complete and flatten the results
+    const results = await Promise.all(batches);
+    const allContent = results.flat();
+    
+    console.log(`Successfully retrieved ${allContent.length} content items`);
+    
+    // Sort the results to match the original order of contentIds
+    const sortedContent = contentIds.map(id => 
+      allContent.find(item => item.id === id)
+    ).filter(item => item !== undefined) as ContentItem[];
+    
+    return sortedContent;
+  } catch (error) {
+    console.error('Error getting content items by IDs:', error);
+    throw error;
+  }
+};
+
 // Update a content item
 export const updateContent = async (contentId: string, data: Partial<ContentItem>): Promise<void> => {
   try {
