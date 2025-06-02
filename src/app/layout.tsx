@@ -3,6 +3,7 @@
 import './globals.css'
 import { Inter, Oswald } from 'next/font/google'
 import { Providers } from '../components/Providers'
+import { PageTransition } from '@/components/animations'
 
 const inter = Inter({ subsets: ['latin'] })
 const oswald = Oswald({ 
@@ -34,7 +35,9 @@ export default function RootLayout({
       </head>
       <body className={`${inter.className} ${oswald.variable} min-h-screen bg-slate-900 text-slate-200 bg-gradient-glow bg-mesh bg-glow`}>
         <Providers>
-          {children}
+          <PageTransition>
+            {children}
+          </PageTransition>
         </Providers>
       </body>
     </html>

@@ -34,7 +34,21 @@ export const createCollection = async (
     
     // Generate a unique shareLink
     const shareId = generateRandomString(8);
-    const shareLink = `${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/share/collections/${shareId}`;
+    
+    // Get the base URL with proper fallbacks for production
+    let baseUrl = process.env.NEXT_PUBLIC_APP_URL;
+    
+    // If no environment variable is set, try to get it from window (client-side only)
+    if (!baseUrl && typeof window !== 'undefined') {
+      baseUrl = window.location.origin;
+    }
+    
+    // Final fallback to production URL if we're still missing it
+    if (!baseUrl || baseUrl.includes('localhost')) {
+      baseUrl = 'https://drillshare.netlify.app';
+    }
+    
+    const shareLink = `${baseUrl}/share/collections/${shareId}`;
     console.log('Generated share link:', shareLink);
     
     const collectionRef = collection(db, COLLECTIONS_COLLECTION);

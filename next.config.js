@@ -20,6 +20,17 @@ const nextConfig = {
       bodySizeLimit: '2mb'
     },
   },
+  webpack: (config, { isServer }) => {
+    // Handle framer-motion properly
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+      };
+    }
+    
+    return config;
+  },
 };
 
 module.exports = nextConfig; 

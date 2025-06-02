@@ -14,6 +14,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { ChevronDown, Target, Users, Zap, Hand, Circle } from 'lucide-react';
+import { CategoryTransition, StaggerContainer, FadeInUp } from '@/components/animations';
+import { motion } from 'framer-motion';
 
 interface ContentGridProps {
   onAddContent: () => void;
@@ -152,264 +154,285 @@ export function ContentGrid({ onAddContent, onSelectContent, onEditContent }: Co
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-        <div className="flex gap-2 w-full sm:w-auto">
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" className="flex items-center gap-2 bg-slate-800 border-slate-700 hover:bg-slate-700 text-slate-300">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-                </svg>
-                Filters
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[280px] p-4 bg-slate-900 border-slate-700">
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-medium text-slate-400">Filters</h4>
-                  {(activeTag || showFavoritesOnly || showTeamContentOnly) && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-xs text-slate-400 hover:text-slate-300"
-                      onClick={() => {
-                        setActiveTag(null);
-                        setShowFavoritesOnly(false);
-                        setShowTeamContentOnly(false);
-                      }}
-                    >
-                      Clear all
-                    </Button>
-                  )}
-                </div>
-                
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox 
-                      id="favorites" 
-                      checked={showFavoritesOnly}
-                      onCheckedChange={(checked: boolean | 'indeterminate') => {
-                        setShowFavoritesOnly(checked === true);
-                        if (checked === true) setShowTeamContentOnly(false);
-                      }}
-                      className="data-[state=checked]:bg-slate-600 data-[state=checked]:border-slate-600"
-                    />
-                    <Label htmlFor="favorites" className="text-slate-300">
-                      <div className="flex items-center">
-                        Favorites only
-                        <svg className="ml-1.5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                        </svg>
-                      </div>
-                    </Label>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <Checkbox 
-                      id="teamContent" 
-                      checked={showTeamContentOnly}
-                      onCheckedChange={(checked: boolean | 'indeterminate') => {
-                        setShowTeamContentOnly(checked === true);
-                        if (checked === true) setShowFavoritesOnly(false);
-                      }}
-                      className="data-[state=checked]:bg-slate-600 data-[state=checked]:border-slate-600"
-                    />
-                    <Label htmlFor="teamContent" className="text-slate-300">
-                      <div className="flex items-center">
-                        My Program
-                        <div className="ml-1.5 w-4 h-4 rounded-full bg-slate-700 flex items-center justify-center">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M2 3h20"></path>
-                            <path d="M21 3v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V3"></path>
-                            <path d="M12 8v8"></path>
-                            <path d="M8 12h8"></path>
-                          </svg>
-                        </div>
-                      </div>
-                    </Label>
+      <FadeInUp>
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+          <div className="flex gap-2 w-full sm:w-auto">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="flex items-center gap-2 bg-slate-800 border-slate-700 hover:bg-slate-700 text-slate-300">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+                  </svg>
+                  Filters
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[280px] p-4 bg-slate-900 border-slate-700">
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium text-slate-400">Filters</h4>
+                    {(activeTag || showFavoritesOnly || showTeamContentOnly) && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-xs text-slate-400 hover:text-slate-300"
+                        onClick={() => {
+                          setActiveTag(null);
+                          setShowFavoritesOnly(false);
+                          setShowTeamContentOnly(false);
+                        }}
+                      >
+                        Clear all
+                      </Button>
+                    )}
                   </div>
                   
-                  <div className="pt-2">
-                    <h5 className="text-sm font-medium text-slate-400 mb-3">Popular Tags</h5>
-                    <div className="flex flex-wrap gap-2">
-                      {getAllTags().slice(0, 8).map(tag => (
-                        <Badge
-                          key={tag}
-                          variant="secondary"
-                          className={`text-xs cursor-pointer transition-colors ${
-                            activeTag === tag
-                              ? 'bg-slate-700/50 text-slate-300 hover:bg-slate-700/70'
-                              : 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-slate-200'
-                          }`}
-                          onClick={() => setActiveTag(currentTag => currentTag === tag ? null : tag)}
-                        >
-                          {tag}
-                        </Badge>
-                      ))}
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="favorites" 
+                        checked={showFavoritesOnly}
+                        onCheckedChange={(checked: boolean | 'indeterminate') => {
+                          setShowFavoritesOnly(checked === true);
+                          if (checked === true) setShowTeamContentOnly(false);
+                        }}
+                        className="data-[state=checked]:bg-slate-600 data-[state=checked]:border-slate-600"
+                      />
+                      <Label htmlFor="favorites" className="text-slate-300">
+                        <div className="flex items-center">
+                          Favorites only
+                          <svg className="ml-1.5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                          </svg>
+                        </div>
+                      </Label>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="teamContent" 
+                        checked={showTeamContentOnly}
+                        onCheckedChange={(checked: boolean | 'indeterminate') => {
+                          setShowTeamContentOnly(checked === true);
+                          if (checked === true) setShowFavoritesOnly(false);
+                        }}
+                        className="data-[state=checked]:bg-slate-600 data-[state=checked]:border-slate-600"
+                      />
+                      <Label htmlFor="teamContent" className="text-slate-300">
+                        <div className="flex items-center">
+                          My Program
+                          <div className="ml-1.5 w-4 h-4 rounded-full bg-slate-700 flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M2 3h20"></path>
+                              <path d="M21 3v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V3"></path>
+                              <path d="M12 8v8"></path>
+                              <path d="M8 12h8"></path>
+                            </svg>
+                          </div>
+                        </div>
+                      </Label>
+                    </div>
+                    
+                    <div className="pt-2">
+                      <h5 className="text-sm font-medium text-slate-400 mb-3">Popular Tags</h5>
+                      <div className="flex flex-wrap gap-2">
+                        {getAllTags().slice(0, 8).map(tag => (
+                          <Badge
+                            key={tag}
+                            variant="secondary"
+                            className={`text-xs cursor-pointer transition-colors ${
+                              activeTag === tag
+                                ? 'bg-slate-700/50 text-slate-300 hover:bg-slate-700/70'
+                                : 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-slate-200'
+                            }`}
+                            onClick={() => setActiveTag(currentTag => currentTag === tag ? null : tag)}
+                          >
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </PopoverContent>
-          </Popover>
+              </PopoverContent>
+            </Popover>
+          </div>
+          <div className="flex gap-2 w-full sm:w-auto">
+            <Button onClick={onAddContent} className="w-full sm:w-auto bg-white hover:bg-slate-100 text-slate-900">+ Add Content</Button>
+            <Button 
+              variant="outline" 
+              onClick={() => window.location.href = '/collections'} 
+              className="w-full sm:w-auto bg-slate-600 hover:bg-slate-700 text-white border-0"
+            >
+              Collect & Share
+            </Button>
+          </div>
         </div>
-        <div className="flex gap-2 w-full sm:w-auto">
-          <Button onClick={onAddContent} className="w-full sm:w-auto bg-white hover:bg-slate-100 text-slate-900">+ Add Content</Button>
-          <Button 
-            variant="outline" 
-            onClick={() => window.location.href = '/collections'} 
-            className="w-full sm:w-auto bg-slate-600 hover:bg-slate-700 text-white border-0"
-          >
-            Collect & Share
-          </Button>
-        </div>
-      </div>
+      </FadeInUp>
 
       {/* Active tag display or filters indication */}
       {(activeTag || showFavoritesOnly || showTeamContentOnly) && (
-        <div className="p-2 bg-slate-800/50 border border-slate-700 rounded-md">
-          <div className="flex items-center gap-3 text-slate-400 font-medium">
-            <span>Filtering by:</span>
-            <div className="flex flex-wrap gap-2">
-              {activeTag && (
-                <Badge className="bg-slate-700/50 text-slate-300 hover:bg-slate-600/70">
-                  {activeTag}
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setActiveTag(null);
-                    }}
-                    className="ml-3 hover:text-slate-200 transition-colors"
-                  >
-                    ×
-                  </button>
-                </Badge>
-              )}
-              {showFavoritesOnly && (
-                <Badge className="bg-slate-700/50 text-slate-300 hover:bg-slate-600/70">
-                  <div className="flex items-center">
-                    <svg className="mr-1.5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                    </svg>
-                    Favorites
+        <FadeInUp delay={0.1}>
+          <div className="p-2 bg-slate-800/50 border border-slate-700 rounded-md">
+            <div className="flex items-center gap-3 text-slate-400 font-medium">
+              <span>Filtering by:</span>
+              <div className="flex flex-wrap gap-2">
+                {activeTag && (
+                  <Badge className="bg-slate-700/50 text-slate-300 hover:bg-slate-600/70">
+                    {activeTag}
                     <button 
-                      onClick={() => setShowFavoritesOnly(false)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveTag(null);
+                      }}
                       className="ml-3 hover:text-slate-200 transition-colors"
                     >
                       ×
                     </button>
-                  </div>
-                </Badge>
-              )}
-              {showTeamContentOnly && (
-                <Badge className="bg-slate-700/50 text-slate-300 hover:bg-slate-600/70">
-                  <div className="flex items-center">
-                    <div className="mr-1.5 w-3 h-3 rounded-full bg-slate-600 flex items-center justify-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M2 3h20"></path>
-                        <path d="M21 3v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V3"></path>
-                        <path d="M12 8v8"></path>
-                        <path d="M8 12h8"></path>
+                  </Badge>
+                )}
+                {showFavoritesOnly && (
+                  <Badge className="bg-slate-700/50 text-slate-300 hover:bg-slate-600/70">
+                    <div className="flex items-center">
+                      <svg className="mr-1.5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
                       </svg>
+                      Favorites
+                      <button 
+                        onClick={() => setShowFavoritesOnly(false)}
+                        className="ml-3 hover:text-slate-200 transition-colors"
+                      >
+                        ×
+                      </button>
                     </div>
-                    My Program
-                    <button 
-                      onClick={() => setShowTeamContentOnly(false)}
-                      className="ml-3 hover:text-slate-200 transition-colors"
-                    >
-                      ×
-                    </button>
-                  </div>
-                </Badge>
-              )}
+                  </Badge>
+                )}
+                {showTeamContentOnly && (
+                  <Badge className="bg-slate-700/50 text-slate-300 hover:bg-slate-600/70">
+                    <div className="flex items-center">
+                      <div className="mr-1.5 w-3 h-3 rounded-full bg-slate-600 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M2 3h20"></path>
+                          <path d="M21 3v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V3"></path>
+                          <path d="M12 8v8"></path>
+                          <path d="M8 12h8"></path>
+                        </svg>
+                      </div>
+                      My Program
+                      <button 
+                        onClick={() => setShowTeamContentOnly(false)}
+                        className="ml-3 hover:text-slate-200 transition-colors"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  </Badge>
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        </FadeInUp>
       )}
 
       {/* Horizontal Category Tabs */}
-      <div className="w-full flex justify-center mb-8">
-        <div className="flex gap-4">
-          <button
-            onClick={() => setActiveCategory('all')}
-            className={`min-w-[120px] px-8 py-3 font-oswald flex flex-col items-center text-base rounded-md transition-all duration-200 ${
-              activeCategory === 'all'
-                ? 'bg-slate-600 text-white'
-                : 'hover:bg-slate-700/50 text-slate-300'
-            }`}
-          >
-            <img src="/baseball.png" alt="Baseball" className="w-5 h-5 mb-2 opacity-80" />
-            All Content
-          </button>
-          <button
-            onClick={() => setActiveCategory('hitting')}
-            className={`min-w-[120px] px-8 py-3 font-oswald flex flex-col items-center text-base rounded-md transition-all duration-200 ${
-              activeCategory === 'hitting'
-                ? 'bg-slate-600 text-white'
-                : 'hover:bg-slate-700/50 text-slate-300'
-            }`}
-          >
-            <img src="/baseball.png" alt="Baseball" className="w-5 h-5 mb-2 opacity-80" />
-            Hitting
-          </button>
-          <button
-            onClick={() => setActiveCategory('pitching')}
-            className={`min-w-[120px] px-8 py-3 font-oswald flex flex-col items-center text-base rounded-md transition-all duration-200 ${
-              activeCategory === 'pitching'
-                ? 'bg-slate-600 text-white'
-                : 'hover:bg-slate-700/50 text-slate-300'
-            }`}
-          >
-            <img src="/baseball.png" alt="Baseball" className="w-5 h-5 mb-2 opacity-80" />
-            Pitching
-          </button>
-          <button
-            onClick={() => setActiveCategory('infield')}
-            className={`min-w-[120px] px-8 py-3 font-oswald flex flex-col items-center text-base rounded-md transition-all duration-200 ${
-              activeCategory === 'infield'
-                ? 'bg-slate-600 text-white'
-                : 'hover:bg-slate-700/50 text-slate-300'
-            }`}
-          >
-            <img src="/baseball.png" alt="Baseball" className="w-5 h-5 mb-2 opacity-80" />
-            Infield
-          </button>
-          <button
-            onClick={() => setActiveCategory('catching')}
-            className={`min-w-[120px] px-8 py-3 font-oswald flex flex-col items-center text-base rounded-md transition-all duration-200 ${
-              activeCategory === 'catching'
-                ? 'bg-slate-600 text-white'
-                : 'hover:bg-slate-700/50 text-slate-300'
-            }`}
-          >
-            <img src="/baseball.png" alt="Baseball" className="w-5 h-5 mb-2 opacity-80" />
-            Catching
-          </button>
+      <FadeInUp delay={0.2}>
+        <div className="w-full flex justify-center mb-8">
+          <div className="flex gap-4">
+            {Object.entries(categoryConfig).map(([key, config]) => {
+              const isActive = activeCategory === key;
+              return (
+                <motion.button
+                  key={key}
+                  onClick={() => setActiveCategory(key as 'all' | ContentCategory)}
+                  className={`min-w-[120px] px-8 py-3 font-oswald flex flex-col items-center text-base rounded-md transition-all duration-200 ${
+                    isActive
+                      ? 'bg-slate-600 text-white'
+                      : 'hover:bg-slate-700/50 text-slate-300'
+                  }`}
+                  whileHover={{
+                    scale: 1.05,
+                    y: -2,
+                    transition: { duration: 0.2 }
+                  }}
+                  whileTap={{
+                    scale: 0.95,
+                    transition: { duration: 0.1 }
+                  }}
+                  animate={isActive ? {
+                    scale: 1.02,
+                    boxShadow: '0 8px 25px rgba(0, 0, 0, 0.3)',
+                  } : {
+                    scale: 1,
+                    boxShadow: '0 0px 0px rgba(0, 0, 0, 0)',
+                  }}
+                >
+                  <img src="/baseball.png" alt="Baseball" className="w-5 h-5 mb-2 opacity-80" />
+                  {config.title === 'All Content' ? 'All Content' : config.title}
+                </motion.button>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      </FadeInUp>
 
       {isLoading ? (
         <ContentLoader message="Loading your content..." />
       ) : (
         <div className="mt-12">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {getFilteredContent().map(content => (
-              <ContentCard
-                key={content.id}
-                content={content}
-                onSelect={handleContentSelection}
-                onFavoriteToggle={handleFavoriteToggle}
-                onTagClick={handleTagClick}
-                activeTag={activeTag}
-                onEdit={onEditContent}
-              />
-            ))}
-            {getFilteredContent().length === 0 && (
-              <div className="col-span-3 text-center py-12 text-slate-400">
-                No content found{activeCategory !== 'all' ? ` in ${activeCategory}` : ''}. Try adjusting your filters or adding new content.
-              </div>
-            )}
-          </div>
+          <CategoryTransition categoryKey={`${activeCategory}-${activeTag}-${showFavoritesOnly}-${showTeamContentOnly}`}>
+            <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {getFilteredContent().map((content, index) => (
+                <motion.div
+                  key={content.id}
+                  variants={{
+                    hidden: { 
+                      opacity: 0, 
+                      y: 30,
+                      scale: 0.95,
+                    },
+                    visible: { 
+                      opacity: 1, 
+                      y: 0,
+                      scale: 1,
+                      transition: {
+                        duration: 0.5,
+                        ease: [0.25, 0.25, 0, 1],
+                      },
+                    },
+                  }}
+                  whileHover={{
+                    y: -8,
+                    scale: 1.02,
+                    transition: {
+                      duration: 0.2,
+                      ease: [0.25, 0.25, 0, 1],
+                    },
+                  }}
+                  whileTap={{
+                    scale: 0.98,
+                    transition: {
+                      duration: 0.1,
+                    },
+                  }}
+                >
+                  <ContentCard
+                    content={content}
+                    onSelect={handleContentSelection}
+                    onFavoriteToggle={handleFavoriteToggle}
+                    onTagClick={handleTagClick}
+                    activeTag={activeTag}
+                    onEdit={onEditContent}
+                  />
+                </motion.div>
+              ))}
+              {getFilteredContent().length === 0 && (
+                <FadeInUp className="col-span-3 text-center py-12 text-slate-400">
+                  <div>
+                    No content found{activeCategory !== 'all' ? ` in ${activeCategory}` : ''}. Try adjusting your filters or adding new content.
+                  </div>
+                </FadeInUp>
+              )}
+            </StaggerContainer>
+          </CategoryTransition>
         </div>
       )}
     </div>

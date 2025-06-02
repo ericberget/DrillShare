@@ -15,6 +15,8 @@ import { useFirebase } from '@/contexts/FirebaseContext'
 import { useAuth } from '@/hooks/useAuth'
 import { useRouter, usePathname } from 'next/navigation'
 import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { FadeInUp } from '@/components/animations'
 
 export function Navbar() {
   const { user, loading } = useFirebase()
@@ -72,20 +74,68 @@ export function Navbar() {
     }
   ];
 
+  const menuVariants = {
+    hidden: {
+      opacity: 0,
+      y: -20,
+      scale: 0.95,
+    },
+    visible: {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      transition: {
+        duration: 0.3,
+        ease: [0.25, 0.25, 0, 1],
+        staggerChildren: 0.1,
+        delayChildren: 0.1,
+      },
+    },
+    exit: {
+      opacity: 0,
+      y: -20,
+      scale: 0.95,
+      transition: {
+        duration: 0.2,
+        ease: [0.25, 0.25, 0, 1],
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: {
+      opacity: 0,
+      y: 20,
+    },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.4,
+        ease: [0.25, 0.25, 0, 1],
+      },
+    },
+  };
+
   return (
     <>
       <nav className="bg-slate-950/95 border-b border-slate-800/50 backdrop-blur-sm relative z-50">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-14">
             {user && !loading && (
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="group hover:bg-slate-800/50 hover:border-slate-600/50 border border-slate-700/50 transition-colors"
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
-                <Menu className="h-7 w-7 text-slate-300 group-hover:text-slate-100 transition-colors" />
-              </Button>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="group hover:bg-slate-800/50 hover:border-slate-600/50 border border-slate-700/50 transition-colors"
+                  onClick={() => setIsMenuOpen(!isMenuOpen)}
+                >
+                  <Menu className="h-7 w-7 text-slate-300 group-hover:text-slate-100 transition-colors" />
+                </Button>
+              </motion.div>
             )}
             
             {loading ? (
@@ -150,45 +200,81 @@ export function Navbar() {
       </nav>
 
       {/* Full-Width Navigation Menu */}
-      {isMenuOpen && user && (
-        <>
-          {/* Backdrop */}
-          <div 
-            className="fixed inset-0 bg-black/50 z-40"
-            onClick={() => setIsMenuOpen(false)}
-          />
-          
-          {/* Full-Width Menu */}
-          <div className="fixed top-14 left-0 right-0 bg-slate-950/98 backdrop-blur-sm border-b border-slate-800/50 z-50">
-            <div className="container mx-auto px-4 py-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
-                {navigationItems.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className="group"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    <div className="bg-slate-900/50 border border-slate-700/50 hover:border-slate-600/50 rounded-lg p-6 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl">
-                      <div className="flex flex-col items-center text-center">
-                        <div className={`w-16 h-16 rounded-xl ${item.gradient} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}>
-                          {item.icon}
-                        </div>
-                        <h3 className="text-lg font-bold text-slate-100 mb-2 group-hover:text-white transition-colors">
-                          {item.title}
-                        </h3>
-                        <p className="text-sm text-slate-400 group-hover:text-slate-300 transition-colors leading-relaxed">
-                          {item.description}
-                        </p>
-                      </div>
-                    </div>
-                  </Link>
-                ))}
+      <AnimatePresence>
+        {isMenuOpen && user && (
+          <>
+            {/* Backdrop */}
+            <motion.div 
+              className="fixed inset-0 bg-black/50 z-40"
+              onClick={() => setIsMenuOpen(false)}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            />
+            
+            {/* Full-Width Menu */}
+            <motion.div 
+              className="fixed top-14 left-0 right-0 bg-slate-950/98 backdrop-blur-sm border-b border-slate-800/50 z-50"
+              variants={menuVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+            >
+              <div className="container mx-auto px-4 py-8">
+                <motion.div 
+                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6"
+                  variants={menuVariants}
+                >
+                  {navigationItems.map((item, index) => (
+                    <motion.div key={item.href} variants={itemVariants}>
+                      <Link
+                        href={item.href}
+                        className="group"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        <motion.div 
+                          className="bg-slate-900/50 border border-slate-700/50 hover:border-slate-600/50 rounded-lg p-6 transition-all duration-300"
+                          whileHover={{
+                            scale: 1.02,
+                            y: -4,
+                            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3)',
+                          }}
+                          whileTap={{
+                            scale: 0.98,
+                          }}
+                        >
+                          <div className="flex flex-col items-center text-center">
+                            <motion.div 
+                              className={`w-16 h-16 rounded-xl ${item.gradient} flex items-center justify-center mb-4`}
+                              whileHover={{
+                                scale: 1.1,
+                                rotate: 5,
+                              }}
+                              transition={{
+                                duration: 0.3,
+                                ease: [0.25, 0.25, 0, 1],
+                              }}
+                            >
+                              {item.icon}
+                            </motion.div>
+                            <h3 className="text-lg font-bold text-slate-100 mb-2 group-hover:text-white transition-colors">
+                              {item.title}
+                            </h3>
+                            <p className="text-sm text-slate-400 group-hover:text-slate-300 transition-colors leading-relaxed">
+                              {item.description}
+                            </p>
+                          </div>
+                        </motion.div>
+                      </Link>
+                    </motion.div>
+                  ))}
+                </motion.div>
               </div>
-            </div>
-          </div>
-        </>
-      )}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </>
   )
 } 
