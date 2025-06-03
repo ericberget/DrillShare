@@ -33,15 +33,21 @@ export const createUserDocument = async (
     console.log(`Creating user document for ${email} with uid: ${uid}`);
     
     const userRef = doc(db, USERS_COLLECTION, uid);
-    const userData: UserDocument = {
+    
+    // Build userData object and filter out undefined values
+    const userData: any = {
       uid,
       email,
       displayName,
-      photoURL,
       emailVerified,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     };
+    
+    // Only add photoURL if it's not undefined
+    if (photoURL !== undefined && photoURL !== null) {
+      userData.photoURL = photoURL;
+    }
     
     await setDoc(userRef, userData);
     console.log(`Successfully created user document for ${email}`);
@@ -75,10 +81,21 @@ export const updateUserDocument = async (
 ): Promise<void> => {
   try {
     const userRef = doc(db, USERS_COLLECTION, uid);
-    await updateDoc(userRef, {
-      ...updateData,
+    
+    // Filter out undefined values from updateData
+    const cleanedUpdateData: any = {
       updatedAt: serverTimestamp()
+    };
+    
+    // Only add fields that are not undefined
+    Object.keys(updateData).forEach(key => {
+      const value = updateData[key as keyof UserDocument];
+      if (value !== undefined) {
+        cleanedUpdateData[key] = value;
+      }
     });
+    
+    await updateDoc(userRef, cleanedUpdateData);
     console.log(`Successfully updated user document for uid: ${uid}`);
   } catch (error) {
     console.error('Error updating user document:', error);
