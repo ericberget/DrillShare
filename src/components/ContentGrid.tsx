@@ -15,7 +15,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { ChevronDown, Target, Users, Zap, Hand, Circle } from 'lucide-react';
 import { CategoryTransition, StaggerContainer, FadeInUp } from '@/components/animations';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface ContentGridProps {
   onAddContent: () => void;
@@ -67,6 +67,7 @@ export function ContentGrid({ onAddContent, onSelectContent, onEditContent }: Co
   const [searchQuery, setSearchQuery] = useState('');
   const [programSettings, setProgramSettings] = useState<any>(null);
   const [activeSkillLevel, setActiveSkillLevel] = useState<SkillLevel | null>(null);
+  const [showFilters, setShowFilters] = useState(false);
 
   // Load program settings when component mounts
   useEffect(() => {
@@ -172,32 +173,58 @@ export function ContentGrid({ onAddContent, onSelectContent, onEditContent }: Co
   return (
     <div className="space-y-6">
       <FadeInUp>
-        {/* Compact Search & Filters - Left Side */}
+        {/* Compact Search & Filters */}
         <div className="flex flex-col gap-4">
           {/* Top Row - Search and Action Buttons */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            {/* Left Side - Search Bar */}
-            <div className="relative">
-              <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <input
-                type="text"
-                placeholder="Search videos..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full sm:w-64 bg-slate-800/50 border border-slate-700 rounded-lg pl-10 pr-4 py-2.5 text-sm text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors"
-                >
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              )}
+            {/* Left Side - Compact Search with Filters Button */}
+            <div className="flex items-center gap-3">
+              {/* Compact Search Bar */}
+              <div className="relative">
+                <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input
+                  type="text"
+                  placeholder="Search videos..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-48 focus:w-64 bg-slate-800/50 border border-slate-700 rounded-lg pl-10 pr-4 py-2.5 text-sm text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors"
+                  >
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+
+              {/* Filters Toggle Button */}
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                  showFilters || activeSkillLevel || showFavoritesOnly || activeTag
+                    ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                    : 'bg-slate-800/50 text-slate-300 border border-slate-700 hover:bg-slate-700/50'
+                }`}
+              >
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                </svg>
+                Filters
+                {(activeSkillLevel || showFavoritesOnly || activeTag) && (
+                  <span className="ml-1 px-1.5 py-0.5 bg-blue-500 text-white text-xs rounded-full">
+                    {[activeSkillLevel, showFavoritesOnly && 'fav', activeTag].filter(Boolean).length}
+                  </span>
+                )}
+                <svg className={`h-4 w-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
             </div>
 
             {/* Right Side - Action Buttons */}
@@ -215,75 +242,128 @@ export function ContentGrid({ onAddContent, onSelectContent, onEditContent }: Co
             </div>
           </div>
 
-          {/* Bottom Row - Filter Chips */}
-          <div className="flex flex-wrap gap-2 items-center">
-            {/* Skill Level Filters */}
-            <div className="flex gap-1">
-              <button
-                onClick={() => setActiveSkillLevel(activeSkillLevel === 'beginner' ? null : 'beginner')}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                  activeSkillLevel === 'beginner'
-                    ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                    : 'bg-slate-800/50 text-slate-300 border border-slate-700 hover:bg-slate-700/50'
-                }`}
+          {/* Collapsible Filter Options */}
+          <AnimatePresence>
+            {showFilters && (
+              <motion.div
+                initial={{ 
+                  opacity: 0,
+                  scaleY: 0,
+                  transformOrigin: "top"
+                }}
+                animate={{ 
+                  opacity: 1,
+                  scaleY: 1,
+                  transformOrigin: "top"
+                }}
+                exit={{ 
+                  opacity: 0,
+                  scaleY: 0,
+                  transformOrigin: "top"
+                }}
+                transition={{ 
+                  duration: 0.25,
+                  ease: [0.23, 1, 0.32, 1],
+                  opacity: { duration: 0.2 }
+                }}
+                className="overflow-hidden"
               >
-                Beginner
-              </button>
-              <button
-                onClick={() => setActiveSkillLevel(activeSkillLevel === 'littleLeague' ? null : 'littleLeague')}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                  activeSkillLevel === 'littleLeague'
-                    ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
-                    : 'bg-slate-800/50 text-slate-300 border border-slate-700 hover:bg-slate-700/50'
-                }`}
-              >
-                Little League
-              </button>
-              <button
-                onClick={() => setActiveSkillLevel(activeSkillLevel === 'highLevel' ? null : 'highLevel')}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                  activeSkillLevel === 'highLevel'
-                    ? 'bg-red-500/20 text-red-400 border border-red-500/30'
-                    : 'bg-slate-800/50 text-slate-300 border border-slate-700 hover:bg-slate-700/50'
-                }`}
-              >
-                High Level
-              </button>
-            </div>
+                <div className="bg-slate-800/30 border border-slate-700/50 rounded-lg p-4">
+                  <div className="flex flex-wrap gap-3 items-center">
+                    {/* Skill Level Filters */}
+                    <div className="flex gap-1">
+                      <span className="text-xs text-slate-400 mr-2 flex items-center">Skill Level:</span>
+                      <button
+                        onClick={() => setActiveSkillLevel(activeSkillLevel === 'beginner' ? null : 'beginner')}
+                        className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                          activeSkillLevel === 'beginner'
+                            ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                            : 'bg-slate-700/50 text-slate-300 border border-slate-600 hover:bg-slate-600/50'
+                        }`}
+                      >
+                        Beginner
+                      </button>
+                      <button
+                        onClick={() => setActiveSkillLevel(activeSkillLevel === 'littleLeague' ? null : 'littleLeague')}
+                        className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                          activeSkillLevel === 'littleLeague'
+                            ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
+                            : 'bg-slate-700/50 text-slate-300 border border-slate-600 hover:bg-slate-600/50'
+                        }`}
+                      >
+                        Little League
+                      </button>
+                      <button
+                        onClick={() => setActiveSkillLevel(activeSkillLevel === 'highLevel' ? null : 'highLevel')}
+                        className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                          activeSkillLevel === 'highLevel'
+                            ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+                            : 'bg-slate-700/50 text-slate-300 border border-slate-600 hover:bg-slate-600/50'
+                        }`}
+                      >
+                        High Level
+                      </button>
+                    </div>
 
-            {/* Divider */}
-            <div className="h-6 w-px bg-slate-600"></div>
+                    {/* Divider */}
+                    <div className="h-6 w-px bg-slate-600"></div>
 
-            {/* Favorites Filter */}
-            <button
-              onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                showFavoritesOnly
-                  ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                  : 'bg-slate-800/50 text-slate-300 border border-slate-700 hover:bg-slate-700/50'
-              }`}
-            >
-              <svg className="h-3 w-3" fill={showFavoritesOnly ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-              </svg>
-              Favorites
-            </button>
+                    {/* Other Filters */}
+                    <div className="flex gap-2 items-center">
+                      <span className="text-xs text-slate-400 mr-1">Quick Filters:</span>
+                      
+                      {/* Favorites Filter */}
+                      <button
+                        onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                          showFavoritesOnly
+                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                            : 'bg-slate-700/50 text-slate-300 border border-slate-600 hover:bg-slate-600/50'
+                        }`}
+                      >
+                        <svg className="h-3 w-3" fill={showFavoritesOnly ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                        </svg>
+                        Favorites
+                      </button>
 
-            {/* Popular Tags */}
-            {getAllTags().slice(0, 5).map(tag => (
-              <button
-                key={tag}
-                onClick={() => setActiveTag(activeTag === tag ? null : tag)}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                  activeTag === tag
-                    ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
-                    : 'bg-slate-800/50 text-slate-300 border border-slate-700 hover:bg-slate-700/50'
-                }`}
-              >
-                {tag}
-              </button>
-            ))}
-          </div>
+                      {/* Popular Tags */}
+                      {getAllTags().slice(0, 4).map(tag => (
+                        <button
+                          key={tag}
+                          onClick={() => setActiveTag(activeTag === tag ? null : tag)}
+                          className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                            activeTag === tag
+                              ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
+                              : 'bg-slate-700/50 text-slate-300 border border-slate-600 hover:bg-slate-600/50'
+                          }`}
+                        >
+                          {tag}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Clear All Filters */}
+                    {(activeSkillLevel || showFavoritesOnly || activeTag) && (
+                      <>
+                        <div className="h-6 w-px bg-slate-600"></div>
+                        <button
+                          onClick={() => {
+                            setActiveSkillLevel(null);
+                            setShowFavoritesOnly(false);
+                            setActiveTag(null);
+                          }}
+                          className="text-xs text-slate-400 hover:text-slate-200 underline"
+                        >
+                          Clear All
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </FadeInUp>
 
