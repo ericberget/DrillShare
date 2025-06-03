@@ -86,6 +86,10 @@ export function useAuth() {
           .then(() => {
             showToast('Starter videos added to your library!', 'success');
             console.log('Starter content seeding completed successfully');
+            // Refresh the page to show the new content
+            setTimeout(() => {
+              window.location.reload();
+            }, 1000);
           })
           .catch(seedError => {
             showToast('Your account is ready! You can add your own videos anytime.', 'error');
@@ -210,6 +214,10 @@ export function useAuth() {
           .then(() => {
             showToast('Starter videos added to your library!', 'success');
             console.log('Starter content seeding completed successfully');
+            // Refresh the page to show the new content
+            setTimeout(() => {
+              window.location.reload();
+            }, 1000);
           })
           .catch(seedError => {
             showToast('Your account is ready! You can add your own videos anytime.', 'error');

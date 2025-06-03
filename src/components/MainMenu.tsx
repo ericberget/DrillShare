@@ -23,7 +23,7 @@ function MenuItem({ href, icon, title, description, gradient }: MenuItemProps) {
               {icon}
             </div>
             <div className="flex-1">
-              <h3 className="text-xl font-bold text-slate-100 mb-2 group-hover:text-white transition-colors">
+              <h3 className="text-xl font-bold text-slate-100 mb-2 group-hover:text-white transition-colors font-oswald">
                 {title}
               </h3>
             </div>

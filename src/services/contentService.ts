@@ -257,28 +257,48 @@ export const updateContentLastViewed = async (contentId: string): Promise<void> 
 // Seed starter content for new users
 export const seedUserStarterContent = async (userId: string): Promise<void> => {
   try {
-    console.log(`Starting starter content seeding for user ${userId}`);
+    console.log(`🔥 Starting starter content seeding for user ${userId}`);
+    console.log(`🔥 Current timestamp: ${new Date().toISOString()}`);
     
     // First check if the user already has any content
+    console.log(`🔥 Checking if user ${userId} already has content...`);
     const userContent = await getUserContent(userId);
-    console.log(`User has ${userContent.length} existing content items`);
+    console.log(`🔥 User has ${userContent.length} existing content items`);
+    console.log(`🔥 Existing content:`, userContent.map(c => ({ id: c.id, title: c.title })));
 
     // Skip if user already has content
     if (userContent.length > 0) {
-      console.log('User already has content - skipping starter content seeding');
+      console.log('🔥 User already has content - skipping starter content seeding');
       return;
     }
+
+    console.log(`🔥 User has no content - proceeding with starter video seeding`);
 
     // Define starter videos for new users
     const starterVideos = [
       {
-        title: 'Essential Baseball Fundamentals',
-        description: 'Learn the basic fundamentals every baseball player needs to master. This starter video will help you build a strong foundation for your training.',
+        title: 'Stop Casting',
+        description: 'Good demo fo what casting the bat is, and how to fix.',
         url: 'https://www.youtube.com/watch?v=4b7AEunZS2Q',
         youtubeId: '4b7AEunZS2Q',
         thumbnailUrl: `https://img.youtube.com/vi/4b7AEunZS2Q/maxresdefault.jpg`,
         category: 'hitting' as const,
-        tags: ['starter', 'fundamentals', 'basics'],
+        tags: ['fundamentals', 'basics'],
+        skillLevel: 'beginner' as const,
+        orientation: 'vertical' as const,
+        favorite: false,
+        userId: userId,
+        isSample: false,
+        isStarter: true // Mark as starter content
+      },
+      {
+        title: 'Fix Bat Drag', 
+        description: 'Simple drill to remove common issue of bat drag.',
+        url: 'https://www.youtube.com/watch?v=rw7rZu160E0',
+        youtubeId: 'rw7rZu160E0',
+        thumbnailUrl: `https://img.youtube.com/vi/rw7rZu160E0/maxresdefault.jpg`,
+        category: 'pitching' as const,
+        tags: ['swing mechanics'],
         skillLevel: 'beginner' as const,
         orientation: 'landscape' as const,
         favorite: false,
@@ -287,14 +307,14 @@ export const seedUserStarterContent = async (userId: string): Promise<void> => {
         isStarter: true // Mark as starter content
       },
       {
-        title: 'Baseball Training Techniques', 
-        description: 'Discover essential training techniques and tips to improve your baseball skills. Perfect for players just starting their journey with DrillShare.',
-        url: 'https://www.youtube.com/watch?v=rw7rZu160E0',
-        youtubeId: 'rw7rZu160E0',
-        thumbnailUrl: `https://img.youtube.com/vi/rw7rZu160E0/maxresdefault.jpg`,
-        category: 'pitching' as const,
-        tags: ['starter', 'training', 'techniques'],
-        skillLevel: 'beginner' as const,
+        title: 'Create Rhythm',
+        description: 'Perfect illustration of right left for mid-level and high-level infielders. Jump to the middle of the video to get to the meat of it.',
+        url: 'https://youtu.be/eD5FBGs6jMY?si=ppTX6F8gMfdYXXEx&t=195',
+        youtubeId: 'eD5FBGs6jMY',
+        thumbnailUrl: `https://img.youtube.com/vi/eD5FBGs6jMY/maxresdefault.jpg`,
+        category: 'infield' as const,
+        tags: ['rhythm', 'infield', 'high school', 'shortstop'],
+        skillLevel: 'highLevel' as const,
         orientation: 'landscape' as const,
         favorite: false,
         userId: userId,
@@ -303,10 +323,16 @@ export const seedUserStarterContent = async (userId: string): Promise<void> => {
       }
     ];
     
+    console.log(`🔥 About to create ${starterVideos.length} starter videos for user ${userId}`);
+    
     // Create starter content for the user
     let successCount = 0;
-    for (const video of starterVideos) {
+    for (let i = 0; i < starterVideos.length; i++) {
+      const video = starterVideos[i];
       try {
+        console.log(`🔥 Creating starter video ${i + 1}/${starterVideos.length}: "${video.title}"`);
+        console.log(`🔥 Video data:`, JSON.stringify(video, null, 2));
+        
         const contentRef = collection(db, CONTENT_COLLECTION);
         const docRef = await addDoc(contentRef, {
           ...video,
@@ -315,20 +341,27 @@ export const seedUserStarterContent = async (userId: string): Promise<void> => {
         });
         
         successCount++;
-        console.log(`Successfully created starter video ${successCount}/${starterVideos.length} (ID: ${docRef.id}) for user ${userId}`);
+        console.log(`🔥 ✅ Successfully created starter video ${successCount}/${starterVideos.length} (ID: ${docRef.id}) for user ${userId}`);
       } catch (itemError) {
-        console.error(`Failed to create starter video for user ${userId}:`, itemError);
+        console.error(`🔥 ❌ Failed to create starter video "${video.title}" for user ${userId}:`, itemError);
         // Continue with other videos even if one fails
       }
     }
     
-    console.log(`Successfully seeded ${successCount}/${starterVideos.length} starter videos for user ${userId}`);
+    console.log(`🔥 🎉 Successfully seeded ${successCount}/${starterVideos.length} starter videos for user ${userId}`);
     
     if (successCount > 0) {
-      console.log(`New user ${userId} started with ${successCount} helpful training videos!`);
+      console.log(`🔥 🎊 New user ${userId} started with ${successCount} helpful training videos!`);
+    } else {
+      console.error(`🔥 ⚠️ WARNING: No starter videos were created for user ${userId}`);
     }
   } catch (error) {
-    console.error('Error in seedUserStarterContent:', error);
+    console.error('🔥 💥 Error in seedUserStarterContent:', error);
+    console.error('🔥 💥 Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : 'No stack trace',
+      userId
+    });
     throw error;
   }
 };
