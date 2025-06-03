@@ -66,6 +66,7 @@ export function ContentGrid({ onAddContent, onSelectContent, onEditContent }: Co
   const [showTeamContentOnly, setShowTeamContentOnly] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [programSettings, setProgramSettings] = useState<any>(null);
+  const [activeSkillLevel, setActiveSkillLevel] = useState<SkillLevel | null>(null);
 
   // Load program settings when component mounts
   useEffect(() => {
@@ -122,6 +123,11 @@ export function ContentGrid({ onAddContent, onSelectContent, onEditContent }: Co
       filtered = filtered.filter(item => item.tags.includes(activeTag));
     }
     
+    // Apply skill level filter
+    if (activeSkillLevel) {
+      filtered = filtered.filter(item => item.skillLevel === activeSkillLevel);
+    }
+    
     return filtered;
   };
 
@@ -167,10 +173,10 @@ export function ContentGrid({ onAddContent, onSelectContent, onEditContent }: Co
     <div className="space-y-6">
       <FadeInUp>
         {/* Compact Search & Filters - Left Side */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          {/* Left Side - Compact Search & Quick Filters */}
-          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-            {/* Compact Search Bar */}
+        <div className="flex flex-col gap-4">
+          {/* Top Row - Search and Action Buttons */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            {/* Left Side - Search Bar */}
             <div className="relative">
               <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -194,10 +200,64 @@ export function ContentGrid({ onAddContent, onSelectContent, onEditContent }: Co
               )}
             </div>
 
-            {/* Favorites Filter Only */}
+            {/* Right Side - Action Buttons */}
+            <div className="flex gap-3 w-full sm:w-auto">
+              <Button onClick={onAddContent} className="w-full sm:w-auto bg-white hover:bg-slate-100 text-slate-900">
+                + Add Content
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => window.location.href = '/collections'} 
+                className="w-full sm:w-auto bg-slate-600 hover:bg-slate-700 text-white border-0"
+              >
+                Collect & Share
+              </Button>
+            </div>
+          </div>
+
+          {/* Bottom Row - Filter Chips */}
+          <div className="flex flex-wrap gap-2 items-center">
+            {/* Skill Level Filters */}
+            <div className="flex gap-1">
+              <button
+                onClick={() => setActiveSkillLevel(activeSkillLevel === 'beginner' ? null : 'beginner')}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                  activeSkillLevel === 'beginner'
+                    ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                    : 'bg-slate-800/50 text-slate-300 border border-slate-700 hover:bg-slate-700/50'
+                }`}
+              >
+                Beginner
+              </button>
+              <button
+                onClick={() => setActiveSkillLevel(activeSkillLevel === 'littleLeague' ? null : 'littleLeague')}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                  activeSkillLevel === 'littleLeague'
+                    ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
+                    : 'bg-slate-800/50 text-slate-300 border border-slate-700 hover:bg-slate-700/50'
+                }`}
+              >
+                Little League
+              </button>
+              <button
+                onClick={() => setActiveSkillLevel(activeSkillLevel === 'highLevel' ? null : 'highLevel')}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                  activeSkillLevel === 'highLevel'
+                    ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+                    : 'bg-slate-800/50 text-slate-300 border border-slate-700 hover:bg-slate-700/50'
+                }`}
+              >
+                High Level
+              </button>
+            </div>
+
+            {/* Divider */}
+            <div className="h-6 w-px bg-slate-600"></div>
+
+            {/* Favorites Filter */}
             <button
               onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-xs font-medium transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
                 showFavoritesOnly
                   ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
                   : 'bg-slate-800/50 text-slate-300 border border-slate-700 hover:bg-slate-700/50'
@@ -208,20 +268,21 @@ export function ContentGrid({ onAddContent, onSelectContent, onEditContent }: Co
               </svg>
               Favorites
             </button>
-          </div>
 
-          {/* Right Side - Action Buttons */}
-          <div className="flex gap-3 w-full sm:w-auto">
-            <Button onClick={onAddContent} className="w-full sm:w-auto bg-white hover:bg-slate-100 text-slate-900">
-              + Add Content
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => window.location.href = '/collections'} 
-              className="w-full sm:w-auto bg-slate-600 hover:bg-slate-700 text-white border-0"
-            >
-              Collect & Share
-            </Button>
+            {/* Popular Tags */}
+            {getAllTags().slice(0, 5).map(tag => (
+              <button
+                key={tag}
+                onClick={() => setActiveTag(activeTag === tag ? null : tag)}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                  activeTag === tag
+                    ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
+                    : 'bg-slate-800/50 text-slate-300 border border-slate-700 hover:bg-slate-700/50'
+                }`}
+              >
+                {tag}
+              </button>
+            ))}
           </div>
         </div>
       </FadeInUp>
@@ -271,7 +332,7 @@ export function ContentGrid({ onAddContent, onSelectContent, onEditContent }: Co
         <ContentLoader message="Loading your content..." />
       ) : (
         <div className="mt-12">
-          <CategoryTransition categoryKey={`${activeCategory}-${activeTag}-${showFavoritesOnly}-${showTeamContentOnly}`}>
+          <CategoryTransition categoryKey={`${activeCategory}-${activeTag}-${showFavoritesOnly}-${showTeamContentOnly}-${activeSkillLevel}`}>
             <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {getFilteredContent().map((content, index) => (
                 <motion.div

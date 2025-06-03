@@ -320,6 +320,21 @@ export const seedUserStarterContent = async (userId: string): Promise<void> => {
         userId: userId,
         isSample: false,
         isStarter: true // Mark as starter content
+      },
+      {
+        title: 'Youth Pitching',
+        description: 'A longer video on pitching basics.',
+        url: 'https://youtu.be/4NOo7JSK6eA?si=vJyDsF4JXbknS1Mm&t=59',
+        youtubeId: '4NOo7JSK6eA',
+        thumbnailUrl: `https://img.youtube.com/vi/4NOo7JSK6eA/maxresdefault.jpg`,
+        category: 'pitching' as const,
+        tags: ['8u'],
+        skillLevel: 'beginner' as const,
+        orientation: 'landscape' as const,
+        favorite: false,
+        userId: userId,
+        isSample: false,
+        isStarter: true // Mark as starter content
       }
     ];
     
