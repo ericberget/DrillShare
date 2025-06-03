@@ -14,6 +14,7 @@ import {
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import { seedUserSampleContent } from '@/services/contentService';
+import { createUserDocument, createOrUpdateUserDocument } from '@/services/userService';
 import { useToast } from '@/contexts/ToastContext';
 
 export interface AuthError {
@@ -34,9 +35,21 @@ export function useAuth() {
     
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      
       if (displayName) {
-        await firebaseUpdateProfile(userCredential.user, { displayName });
+        await firebaseUpdateProfile(user, { displayName });
       }
+      
+      // Create user document in Firestore
+      showToast('Setting up your profile...', 'loading', 0, true);
+      await createUserDocument(
+        user.uid,
+        user.email || email,
+        displayName || user.displayName || 'User',
+        user.photoURL || undefined,
+        user.emailVerified
+      );
       
       // Show toast that we're preparing content
       showToast('Setting up your content...', 'loading', 0, true);
@@ -80,6 +93,18 @@ export function useAuth() {
     
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      
+      // Create or update user document in Firestore
+      showToast('Setting up your profile...', 'loading', 0, true);
+      await createOrUpdateUserDocument(
+        user.uid,
+        user.email || email,
+        user.displayName || 'User',
+        user.photoURL || undefined,
+        user.emailVerified
+      );
+      
       showToast('Sign in successful!', 'success');
       router.push('/');
       return userCredential.user;
@@ -132,6 +157,17 @@ export function useAuth() {
         });
         throw authError;
       }
+
+      // Create or update user document in Firestore
+      const user = userCredential.user;
+      showToast('Setting up your profile...', 'loading', 0, true);
+      await createOrUpdateUserDocument(
+        user.uid,
+        user.email || '',
+        user.displayName || 'User',
+        user.photoURL || undefined,
+        user.emailVerified
+      );
 
       // Show toast that we're preparing content
       showToast('Setting up your content...', 'loading', 0, true);

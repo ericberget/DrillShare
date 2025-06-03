@@ -11,7 +11,7 @@ import { useAuth } from '@/hooks/useAuth';
 export default function SignIn() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { signIn, loading, error } = useAuth();
+  const { signIn, signInWithGoogle, loading, error } = useAuth();
 
   const handleEmailSignIn = async (e: React.FormEvent) => {
     e.preventDefault();

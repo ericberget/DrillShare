@@ -14,7 +14,8 @@ interface ToastState {
 }
 
 export type ToastContextType = {
-  toast: (props: { title: string; description: string; variant?: 'default' | 'destructive' | 'success' }) => void;
+  showToast: (message: string, variant?: ToastVariant, duration?: number, loading?: boolean) => void;
+  hideToast: () => void;
 };
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
