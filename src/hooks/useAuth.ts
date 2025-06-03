@@ -31,22 +31,45 @@ export function useAuth() {
   const signUp = async (email: string, password: string, displayName?: string) => {
     setLoading(true);
     setError(null);
+    
+    // Input validation before calling Firebase
+    if (!email || !email.trim()) {
+      setError({ code: 'invalid-email', message: 'Email is required' });
+      setLoading(false);
+      return;
+    }
+    
+    if (!password || password.length < 6) {
+      setError({ code: 'weak-password', message: 'Password must be at least 6 characters' });
+      setLoading(false);
+      return;
+    }
+    
+    // Basic email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      setError({ code: 'invalid-email', message: 'Please enter a valid email address' });
+      setLoading(false);
+      return;
+    }
+    
     showToast('Creating your account...', 'loading', 0, true);
     
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(auth, email.trim(), password);
       const user = userCredential.user;
       
-      if (displayName) {
-        await firebaseUpdateProfile(user, { displayName });
+      // Only update profile if displayName is provided and not empty
+      if (displayName && displayName.trim()) {
+        await firebaseUpdateProfile(user, { displayName: displayName.trim() });
       }
       
       // Create user document in Firestore
       showToast('Setting up your profile...', 'loading', 0, true);
       await createUserDocument(
         user.uid,
-        user.email || email,
-        displayName || user.displayName || 'User',
+        user.email || email.trim(),
+        displayName?.trim() || user.displayName || 'User',
         user.photoURL || undefined,
         user.emailVerified
       );
@@ -76,6 +99,11 @@ export function useAuth() {
       return userCredential.user;
     } catch (err: any) {
       hideToast();
+      console.error('Sign up error details:', {
+        code: err.code,
+        message: err.message,
+        fullError: err
+      });
       setError({
         code: err.code,
         message: getErrorMessage(err.code)
@@ -276,6 +304,8 @@ function getErrorMessage(code: string): string {
       return 'An account with this email already exists';
     case 'auth/invalid-email':
       return 'Invalid email address';
+    case 'auth/invalid-argument':
+      return 'Invalid input provided. Please check your email and password.';
     case 'auth/operation-not-allowed':
       return 'Operation not allowed';
     case 'auth/weak-password':
