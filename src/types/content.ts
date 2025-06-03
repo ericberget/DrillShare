@@ -10,6 +10,7 @@ export interface ContentItem {
   title: string;
   description?: string;
   url: string;
+  youtubeId?: string;
   thumbnailUrl?: string;
   category: ContentCategory;
   skillLevel: SkillLevel;
@@ -18,6 +19,7 @@ export interface ContentItem {
   createdAt: Timestamp;
   updatedAt: Timestamp;
   isSample: boolean;
+  isStarter?: boolean;  // Flag to indicate if this is starter content for new users
   favorite?: boolean;
   lastViewed?: number;
   isTeamContent?: boolean;  // Flag to indicate if this is team content

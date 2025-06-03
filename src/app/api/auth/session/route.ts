@@ -1,9 +1,15 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { auth } from '@/lib/firebase-admin';
+import { getAdminAuth } from '@/lib/firebase-admin';
 
 export async function POST(request: Request) {
   try {
+    const auth = getAdminAuth();
+    if (!auth) {
+      console.error('Firebase Admin Auth not available');
+      return NextResponse.json({ error: 'Service unavailable' }, { status: 503 });
+    }
+
     const { idToken } = await request.json();
     
     // Verify the ID token

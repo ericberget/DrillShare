@@ -49,10 +49,12 @@ export function ContentProvider({ children }: { children: React.ReactNode }) {
           showToast('Loading your content...', 'loading', 0, true);
         }
         
+        // DISABLED: Sample content loading is now disabled
         // Always load sample content
-        const sampleContent = await getSampleContent();
-        setSampleContentItems(sampleContent);
-        console.log(`Loaded ${sampleContent.length} sample content items`);
+        // const sampleContent = await getSampleContent();
+        // setSampleContentItems(sampleContent);
+        // console.log(`Loaded ${sampleContent.length} sample content items`);
+        setSampleContentItems([]);
         
         // If user is logged in, load their content
         if (user) {
@@ -61,7 +63,7 @@ export function ContentProvider({ children }: { children: React.ReactNode }) {
           setUserContentItems(userContent);
           console.log(`Loaded ${userContent.length} user content items`);
           
-          // Get all content (user's content + sample content)
+          // Get all content (just user's content now, no sample content)
           const allContent = await getAllContent(user.uid);
           setContentItems(allContent);
           console.log(`Loaded ${allContent.length} total content items`);
@@ -69,9 +71,9 @@ export function ContentProvider({ children }: { children: React.ReactNode }) {
           // Hide the loading toast
           hideToast();
         } else {
-          // Just show sample content for non-logged in users
-          setContentItems(sampleContent);
-          console.log('No user logged in, only showing sample content');
+          // No content for non-logged in users (no sample content)
+          setContentItems([]);
+          console.log('No user logged in, showing empty content list');
         }
       } catch (error) {
         console.error('Error loading content:', error);

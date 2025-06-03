@@ -72,13 +72,8 @@ export const getAllContent = async (userId?: string): Promise<ContentItem[]> => 
     console.log('Getting all content for userId:', userId);
     const contentRef = collection(db, CONTENT_COLLECTION);
     
-    // We need to run two separate queries and combine the results
-    // since Firestore doesn't support OR queries directly
-    
     if (userId) {
-      // If user is logged in, get their content and sample content
-      
-      // First query: Get user's own content
+      // If user is logged in, get only their content (no sample content)
       const userContentQuery = query(
         contentRef,
         where('userId', '==', userId),
@@ -86,47 +81,19 @@ export const getAllContent = async (userId?: string): Promise<ContentItem[]> => 
         orderBy('createdAt', 'desc')
       );
       
-      // Second query: Get sample content
-      const sampleContentQuery = query(
-        contentRef,
-        where('isSample', '==', true),
-        orderBy('createdAt', 'desc')
-      );
-      
-      // Execute both queries
-      const [userSnapshot, sampleSnapshot] = await Promise.all([
-        getDocs(userContentQuery),
-        getDocs(sampleContentQuery)
-      ]);
-      
-      // Combine the results
+      const userSnapshot = await getDocs(userContentQuery);
       const userContent = userSnapshot.docs.map(doc => ({ 
         id: doc.id, 
         ...doc.data() 
       }));
       
-      const sampleContent = sampleSnapshot.docs.map(doc => ({ 
-        id: doc.id, 
-        ...doc.data() 
-      }));
+      console.log(`Retrieved ${userContent.length} user content items (sample content disabled)`);
       
-      console.log(`Retrieved ${userContent.length} user content items and ${sampleContent.length} sample content items`);
-      
-      return [...userContent, ...sampleContent] as ContentItem[];
+      return userContent as ContentItem[];
     } else {
-      // If no user, only get sample content
-      const q = query(
-        contentRef,
-        where('isSample', '==', true),
-        orderBy('createdAt', 'desc')
-      );
-      
-      const querySnapshot = await getDocs(q);
-      
-      return querySnapshot.docs.map(doc => ({ 
-        id: doc.id, 
-        ...doc.data() 
-      })) as ContentItem[];
+      // If no user, return empty array (no sample content)
+      console.log('No user logged in - returning empty content array (sample content disabled)');
+      return [];
     }
   } catch (error) {
     console.error('Error getting all content:', error);
@@ -287,86 +254,93 @@ export const updateContentLastViewed = async (contentId: string): Promise<void> 
   }
 };
 
-// Seed sample content for a specific user
-export const seedUserSampleContent = async (userId: string): Promise<void> => {
+// Seed starter content for new users
+export const seedUserStarterContent = async (userId: string): Promise<void> => {
   try {
-    console.log(`Starting content seeding for user ${userId}`);
+    console.log(`Starting starter content seeding for user ${userId}`);
     
     // First check if the user already has any content
     const userContent = await getUserContent(userId);
     console.log(`User has ${userContent.length} existing content items`);
-    
-    // If user already has content, don't seed
+
+    // Skip if user already has content
     if (userContent.length > 0) {
-      console.log('User already has content, skipping sample content seeding');
+      console.log('User already has content - skipping starter content seeding');
       return;
     }
-    
-    // Get existing sample content to use as templates
-    const contentRef = collection(db, CONTENT_COLLECTION);
-    const q = query(contentRef, where('isSample', '==', true));
-    const querySnapshot = await getDocs(q);
-    const sampleContent = querySnapshot.docs.map(doc => ({ 
-      id: doc.id, 
-      ...doc.data() 
-    }));
-    
-    console.log(`Found ${sampleContent.length} sample content items to seed`);
-    
-    // If no sample content exists, create it first
-    if (sampleContent.length === 0) {
-      console.log('No sample content found, creating sample content first');
-      const response = await fetch('/api/seed', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.text();
-        console.error('Failed to seed sample content:', errorData);
-        throw new Error(`Failed to seed sample content: ${errorData}`);
+
+    // Define starter videos for new users
+    const starterVideos = [
+      {
+        title: 'Essential Baseball Fundamentals',
+        description: 'Learn the basic fundamentals every baseball player needs to master. This starter video will help you build a strong foundation for your training.',
+        url: 'https://www.youtube.com/watch?v=4b7AEunZS2Q',
+        youtubeId: '4b7AEunZS2Q',
+        thumbnailUrl: `https://img.youtube.com/vi/4b7AEunZS2Q/maxresdefault.jpg`,
+        category: 'hitting' as const,
+        tags: ['starter', 'fundamentals', 'basics'],
+        skillLevel: 'beginner' as const,
+        orientation: 'landscape' as const,
+        favorite: false,
+        userId: userId,
+        isSample: false,
+        isStarter: true // Mark as starter content
+      },
+      {
+        title: 'Baseball Training Techniques', 
+        description: 'Discover essential training techniques and tips to improve your baseball skills. Perfect for players just starting their journey with DrillShare.',
+        url: 'https://www.youtube.com/watch?v=rw7rZu160E0',
+        youtubeId: 'rw7rZu160E0',
+        thumbnailUrl: `https://img.youtube.com/vi/rw7rZu160E0/maxresdefault.jpg`,
+        category: 'pitching' as const,
+        tags: ['starter', 'training', 'techniques'],
+        skillLevel: 'beginner' as const,
+        orientation: 'landscape' as const,
+        favorite: false,
+        userId: userId,
+        isSample: false,
+        isStarter: true // Mark as starter content
       }
-      
-      // Get the newly created sample content
-      const newQuerySnapshot = await getDocs(q);
-      const newSampleContent = newQuerySnapshot.docs.map(doc => ({ 
-        id: doc.id, 
-        ...doc.data() 
-      }));
-      console.log(`Retrieved ${newSampleContent.length} new sample content items`);
-      sampleContent.push(...newSampleContent);
-    }
+    ];
     
-    // Create copies of sample content for the user
+    // Create starter content for the user
     let successCount = 0;
-    for (const sample of sampleContent) {
+    for (const video of starterVideos) {
       try {
-        const userContent = {
-          ...sample,
-          id: undefined, // Remove id to create new document
-          userId, // Set to the new user's ID
-          isSample: false, // Mark as regular content
-          createdAt: Timestamp.now(),
-          updatedAt: Timestamp.now()
-        };
-        
         const contentRef = collection(db, CONTENT_COLLECTION);
-        await addDoc(contentRef, userContent);
+        const docRef = await addDoc(contentRef, {
+          ...video,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+        
         successCount++;
-        console.log(`Successfully created content item ${successCount}/${sampleContent.length} for user ${userId}`);
+        console.log(`Successfully created starter video ${successCount}/${starterVideos.length} (ID: ${docRef.id}) for user ${userId}`);
       } catch (itemError) {
-        console.error(`Failed to create content item for user ${userId}:`, itemError);
-        // Continue with other items even if one fails
+        console.error(`Failed to create starter video for user ${userId}:`, itemError);
+        // Continue with other videos even if one fails
       }
     }
     
-    console.log(`Successfully seeded ${successCount}/${sampleContent.length} content items for user ${userId}`);
+    console.log(`Successfully seeded ${successCount}/${starterVideos.length} starter videos for user ${userId}`);
     
-    if (successCount === 0) {
-      throw new Error('Failed to seed any content items');
+    if (successCount > 0) {
+      console.log(`New user ${userId} started with ${successCount} helpful training videos!`);
     }
+  } catch (error) {
+    console.error('Error in seedUserStarterContent:', error);
+    throw error;
+  }
+};
+
+// Legacy function - now disabled
+export const seedUserSampleContent = async (userId: string): Promise<void> => {
+  try {
+    console.log(`Legacy sample content seeding called for user ${userId}`);
+    console.log('Sample content seeding is disabled - users start with starter videos');
+    
+    // Redirect to new starter content seeding
+    await seedUserStarterContent(userId);
   } catch (error) {
     console.error('Error in seedUserSampleContent:', error);
     throw error;

@@ -13,7 +13,7 @@ import {
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
-import { seedUserSampleContent } from '@/services/contentService';
+import { seedUserStarterContent } from '@/services/contentService';
 import { createUserDocument, createOrUpdateUserDocument } from '@/services/userService';
 import { useToast } from '@/contexts/ToastContext';
 
@@ -52,21 +52,21 @@ export function useAuth() {
       );
       
       // Show toast that we're preparing content
-      showToast('Setting up your content...', 'loading', 0, true);
+      showToast('Adding starter videos to your library...', 'loading', 0, true);
       
       // Navigate immediately
       router.push('/');
       
       // Handle content seeding in the background
       setTimeout(() => {
-        seedUserSampleContent(userCredential.user.uid)
+        seedUserStarterContent(userCredential.user.uid)
           .then(() => {
-            showToast('Your content is ready!', 'success');
-            console.log('Content seeding completed successfully');
+            showToast('Starter videos added to your library!', 'success');
+            console.log('Starter content seeding completed successfully');
           })
           .catch(seedError => {
-            showToast('Your account is ready, but there was an issue preparing sample content', 'error');
-            console.error('Error seeding user content:', {
+            showToast('Your account is ready! You can add your own videos anytime.', 'error');
+            console.error('Error seeding starter content:', {
               error: seedError,
               userId: userCredential.user.uid
             });
@@ -170,7 +170,7 @@ export function useAuth() {
       );
 
       // Show toast that we're preparing content
-      showToast('Setting up your content...', 'loading', 0, true);
+      showToast('Adding starter videos to your library...', 'loading', 0, true);
 
       // Navigate immediately after authentication
       console.log('Navigating to home page...');
@@ -178,14 +178,14 @@ export function useAuth() {
       
       // Then handle the content seeding in the background
       setTimeout(() => {
-        seedUserSampleContent(userCredential.user.uid)
+        seedUserStarterContent(userCredential.user.uid)
           .then(() => {
-            showToast('Your content is ready!', 'success');
-            console.log('Content seeding completed successfully');
+            showToast('Starter videos added to your library!', 'success');
+            console.log('Starter content seeding completed successfully');
           })
           .catch(seedError => {
-            showToast('Your account is ready, but there was an issue preparing sample content', 'error');
-            console.error('Error seeding user content:', {
+            showToast('Your account is ready! You can add your own videos anytime.', 'error');
+            console.error('Error seeding starter content:', {
               error: seedError,
               userId: userCredential.user.uid
             });

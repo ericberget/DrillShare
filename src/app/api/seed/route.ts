@@ -23,8 +23,15 @@ async function createContent(content: any) {
 // This route will seed the database with sample content
 export async function GET() {
   try {
-    console.log('Starting sample content seeding...');
+    console.log('Sample content seeding request received...');
     
+    // DISABLED: Sample content seeding is now disabled
+    return NextResponse.json({
+      success: false,
+      message: 'Sample content seeding has been disabled. Users now start with empty libraries.',
+      disabled: true
+    });
+
     // First check if we already have sample content
     const existingSamples = await getSampleContent();
     console.log(`Found ${existingSamples.length} existing sample items`);
@@ -59,8 +66,8 @@ export async function GET() {
     console.error('Error seeding database:', error);
     return NextResponse.json({
       success: false,
-      message: 'Failed to seed database',
-      error: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+      message: 'Sample content seeding is disabled',
+      error: 'Sample content functionality has been removed'
+    }, { status: 501 });
   }
 } 

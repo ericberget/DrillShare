@@ -16,104 +16,11 @@ import Link from 'next/link';
 import Image from 'next/image';
 
 export default function DemoPage() {
-  // Sample videos with the provided YouTube links
+  // DISABLED: Sample videos removed - users now start with clean libraries
   const sampleVideos = {
-    hitting: [
-      {
-        id: 'demo-1',
-        title: 'Hitting Mechanics Fundamentals',
-        url: 'https://www.youtube.com/watch?v=hoaiArCfav4',
-        category: 'hitting',
-        skillLevel: 'Little League',
-        teachingCue: 'Essential hitting mechanics for developing players',
-        tags: ['Little League', 'Mechanics', 'Fundamentals'],
-        favorite: false
-      },
-      {
-        id: 'demo-2',
-        title: 'Fixing Casting in Your Swing',
-        url: 'https://www.youtube.com/watch?v=GsP74PgqgPk',
-        category: 'hitting',
-        skillLevel: 'Little League',
-        teachingCue: 'How to identify and correct casting in the swing',
-        tags: ['Little League', 'Casting', 'Mechanics'],
-        favorite: true
-      },
-      {
-        id: 'demo-7',
-        title: 'Bat Drag Correction Techniques',
-        url: 'https://www.youtube.com/watch?v=rw7rZu160E0&t=431s',
-        category: 'hitting',
-        skillLevel: 'Intermediate',
-        teachingCue: 'Learn to identify and fix bat drag in your swing',
-        tags: ['Bat Drag', 'Mechanics', 'Swing Fix'],
-        favorite: false
-      },
-      {
-        id: 'demo-8',
-        title: 'Optimal Bat Path Training',
-        url: 'https://www.youtube.com/watch?v=-RTV8LHHFvI',
-        category: 'hitting',
-        skillLevel: 'Advanced',
-        teachingCue: 'Understanding and developing the proper bat path through the zone',
-        tags: ['Bat Path', 'Advanced', 'Swing Mechanics'],
-        favorite: true
-      },
-      {
-        id: 'demo-9',
-        title: 'Youth Baseball Hitting Tips - Basic Concepts for beginner players',
-        url: 'https://www.youtube.com/watch?v=tBBjgzEGfRw',
-        category: 'hitting',
-        skillLevel: 'Little League',
-        teachingCue: 'Basic hitting concepts and fundamentals for young players',
-        tags: ['Youth', 'Basics', 'Fundamentals'],
-        favorite: false
-      }
-    ],
-    pitching: [
-      {
-        id: 'demo-3',
-        title: 'A Guide to Youth Pitching',
-        url: 'https://www.youtube.com/watch?v=4NOo7JSK6eA',
-        category: 'pitching',
-        skillLevel: 'Little League',
-        teachingCue: 'Essential pitching fundamentals for young players',
-        tags: ['Little League', 'Youth Pitching', 'Fundamentals'],
-        favorite: false
-      },
-      {
-        id: 'demo-10',
-        title: 'Pitching Mechanics Masterclass',
-        url: 'https://www.youtube.com/watch?v=JvsKsHS3cxQ',
-        category: 'pitching',
-        skillLevel: 'Advanced',
-        teachingCue: 'Advanced pitching mechanics and delivery techniques',
-        tags: ['Mechanics', 'Advanced', 'Delivery'],
-        favorite: true
-      }
-    ],
-    infield: [
-      {
-        id: 'demo-5',
-        title: 'Double Play Fundamentals',
-        url: 'https://youtu.be/DZcRRrq6jRI?si=xyWVKitbQ5bwqXVf&t=766',
-        category: 'infield',
-        skillLevel: 'High Level',
-        teachingCue: 'Quick hands and footwork for turning two',
-        tags: ['Double Play', 'Drills', 'Fundamentals'],
-        favorite: true
-      },
-      {
-        id: 'demo-6',
-        title: 'Infield Training - 12U Skills',
-        url: 'https://www.youtube.com/watch?v=eD5FBGs6jMY',
-        category: 'infield',
-        skillLevel: 'Little League',
-        teachingCue: 'Essential infield skills and drills for Little League players',
-        tags: ['Little League', 'Infield Skills', 'Training'],
-        favorite: false
-      }
-    ],
+    hitting: [],
+    pitching: [],
+    infield: [],
     catching: [],
     other: []
   };
