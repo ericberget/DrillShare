@@ -206,14 +206,14 @@ export function ContentGrid({ onAddContent, onSelectContent, onEditContent }: Co
               {/* Filters Toggle Button */}
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 transform ${
                   showFilters || activeSkillLevel || showFavoritesOnly || activeTag
-                    ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                    : 'bg-slate-800/50 text-slate-300 border border-slate-700 hover:bg-slate-700/50'
+                    ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30 shadow-lg shadow-blue-500/10'
+                    : 'bg-slate-800/50 text-slate-300 border border-slate-700 hover:bg-blue-500/8 hover:border-blue-500/15 hover:text-blue-300 hover:shadow-md hover:shadow-blue-500/5 hover:scale-105'
                 }`}
               >
                 <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
                 Filters
                 {(activeSkillLevel || showFavoritesOnly || activeTag) && (
@@ -275,30 +275,30 @@ export function ContentGrid({ onAddContent, onSelectContent, onEditContent }: Co
                       <span className="text-xs text-slate-400 mr-2 flex items-center">Skill Level:</span>
                       <button
                         onClick={() => setActiveSkillLevel(activeSkillLevel === 'beginner' ? null : 'beginner')}
-                        className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                        className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 transform ${
                           activeSkillLevel === 'beginner'
-                            ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                            : 'bg-slate-700/50 text-slate-300 border border-slate-600 hover:bg-slate-600/50'
+                            ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30 shadow-lg shadow-blue-500/10'
+                            : 'bg-slate-700/50 text-slate-300 border border-slate-600 hover:bg-blue-500/10 hover:border-blue-500/20 hover:text-blue-300 hover:shadow-md hover:shadow-blue-500/5 hover:scale-105'
                         }`}
                       >
                         Beginner
                       </button>
                       <button
                         onClick={() => setActiveSkillLevel(activeSkillLevel === 'littleLeague' ? null : 'littleLeague')}
-                        className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                        className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 transform ${
                           activeSkillLevel === 'littleLeague'
-                            ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
-                            : 'bg-slate-700/50 text-slate-300 border border-slate-600 hover:bg-slate-600/50'
+                            ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 shadow-lg shadow-yellow-500/10'
+                            : 'bg-slate-700/50 text-slate-300 border border-slate-600 hover:bg-yellow-500/10 hover:border-yellow-500/20 hover:text-yellow-300 hover:shadow-md hover:shadow-yellow-500/5 hover:scale-105'
                         }`}
                       >
                         Little League
                       </button>
                       <button
                         onClick={() => setActiveSkillLevel(activeSkillLevel === 'highLevel' ? null : 'highLevel')}
-                        className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                        className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 transform ${
                           activeSkillLevel === 'highLevel'
-                            ? 'bg-red-500/20 text-red-400 border border-red-500/30'
-                            : 'bg-slate-700/50 text-slate-300 border border-slate-600 hover:bg-slate-600/50'
+                            ? 'bg-red-500/20 text-red-400 border border-red-500/30 shadow-lg shadow-red-500/10'
+                            : 'bg-slate-700/50 text-slate-300 border border-slate-600 hover:bg-red-500/10 hover:border-red-500/20 hover:text-red-300 hover:shadow-md hover:shadow-red-500/5 hover:scale-105'
                         }`}
                       >
                         High Level
@@ -315,10 +315,10 @@ export function ContentGrid({ onAddContent, onSelectContent, onEditContent }: Co
                       {/* Favorites Filter */}
                       <button
                         onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 transform ${
                           showFavoritesOnly
-                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                            : 'bg-slate-700/50 text-slate-300 border border-slate-600 hover:bg-slate-600/50'
+                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-lg shadow-emerald-500/10'
+                            : 'bg-slate-700/50 text-slate-300 border border-slate-600 hover:bg-emerald-500/10 hover:border-emerald-500/20 hover:text-emerald-300 hover:shadow-md hover:shadow-emerald-500/5 hover:scale-105'
                         }`}
                       >
                         <svg className="h-3 w-3" fill={showFavoritesOnly ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
@@ -332,10 +332,10 @@ export function ContentGrid({ onAddContent, onSelectContent, onEditContent }: Co
                         <button
                           key={tag}
                           onClick={() => setActiveTag(activeTag === tag ? null : tag)}
-                          className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                          className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 transform ${
                             activeTag === tag
-                              ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
-                              : 'bg-slate-700/50 text-slate-300 border border-slate-600 hover:bg-slate-600/50'
+                              ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30 shadow-lg shadow-purple-500/10'
+                              : 'bg-slate-700/50 text-slate-300 border border-slate-600 hover:bg-purple-500/10 hover:border-purple-500/20 hover:text-purple-300 hover:shadow-md hover:shadow-purple-500/5 hover:scale-105'
                           }`}
                         >
                           {tag}

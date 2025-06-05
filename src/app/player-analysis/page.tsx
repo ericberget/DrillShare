@@ -870,8 +870,8 @@ const PlayerAnalysisPage = () => {
               )}
             </div>
             <div className="flex items-center gap-6">
-              <div className="text-right">
-                <h1 className="text-2xl font-bold text-slate-400">Player Analysis</h1>
+              <div className="text-center flex-1">
+                <h1 className="text-2xl font-bold text-slate-400">FILM ROOM</h1>
                 <p className="text-slate-400">Upload player videos for analysis</p>
               </div>
               <Button 

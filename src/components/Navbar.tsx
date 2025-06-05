@@ -10,7 +10,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from './ui/dropdown-menu'
-import { Menu, User, Settings, LogOut, Video, FolderOpen, Home, LineChart, Users, Zap, GraduationCap } from 'lucide-react'
+import { Menu, User, Settings, LogOut, Video, FolderOpen, Home, Film, Users, Zap, GraduationCap } from 'lucide-react'
 import { useFirebase } from '@/contexts/FirebaseContext'
 import { useAuth } from '@/hooks/useAuth'
 import { useRouter, usePathname } from 'next/navigation'
@@ -55,14 +55,14 @@ export function Navbar() {
       href: "/practice-planner",
       icon: <Zap className="w-6 h-6 text-white" />,
       title: "Quick Practice Planner",
-      description: "Plan and organize your practices",
+      description: "Create a Practice Plan",
       gradient: "bg-gradient-to-br from-orange-600 to-orange-700"
     },
     {
       href: "/player-analysis",
-      icon: <LineChart className="w-6 h-6 text-white" />,
-      title: "Player Analysis",
-      description: "Analyze individual player performance",
+      icon: <Film className="w-6 h-6 text-white" />,
+      title: "Film Room",
+      description: "Review and analyze player video footage",
       gradient: "bg-gradient-to-br from-purple-600 to-purple-700"
     },
     {
