@@ -29,13 +29,11 @@ const VideoCard = ({
   video, 
   onDelete, 
   onView,
-  onEdit,
   formatDate 
 }: { 
   video: PlayerAnalysisVideo, 
   onDelete: (id: string) => void, 
   onView: (video: PlayerAnalysisVideo) => void,
-  onEdit: (video: PlayerAnalysisVideo) => void,
   formatDate: (timestamp: Timestamp | string | number) => string
 }) => {
   return (
@@ -77,22 +75,10 @@ const VideoCard = ({
             onClick={() => onView(video)}
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-              <circle cx="12" cy="12" r="3"/>
+              <path d="M12 20h9"/>
+              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
             </svg>
-            View
-          </Button>
-          <Button 
-            variant="ghost"
-            size="sm"
-            className="flex-1 text-slate-500 hover:text-slate-300 hover:bg-slate-800/50"
-            onClick={() => onEdit(video)}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-            </svg>
-            Edit
+            Annotate/Edit
           </Button>
           <Button 
             variant="ghost"
@@ -122,6 +108,7 @@ const PlayerAnalysisPage = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
   const [playerName, setPlayerName] = useState('');
   const [notes, setNotes] = useState('');
   const [savedVideos, setSavedVideos] = useState<PlayerAnalysisVideo[]>([]);
@@ -143,6 +130,10 @@ const PlayerAnalysisPage = () => {
   const [isAnnotationMode, setIsAnnotationMode] = useState(false);
   const [currentVideoTime, setCurrentVideoTime] = useState(0);
   const [videoAnnotations, setVideoAnnotations] = useState<VideoAnnotation[]>([]);
+  const [showAnnotations, setShowAnnotations] = useState(true);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editNotes, setEditNotes] = useState('');
+  const [editPlayerName, setEditPlayerName] = useState('');
   const modalVideoRef = useRef<HTMLVideoElement>(null);
 
   const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500MB max upload (before compression)
@@ -220,12 +211,28 @@ const PlayerAnalysisPage = () => {
     if (videoRef.current) {
       try {
         const canvas = document.createElement('canvas');
-        canvas.width = videoRef.current.videoWidth;
-        canvas.height = videoRef.current.videoHeight;
+        // Reduce thumbnail size to prevent Firestore size limits
+        const maxWidth = 320;
+        const maxHeight = 240;
+        const aspectRatio = videoRef.current.videoWidth / videoRef.current.videoHeight;
+        
+        let width = maxWidth;
+        let height = maxHeight;
+        
+        if (aspectRatio > 1) {
+          height = width / aspectRatio;
+        } else {
+          width = height * aspectRatio;
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
         const ctx = canvas.getContext('2d');
         if (ctx) {
-          ctx.drawImage(videoRef.current, 0, 0);
-          return canvas.toDataURL('image/jpeg');
+          ctx.drawImage(videoRef.current, 0, 0, width, height);
+          // Use lower quality to reduce file size
+          return canvas.toDataURL('image/jpeg', 0.6);
         }
       } catch (error) {
         console.error('Error capturing thumbnail:', error);
@@ -386,23 +393,68 @@ const PlayerAnalysisPage = () => {
   
   // Handle file upload to Firebase Storage
   const uploadToStorage = async (file: File): Promise<string> => {
-    if (!storage || !user) {
-      throw new Error('Storage not initialized or user not logged in');
+    if (!storage) {
+      throw new Error('Storage not initialized');
+    }
+    
+    if (!user) {
+      throw new Error('User not logged in');
     }
 
     try {
+      console.log('Starting file upload:', { 
+        fileName: file.name, 
+        fileSize: file.size, 
+        fileType: file.type 
+      });
+      
       const fileExt = file.name.split('.').pop() || 'mp4';
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
       const storageRef = ref(storage, `player-analysis/${user.uid}/${fileName}`);
       
-      // Use uploadBytes instead of uploadBytesResumable for testing
+      console.log('Uploading to storage path:', `player-analysis/${user.uid}/${fileName}`);
+      
+      // Use uploadBytes for the upload
       const snapshot = await uploadBytes(storageRef, file);
+      console.log('Upload successful, getting download URL...');
+      
       const downloadURL = await getDownloadURL(snapshot.ref);
+      console.log('Download URL obtained successfully');
+      
       return downloadURL;
       
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error in uploadToStorage:', err);
-      throw err;
+      
+      // Provide more specific error messages based on Firebase error codes
+      if (err.code) {
+        switch (err.code) {
+          case 'storage/unauthorized':
+            throw new Error('Storage access denied. Please sign in again.');
+          case 'storage/canceled':
+            throw new Error('Upload was canceled. Please try again.');
+          case 'storage/unknown':
+            throw new Error('Unknown storage error occurred. Please try again.');
+          case 'storage/object-not-found':
+            throw new Error('File not found during upload. Please try again.');
+          case 'storage/bucket-not-found':
+            throw new Error('Storage bucket not found. Please contact support.');
+          case 'storage/project-not-found':
+            throw new Error('Project not found. Please contact support.');
+          case 'storage/quota-exceeded':
+            throw new Error('Storage quota exceeded. Please contact support.');
+          case 'storage/unauthenticated':
+            throw new Error('Not authenticated for storage. Please sign in again.');
+          case 'storage/retry-limit-exceeded':
+            throw new Error('Upload failed due to network issues. Please check your connection and try again.');
+          case 'storage/invalid-format':
+            throw new Error('Invalid file format. Please use MP4 or MOV files.');
+          default:
+            throw new Error(`Storage error: ${err.message || err.code}`);
+        }
+      } else {
+        throw new Error(`Upload failed: ${err.message || 'Unknown error'}`);
+      }
     }
   };
 
@@ -556,6 +608,21 @@ const PlayerAnalysisPage = () => {
 
     setIsSaving(true);
     setError('');
+    setWarning('');
+    setSaveSuccess(false);
+    
+    // Verify Firebase services are available
+    if (!db) {
+      setError('Database not available. Please refresh the page and try again.');
+      setIsSaving(false);
+      return;
+    }
+    
+    if (!storage) {
+      setError('Storage not available. Please refresh the page and try again.');
+      setIsSaving(false);
+      return;
+    }
 
     try {
       let videoUrl = '';
@@ -595,30 +662,27 @@ const PlayerAnalysisPage = () => {
           videoUrl = await uploadToStorage(fileToUpload);
         } catch (compressionError) {
           console.error('Compression failed:', compressionError);
-          setError('Video compression failed. Uploading original file...');
-          // Fall back to original file if compression fails
-          videoUrl = await uploadToStorage(file);
+          setWarning('Video compression failed. Uploading original file...');
+          
+          try {
+            // Fall back to original file if compression fails
+            videoUrl = await uploadToStorage(file);
+            setWarning(''); // Clear warning on successful upload
+          } catch (uploadError) {
+            console.error('Original file upload also failed:', uploadError);
+            throw uploadError; // Let the outer catch handle this
+          }
         }
       }
 
-      // Capture thumbnail if not already done
-      const thumbnailUrl = thumbnail || captureThumbnail();
-
-      // Create video data object and filter out undefined values
-      const videoDataRaw = {
-        userId: user.uid,
-        playerName: selectedPlayer,
-        category: selectedPlayer,
-        videoType,
-        videoUrl,
-        thumbnailUrl,
-        notes,
-        createdAt: Timestamp.now(),
-        updatedAt: Timestamp.now(),
-        orientation,
-        ...(file ? { fileSize: file.size, fileName: file.name } : {}),
-        ...(videoType === 'youtube' ? { youtubeVideoId } : {})
-      };
+      // Capture thumbnail if not already done (make it optional to avoid size issues)
+      let thumbnailUrl = thumbnail || captureThumbnail();
+      
+      // If thumbnail is too large, skip it to prevent Firestore errors
+      if (thumbnailUrl && thumbnailUrl.length > 500000) { // 500KB limit
+        console.warn('Thumbnail too large, skipping thumbnail to prevent save errors');
+        thumbnailUrl = undefined;
+      }
 
       // Create properly typed video data
       const videoData: Omit<PlayerAnalysisVideo, 'id'> = {
@@ -642,6 +706,11 @@ const PlayerAnalysisPage = () => {
       
       setSavedVideos(prev => [newVideo, ...prev]);
       
+      // Show success message
+      setSaveSuccess(true);
+      await new Promise(resolve => setTimeout(resolve, 1500)); // Show success for 1.5 seconds
+      setSaveSuccess(false);
+      
       // Reset form
       setFile(null);
       setVideoSrc('');
@@ -659,7 +728,36 @@ const PlayerAnalysisPage = () => {
       
     } catch (err) {
       console.error('Error saving video:', err);
-      setError('Failed to save video. Please try again.');
+      
+      // Provide more specific error messages
+      let errorMessage = 'Failed to save video. Please try again.';
+      
+      if (err instanceof Error) {
+        if (err.message.includes('Storage not initialized')) {
+          errorMessage = 'Storage system not available. Please refresh the page and try again.';
+        } else if (err.message.includes('user not logged in')) {
+          errorMessage = 'You must be logged in to save videos. Please sign in and try again.';
+        } else if (err.message.includes('Video compression failed')) {
+          errorMessage = 'Video compression failed. Try with a smaller video file.';
+        } else if (err.message.includes('Video loading failed')) {
+          errorMessage = 'Unable to process video file. Please try a different video format.';
+        } else if (err.message.includes('permission-denied')) {
+          errorMessage = 'Permission denied. Please check your account permissions.';
+        } else if (err.message.includes('storage/unauthorized')) {
+          errorMessage = 'Storage access denied. Please sign in again.';
+        } else if (err.message.includes('storage/retry-limit-exceeded')) {
+          errorMessage = 'Upload failed due to network issues. Please check your connection and try again.';
+        } else if (err.message.includes('storage/invalid-format')) {
+          errorMessage = 'Invalid video format. Please use MP4 or MOV files.';
+        } else if (err.message.includes('quota-exceeded')) {
+          errorMessage = 'Storage quota exceeded. Please contact support.';
+        } else {
+          // Include the actual error message for debugging
+          errorMessage = `Failed to save video: ${err.message}`;
+        }
+      }
+      
+      setError(errorMessage);
     } finally {
       setIsSaving(false);
     }
@@ -729,6 +827,11 @@ const PlayerAnalysisPage = () => {
         v.id === id ? { ...v, ...updates } : v
       ));
 
+      // Show success message
+      setSaveSuccess(true);
+      await new Promise(resolve => setTimeout(resolve, 1500)); // Show success for 1.5 seconds
+      setSaveSuccess(false);
+
       // Reset form
       setFile(null);
       setVideoSrc('');
@@ -765,19 +868,7 @@ const PlayerAnalysisPage = () => {
     });
   };
 
-  const handleEditVideo = (video: PlayerAnalysisVideo) => {
-    setSelectedVideo(video);
-    setNotes(video.notes || '');
-    setSelectedPlayer(video.category);
-    setOrientation(video.orientation || 'landscape');
-    setVideoType(video.videoType);
-    if (video.videoType === 'youtube') {
-      setYoutubeUrl(video.videoUrl);
-    } else {
-      setVideoSrc(video.videoUrl);
-    }
-    handleTabChange('upload');
-  };
+
 
   // Annotation handling functions
   const handleAnnotationSave = async (annotation: VideoAnnotation) => {
@@ -808,6 +899,73 @@ const PlayerAnalysisPage = () => {
     }
   };
 
+  const handleAnnotationDelete = async (annotationId: string) => {
+    if (!selectedVideo || !user || !db) return;
+
+    try {
+      // Remove annotation from local state
+      const updatedAnnotations = videoAnnotations.filter(annotation => annotation.id !== annotationId);
+      setVideoAnnotations(updatedAnnotations);
+
+      // Update video in Firestore without the deleted annotation
+      const videoRef = doc(db, 'playerAnalysisVideos', selectedVideo.id);
+      
+      await updateDoc(videoRef, {
+        annotations: updatedAnnotations,
+        updatedAt: Timestamp.now()
+      });
+
+      // Update local selectedVideo state
+      setSelectedVideo(prev => prev ? {
+        ...prev,
+        annotations: updatedAnnotations
+      } : null);
+
+    } catch (error) {
+      console.error('Error deleting annotation:', error);
+      setError('Failed to delete annotation');
+      // Revert local state on error
+      if (selectedVideo && selectedVideo.annotations) {
+        setVideoAnnotations(selectedVideo.annotations);
+      }
+    }
+  };
+
+  const handleClearAllAnnotations = async () => {
+    if (!selectedVideo || !user || !db) return;
+
+    if (!window.confirm(`Delete all ${videoAnnotations.length} annotations for this video?`)) {
+      return;
+    }
+
+    try {
+      // Clear annotations from local state
+      setVideoAnnotations([]);
+
+      // Update video in Firestore without annotations
+      const videoRef = doc(db, 'playerAnalysisVideos', selectedVideo.id);
+      
+      await updateDoc(videoRef, {
+        annotations: [],
+        updatedAt: Timestamp.now()
+      });
+
+      // Update local selectedVideo state
+      setSelectedVideo(prev => prev ? {
+        ...prev,
+        annotations: []
+      } : null);
+
+    } catch (error) {
+      console.error('Error clearing annotations:', error);
+      setError('Failed to clear annotations');
+      // Revert local state on error
+      if (selectedVideo && selectedVideo.annotations) {
+        setVideoAnnotations(selectedVideo.annotations);
+      }
+    }
+  };
+
   const handleVideoTimeUpdate = () => {
     if (modalVideoRef.current) {
       setCurrentVideoTime(modalVideoRef.current.currentTime);
@@ -819,6 +977,52 @@ const PlayerAnalysisPage = () => {
     if (modalVideoRef.current && !isAnnotationMode) {
       // Pause video when entering annotation mode
       modalVideoRef.current.pause();
+    }
+  };
+
+  const toggleShowAnnotations = () => {
+    setShowAnnotations(!showAnnotations);
+  };
+
+  const toggleEditMode = () => {
+    if (!isEditMode && selectedVideo) {
+      // Entering edit mode - populate edit fields
+      setEditNotes(selectedVideo.notes || '');
+      setEditPlayerName(selectedVideo.playerName || '');
+    }
+    setIsEditMode(!isEditMode);
+  };
+
+  const handleSaveVideoDetails = async () => {
+    if (!selectedVideo || !user || !db) return;
+
+    try {
+      const videoRef = doc(db, 'playerAnalysisVideos', selectedVideo.id);
+      
+      await updateDoc(videoRef, {
+        notes: editNotes,
+        playerName: editPlayerName,
+        updatedAt: Timestamp.now()
+      });
+
+      // Update local state
+      setSelectedVideo(prev => prev ? {
+        ...prev,
+        notes: editNotes,
+        playerName: editPlayerName
+      } : null);
+
+      // Update the videos list
+      setSavedVideos(prev => prev.map(video => 
+        video.id === selectedVideo.id 
+          ? { ...video, notes: editNotes, playerName: editPlayerName }
+          : video
+      ));
+
+      setIsEditMode(false);
+    } catch (error) {
+      console.error('Error updating video details:', error);
+      setError('Failed to update video details');
     }
   };
 
@@ -836,43 +1040,40 @@ const PlayerAnalysisPage = () => {
       {/* Header */}
       <header className="border-b border-slate-800/30 bg-gradient-to-b from-slate-900/95 to-slate-950/95">
         <div className="container mx-auto py-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              {activeTab === 'upload' && selectedVideo ? (
-                <button 
-                  onClick={() => {
-                    setSelectedVideo(null);
-                    setNotes('');
-                    setSelectedPlayer('');
-                    setOrientation('landscape');
-                    setVideoType('upload');
-                    setVideoSrc('');
-                    setYoutubeUrl('');
-                    setFile(null);
-                    handleTabChange('myvideos');
-                  }}
-                  className="flex items-center gap-4 text-emerald-400 hover:text-emerald-300 transition-colors"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="m12 19-7-7 7-7"/>
-                    <path d="M19 12H5"/>
-                  </svg>
-                  <span className="font-medium">Back to My Videos</span>
-                </button>
-              ) : (
-                <Link href="/" className="flex items-center gap-4 text-emerald-400 hover:text-emerald-300 transition-colors">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="m12 19-7-7 7-7"/>
-                    <path d="M19 12H5"/>
-                  </svg>
-                  <span className="font-medium">Back to DrillShare</span>
-                </Link>
-              )}
-            </div>
-            <div className="flex items-center gap-6">
-              <div className="text-center flex-1">
-                <h1 className="text-2xl font-bold text-slate-400">FILM ROOM</h1>
-                <p className="text-slate-400">Upload player videos for analysis</p>
+          <div className="flex flex-col items-center gap-6">
+            {/* Navigation and Upload Button Row */}
+            <div className="flex items-center justify-between w-full mt-8">
+              <div className="flex items-center gap-4">
+                {activeTab === 'upload' && selectedVideo ? (
+                  <button 
+                    onClick={() => {
+                      setSelectedVideo(null);
+                      setNotes('');
+                      setSelectedPlayer('');
+                      setOrientation('landscape');
+                      setVideoType('upload');
+                      setVideoSrc('');
+                      setYoutubeUrl('');
+                      setFile(null);
+                      handleTabChange('myvideos');
+                    }}
+                    className="flex items-center gap-4 text-emerald-400 hover:text-emerald-300 transition-colors"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="m12 19-7-7 7-7"/>
+                      <path d="M19 12H5"/>
+                    </svg>
+                    <span className="font-medium">Back to My Videos</span>
+                  </button>
+                ) : (
+                  <Link href="/" className="flex items-center gap-4 text-emerald-400 hover:text-emerald-300 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="m12 19-7-7 7-7"/>
+                      <path d="M19 12H5"/>
+                    </svg>
+                    <span className="font-medium">Back to DrillShare</span>
+                  </Link>
+                )}
               </div>
               <Button 
                 onClick={() => handleTabChange('upload')}
@@ -884,6 +1085,15 @@ const PlayerAnalysisPage = () => {
                 </svg>
                 Upload Video
               </Button>
+            </div>
+            
+            {/* Centered Logo */}
+            <div className="text-center -mt-24">
+              <img 
+                src="/filmroom-logo.png" 
+                alt="Film Room" 
+                className="h-20 mx-auto"
+              />
             </div>
           </div>
         </div>
@@ -1241,7 +1451,7 @@ const PlayerAnalysisPage = () => {
                       
                       <div className="flex justify-end">
                         <Button 
-                          className="bg-slate-600 hover:bg-slate-700 text-white"
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white px-6"
                           onClick={() => {
                             if (selectedVideo) {
                               // We're editing an existing video
@@ -1251,9 +1461,16 @@ const PlayerAnalysisPage = () => {
                               saveVideoAnalysis();
                             }
                           }}
-                          disabled={isSaving}
+                          disabled={isSaving || saveSuccess}
                         >
-                          {isSaving ? (
+                          {saveSuccess ? (
+                            <>
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+                                <polyline points="20,6 9,17 4,12"/>
+                              </svg>
+                              Saved! Redirecting...
+                            </>
+                          ) : isSaving ? (
                             <>
                               <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -1261,7 +1478,16 @@ const PlayerAnalysisPage = () => {
                               </svg>
                               {selectedVideo ? 'Updating...' : 'Saving...'}
                             </>
-                          ) : (selectedVideo ? 'Update' : 'Save')}
+                          ) : (
+                            <>
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+                                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                                <polyline points="17,21 17,13 7,13 7,21"/>
+                                <polyline points="7,3 7,8 15,8"/>
+                              </svg>
+                              {selectedVideo ? 'Update & Close' : 'Save & Close'}
+                            </>
+                          )}
                         </Button>
                       </div>
                     </div>
@@ -1346,7 +1572,6 @@ const PlayerAnalysisPage = () => {
                         video={video}
                         onDelete={deleteVideo}
                         onView={setSelectedVideo}
-                        onEdit={handleEditVideo}
                         formatDate={formatDate}
                       />
                     </div>
@@ -1364,20 +1589,60 @@ const PlayerAnalysisPage = () => {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="text-slate-400">{selectedVideo.playerName}</CardTitle>
+                  <CardTitle className="text-slate-200">{selectedVideo.playerName}</CardTitle>
                   <CardDescription className="text-slate-400">
                     Player: {selectedVideo.category}
                   </CardDescription>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex items-center gap-4">
+                  {/* Show Annotations Toggle - only show if annotations exist */}
+                  {videoAnnotations.length > 0 && (
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm text-slate-300 font-medium">Annotations:</span>
+                      <button
+                        onClick={toggleShowAnnotations}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 ${
+                          showAnnotations 
+                            ? 'bg-emerald-600' 
+                            : 'bg-slate-600'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            showAnnotations ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  )}
+                  
+                  {/* Edit Button */}
+                  <Button
+                    variant={isEditMode ? 'default' : 'outline'}
+                    size="sm"
+                    className={`${
+                      isEditMode 
+                        ? 'bg-blue-600 hover:bg-blue-700 text-white border-blue-600' 
+                        : 'border-slate-600 bg-slate-800/50 text-slate-100 hover:bg-blue-600 hover:border-blue-600 hover:text-white'
+                    } font-medium`}
+                    onClick={toggleEditMode}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                    {isEditMode ? 'Cancel Edit' : 'Edit'}
+                  </Button>
+                  
+                  {/* Annotate Button */}
                   <Button
                     variant={isAnnotationMode ? 'default' : 'outline'}
                     size="sm"
                     className={`${
                       isAnnotationMode 
-                        ? 'bg-emerald-600 hover:bg-emerald-700 text-white' 
-                        : 'border-slate-600 text-slate-300 hover:bg-slate-700'
-                    }`}
+                        ? 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600' 
+                        : 'border-slate-600 bg-slate-800/50 text-slate-100 hover:bg-emerald-600 hover:border-emerald-600 hover:text-white'
+                    } font-medium`}
                     onClick={toggleAnnotationMode}
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
@@ -1414,15 +1679,18 @@ const PlayerAnalysisPage = () => {
                       videoElement={modalVideoRef.current}
                       isAnnotationMode={isAnnotationMode}
                       onAnnotationSave={handleAnnotationSave}
+                      onAnnotationDelete={handleAnnotationDelete}
                       existingAnnotations={videoAnnotations}
                       currentTime={currentVideoTime}
+                      showAnnotations={showAnnotations}
                     />
                   </>
                 )}
               </div>
               
+              {/* Annotation mode info banner */}
               {isAnnotationMode && (
-                <div className="mb-4 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+                <div className="mb-4 p-3 bg-emerald-800/30 rounded-lg border border-emerald-600/50">
                   <div className="flex items-start gap-3">
                     <div className="flex-shrink-0 w-8 h-8 bg-emerald-600 rounded-full flex items-center justify-center">
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1431,48 +1699,137 @@ const PlayerAnalysisPage = () => {
                       </svg>
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm text-slate-300 mb-2">
-                        <strong>Annotation Mode Active</strong> - Draw directly on the video to highlight swing mechanics
+                      <p className="text-sm text-emerald-200 mb-2 font-medium">
+                        🎯 Annotation Mode Active - Draw directly on the video to highlight swing mechanics
                       </p>
-                      <div className="grid grid-cols-2 gap-2 text-xs text-slate-400">
-                        <div>• <kbd className="px-1 py-0.5 bg-slate-700 rounded text-xs">L</kbd> Line tool</div>
-                        <div>• <kbd className="px-1 py-0.5 bg-slate-700 rounded text-xs">C</kbd> Circle tool</div>
-                        <div>• <kbd className="px-1 py-0.5 bg-slate-700 rounded text-xs">A</kbd> Arrow tool</div>
-                        <div>• <kbd className="px-1 py-0.5 bg-slate-700 rounded text-xs">F</kbd> Freehand tool</div>
+                      <div className="grid grid-cols-2 gap-2 text-xs text-emerald-300">
+                        <div>• <kbd className="px-1 py-0.5 bg-emerald-700 rounded text-xs">L</kbd> Line tool</div>
+                        <div>• <kbd className="px-1 py-0.5 bg-emerald-700 rounded text-xs">C</kbd> Circle tool</div>
+                        <div>• <kbd className="px-1 py-0.5 bg-emerald-700 rounded text-xs">A</kbd> Arrow tool</div>
+                        <div>• <kbd className="px-1 py-0.5 bg-emerald-700 rounded text-xs">F</kbd> Freehand tool</div>
                       </div>
-                      <p className="text-xs text-slate-500 mt-2">
-                        💡 Tip: Pause the video first, then draw. Annotations are saved automatically at the current timestamp.
+                      <p className="text-xs text-emerald-400 mt-2">
+                        💡 Tip: Pause the video first, then draw. Click "Save" when you finish each annotation.
                       </p>
                     </div>
                   </div>
                 </div>
               )}
+
+
               
               <div className="space-y-4">
-                <div>
-                  <Label className="text-slate-300">Notes</Label>
-                  <p className="text-slate-300 mt-2">{selectedVideo.notes || 'No notes available'}</p>
-                </div>
+                {isEditMode ? (
+                  /* Edit Mode */
+                  <div className="space-y-4 p-4 bg-blue-800/20 rounded-lg border border-blue-600/40">
+                    <div className="flex items-center gap-2 mb-4">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-400">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                      </svg>
+                      <h3 className="text-lg font-medium text-blue-200">Edit Video Details</h3>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="editPlayerName" className="text-slate-300">Player Name</Label>
+                      <Input
+                        id="editPlayerName"
+                        value={editPlayerName}
+                        onChange={(e) => setEditPlayerName(e.target.value)}
+                        className="mt-2 bg-slate-800 border-slate-700 text-slate-100"
+                        placeholder="Enter player name"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="editNotes" className="text-slate-300">Analysis Notes</Label>
+                      <textarea 
+                        id="editNotes"
+                        value={editNotes}
+                        onChange={(e) => setEditNotes(e.target.value)}
+                        placeholder="Add your analysis notes here..."
+                        className="mt-2 w-full h-32 rounded-md border border-slate-700 bg-slate-800 text-slate-100 p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    
+                    <div className="flex gap-2 pt-2">
+                      <Button
+                        onClick={handleSaveVideoDetails}
+                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                      >
+                        Save Changes
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={toggleEditMode}
+                        className="border-slate-600 text-slate-300 hover:bg-slate-700"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  /* View Mode */
+                  <div>
+                    <Label className="text-slate-300">Notes</Label>
+                    <p className="text-slate-300 mt-2">{selectedVideo.notes || 'No notes available'}</p>
+                  </div>
+                )}
                 
                 {videoAnnotations.length > 0 && (
                   <div>
-                    <Label className="text-slate-300">Annotations ({videoAnnotations.length})</Label>
+                    <div className="flex items-center justify-between mb-2">
+                      <Label className="text-slate-300">Annotations ({videoAnnotations.length})</Label>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-red-600 text-red-400 hover:bg-red-600 hover:text-white text-xs h-6 px-2"
+                        onClick={handleClearAllAnnotations}
+                      >
+                        Clear All
+                      </Button>
+                    </div>
                     <div className="mt-2 space-y-2 max-h-32 overflow-y-auto">
-                      {videoAnnotations.map((annotation, index) => (
-                        <div key={annotation.id} className="flex items-center gap-2 text-sm">
+                      {videoAnnotations
+                        .sort((a, b) => a.timestamp - b.timestamp) // Sort by timestamp
+                        .map((annotation, index) => (
+                        <div key={annotation.id} className="flex items-center gap-2 text-sm group">
                           <div 
-                            className="w-3 h-3 rounded-full border"
+                            className="w-3 h-3 rounded-full border flex-shrink-0"
                             style={{ backgroundColor: annotation.color }}
                           />
-                          <span className="text-slate-400">
+                          <button
+                            className="text-slate-400 hover:text-slate-300 font-mono text-xs"
+                            onClick={() => {
+                              if (modalVideoRef.current) {
+                                modalVideoRef.current.currentTime = annotation.timestamp;
+                              }
+                            }}
+                            title="Jump to timestamp"
+                          >
                             {Math.floor(annotation.timestamp / 60)}:{(annotation.timestamp % 60).toFixed(1).padStart(4, '0')}s
-                          </span>
+                          </button>
                           <span className="text-slate-300 capitalize">{annotation.tool}</span>
                           {annotation.notes && (
                             <span className="text-slate-400 text-xs">- {annotation.notes}</span>
                           )}
+                          <button
+                            className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity text-red-400 hover:text-red-300 p-1"
+                            onClick={() => handleAnnotationDelete(annotation.id)}
+                            title="Delete annotation"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="3 6 5 6 21 6"/>
+                              <path d="m19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                              <line x1="10" y1="11" x2="10" y2="17"/>
+                              <line x1="14" y1="11" x2="14" y2="17"/>
+                            </svg>
+                          </button>
                         </div>
                       ))}
+                    </div>
+                    <div className="mt-2 text-xs text-slate-500">
+                      💡 Tip: Click timestamps to jump to that moment, or click annotations on the video to delete them
                     </div>
                   </div>
                 )}
@@ -1505,6 +1862,10 @@ const PlayerAnalysisPage = () => {
                   setSelectedVideo(null);
                   setIsAnnotationMode(false);
                   setVideoAnnotations([]);
+                  setShowAnnotations(true); // Reset annotation visibility
+                  setIsEditMode(false); // Reset edit mode
+                  setEditNotes(''); // Reset edit fields
+                  setEditPlayerName('');
                 }}
               >
                 Close

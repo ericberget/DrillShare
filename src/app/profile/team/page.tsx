@@ -9,7 +9,7 @@ import { useEffect, useState } from 'react';
 
 export default function ProgramSettingsPage() {
   const { user, db, storage } = useFirebase();
-  const { toast } = useToast();
+  const { showToast } = useToast();
   const [programSettings, setProgramSettings] = useState<{
     teamLogo: string;
     teamName: string;
@@ -37,28 +37,20 @@ export default function ProgramSettingsPage() {
         }
       } catch (error) {
         console.error('Error loading program settings:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load program settings. Please try again.",
-          variant: "destructive"
-        });
+        showToast("Failed to load program settings. Please try again.", "error");
       } finally {
         setIsLoading(false);
       }
     };
 
     loadProgramSettings();
-  }, [user, db, toast]);
+  }, [user, db, showToast]);
 
   const handleSaveTeamSettings = async (data: { teamLogo: string; teamName: string; defaultShowTeamContent: boolean }) => {
     if (!user) return;
 
     if (!data.teamName.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter a program name",
-        variant: "destructive"
-      });
+      showToast("Please enter a program name", "error");
       return;
     }
 
@@ -71,11 +63,7 @@ export default function ProgramSettingsPage() {
         userId: user.uid
       });
 
-      toast({
-        title: "Success",
-        description: "Program settings saved successfully",
-        variant: "success"
-      });
+      showToast("Program settings saved successfully", "success");
 
       // Update local state
       setProgramSettings({
@@ -85,11 +73,7 @@ export default function ProgramSettingsPage() {
       });
     } catch (error) {
       console.error('Error saving program settings:', error);
-      toast({
-        title: "Error",
-        description: "Failed to save program settings. Please try again.",
-        variant: "destructive"
-      });
+      showToast("Failed to save program settings. Please try again.", "error");
     }
   };
 
