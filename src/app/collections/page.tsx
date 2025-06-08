@@ -56,17 +56,18 @@ export default function CollectionsPage() {
         <div className="container mx-auto px-4 py-8">
           {/* Header Section */}
           <div className="mb-12 text-center">
-            <div className="w-[400px] mx-auto mb-6">
+            <div className="w-[320px] mx-auto mb-6">
               <img 
                 src="/logo.png" 
                 alt="DrillShare Logo" 
                 className="w-full h-auto"
               />
             </div>
-            <h1 className="text-3xl font-bold text-white mb-4">Collections</h1>
-            <p className="text-slate-400 text-lg max-w-2xl mx-auto">
-              Organize and share curated sets of training videos with your team, league, or coaching staff
-            </p>
+            <img 
+              src="/collectionsTitle.png" 
+              alt="Collections" 
+              className="h-10 mb-4 mx-auto"
+            />
           </div>
 
           {/* Collections Grid */}

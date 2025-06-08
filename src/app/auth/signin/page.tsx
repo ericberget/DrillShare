@@ -8,6 +8,26 @@ import { Label } from "@/components/ui/label";
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 
+const BackgroundVideo = () => {
+  return (
+    <div className="fixed inset-0 w-full h-full">
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="absolute w-full h-full object-cover"
+        style={{ filter: 'grayscale(100%) brightness(0.5)' }}
+      >
+        <source src="/bg-catch.MOV" type="video/mp4" />
+        <source src="/bg-catch.MOV" type="video/quicktime" />
+        Your browser does not support the video tag.
+      </video>
+      <div className="absolute inset-0 bg-gradient-to-b from-slate-950/50 to-slate-950/70" />
+    </div>
+  );
+};
+
 export default function SignIn() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -19,8 +39,9 @@ export default function SignIn() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-950/90">
-      <Card className="w-[400px] bg-slate-900/95 border-slate-800/30">
+    <div className="relative min-h-screen flex items-center justify-center">
+      <BackgroundVideo />
+      <Card className="w-[400px] bg-slate-900/95 border-white/30 relative z-10 shadow-xl">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold text-drillhub-400">Welcome to DrillShare</CardTitle>
           <CardDescription className="text-slate-400">Sign in to your account</CardDescription>

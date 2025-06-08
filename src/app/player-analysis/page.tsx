@@ -1057,7 +1057,7 @@ const PlayerAnalysisPage = () => {
                       setFile(null);
                       handleTabChange('myvideos');
                     }}
-                    className="flex items-center gap-4 text-emerald-400 hover:text-emerald-300 transition-colors"
+                    className="flex items-center gap-4 text-slate-400 hover:text-slate-300 opacity-50 hover:opacity-100 transition-all"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="m12 19-7-7 7-7"/>
@@ -1066,7 +1066,7 @@ const PlayerAnalysisPage = () => {
                     <span className="font-medium">Back to My Videos</span>
                   </button>
                 ) : (
-                  <Link href="/" className="flex items-center gap-4 text-emerald-400 hover:text-emerald-300 transition-colors">
+                  <Link href="/" className="flex items-center gap-4 text-slate-400 hover:text-slate-300 opacity-50 hover:opacity-100 transition-all">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="m12 19-7-7 7-7"/>
                       <path d="M19 12H5"/>
@@ -1077,7 +1077,7 @@ const PlayerAnalysisPage = () => {
               </div>
               <Button 
                 onClick={() => handleTabChange('upload')}
-                className="bg-slate-600 hover:bg-slate-700 text-white flex items-center gap-2"
+                className="bg-white hover:bg-slate-100 text-slate-900 flex items-center gap-2"
                 size="lg"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1108,9 +1108,6 @@ const PlayerAnalysisPage = () => {
               <Card className="bg-slate-900/30 border-slate-700/50">
                 <CardHeader>
                   <CardTitle className="text-slate-400">Upload Video</CardTitle>
-                  <CardDescription className="text-slate-400">
-                    Upload videos (max 500MB) for swing analysis
-                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   {/* Video Type Toggle */}
@@ -1498,11 +1495,6 @@ const PlayerAnalysisPage = () => {
           </TabsContent>
           
           <TabsContent value="myvideos" className="mt-0">
-            {/* My Videos Section */}
-            <div className="mb-6">
-              <h2 className="text-xl font-bold text-slate-400 mb-2">My Saved Videos</h2>
-              <p className="text-slate-400">View and manage your saved video analyses</p>
-            </div>
             
             {/* Player Filter */}
             <div className="mb-6">
@@ -1510,7 +1502,7 @@ const PlayerAnalysisPage = () => {
               <div className="flex flex-wrap gap-2">
                 <Button
                   variant={selectedPlayer === 'all' ? 'default' : 'outline'}
-                  className={`${selectedPlayer === 'all' ? 'bg-slate-600 hover:bg-slate-700' : 'border-slate-700 text-slate-400 hover:text-slate-300'}`}
+                  className={`${selectedPlayer === 'all' ? 'bg-[#2b7d68] hover:bg-[#39a589] text-white' : 'border-[#424f61] bg-[#424f61] text-slate-300 hover:bg-[#39a589] hover:border-[#39a589] hover:text-white'}`}
                   onClick={() => setSelectedPlayer('all')}
                 >
                   All Players ({savedVideos.length})
@@ -1519,7 +1511,7 @@ const PlayerAnalysisPage = () => {
                   <Button
                     key={player}
                     variant={selectedPlayer === player ? 'default' : 'outline'}
-                    className={`${selectedPlayer === player ? 'bg-slate-600 hover:bg-slate-700' : 'border-slate-700 text-slate-400 hover:text-slate-300'}`}
+                    className={`${selectedPlayer === player ? 'bg-[#2b7d68] hover:bg-[#39a589] text-white' : 'border-[#424f61] bg-[#424f61] text-slate-300 hover:bg-[#39a589] hover:border-[#39a589] hover:text-white'}`}
                     onClick={() => setSelectedPlayer(player)}
                   >
                     {player} ({savedVideos.filter(v => v.category === player).length})
