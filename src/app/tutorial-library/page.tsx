@@ -14,14 +14,22 @@ export default function TutorialLibraryPage() {
   const tutorialVideos = {
     'getting-started': [
       {
+        id: 'tutorial-my-library',
+        title: 'My Library Overview',
+        description: 'Complete walkthrough of the My Library feature and how to organize your content',
+        duration: 'TBD', // You can update this with the actual duration
+        difficulty: 'Beginner',
+        thumbnail: '/thumbnail-1.jpg',
+        videoUrl: '/tutorial-videos/Tutorial_myLibrary.mp4'
+      },
+      {
         id: 'tutorial-1',
         title: 'Getting Started with DrillShare',
         description: 'Learn the basics of navigating DrillShare and setting up your account',
         duration: '5:30',
         difficulty: 'Beginner',
         thumbnail: '/tutorial-thumbnails/getting-started.jpg',
-        videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-        tags: ['Setup', 'Navigation', 'Basics']
+        videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ'
       },
       {
         id: 'tutorial-2',
@@ -30,8 +38,7 @@ export default function TutorialLibraryPage() {
         duration: '3:45',
         difficulty: 'Beginner',
         thumbnail: '/tutorial-thumbnails/first-video.jpg',
-        videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-        tags: ['Videos', 'Library', 'YouTube']
+        videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ'
       },
       {
         id: 'tutorial-3',
@@ -40,8 +47,7 @@ export default function TutorialLibraryPage() {
         duration: '4:20',
         difficulty: 'Beginner',
         thumbnail: '/tutorial-thumbnails/tags-categories.jpg',
-        videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-        tags: ['Organization', 'Tags', 'Categories']
+        videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ'
       }
     ],
     'collections': [
@@ -52,8 +58,7 @@ export default function TutorialLibraryPage() {
         duration: '6:15',
         difficulty: 'Intermediate',
         thumbnail: '/tutorial-thumbnails/first-collection.jpg',
-        videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-        tags: ['Collections', 'Organization', 'Sharing']
+        videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ'
       },
       {
         id: 'tutorial-5',
@@ -62,8 +67,7 @@ export default function TutorialLibraryPage() {
         duration: '4:50',
         difficulty: 'Intermediate',
         thumbnail: '/tutorial-thumbnails/sharing-collections.jpg',
-        videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-        tags: ['Sharing', 'Team', 'Collaboration']
+        videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ'
       }
     ],
     'player-analysis': [
@@ -74,8 +78,7 @@ export default function TutorialLibraryPage() {
         duration: '7:30',
         difficulty: 'Intermediate',
         thumbnail: '/tutorial-thumbnails/player-analysis.jpg',
-        videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-        tags: ['Analysis', 'Players', 'Video Upload']
+        videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ'
       },
       {
         id: 'tutorial-7',
@@ -84,8 +87,7 @@ export default function TutorialLibraryPage() {
         duration: '9:45',
         difficulty: 'Advanced',
         thumbnail: '/tutorial-thumbnails/advanced-analysis.jpg',
-        videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-        tags: ['Advanced', 'Analysis', 'Performance']
+        videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ'
       }
     ],
     'tips-tricks': [
@@ -96,8 +98,7 @@ export default function TutorialLibraryPage() {
         duration: '8:20',
         difficulty: 'Advanced',
         thumbnail: '/tutorial-thumbnails/power-tips.jpg',
-        videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-        tags: ['Tips', 'Advanced', 'Productivity']
+        videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ'
       },
       {
         id: 'tutorial-9',
@@ -106,8 +107,7 @@ export default function TutorialLibraryPage() {
         duration: '3:15',
         difficulty: 'Intermediate',
         thumbnail: '/tutorial-thumbnails/shortcuts.jpg',
-        videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-        tags: ['Shortcuts', 'Productivity', 'Navigation']
+        videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ'
       }
     ]
   };
@@ -128,8 +128,22 @@ export default function TutorialLibraryPage() {
     >
       <CardHeader className="pb-3">
         <div className="aspect-video bg-slate-700 rounded-lg mb-3 flex items-center justify-center relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-slate-600 to-slate-800"></div>
-          <Play className="w-12 h-12 text-slate-300 relative z-10" />
+          {video.thumbnail ? (
+            <>
+              <img 
+                src={video.thumbnail} 
+                alt={video.title}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-black/20 hover:bg-black/10 transition-colors"></div>
+              <Play className="w-12 h-12 text-white absolute z-10 drop-shadow-lg" />
+            </>
+          ) : (
+            <>
+              <div className="absolute inset-0 bg-gradient-to-br from-slate-600 to-slate-800"></div>
+              <Play className="w-12 h-12 text-slate-300 relative z-10" />
+            </>
+          )}
           <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
             {video.duration}
           </div>
@@ -147,18 +161,7 @@ export default function TutorialLibraryPage() {
             {video.duration}
           </div>
         </div>
-        <div className="flex gap-1 flex-wrap">
-          {video.tags.slice(0, 2).map((tag: string) => (
-            <Badge key={tag} variant="secondary" className="text-xs bg-slate-700 text-slate-300">
-              {tag}
-            </Badge>
-          ))}
-          {video.tags.length > 2 && (
-            <Badge variant="secondary" className="text-xs bg-slate-700 text-slate-300">
-              +{video.tags.length - 2}
-            </Badge>
-          )}
-        </div>
+
       </CardContent>
     </Card>
   );
@@ -204,52 +207,58 @@ export default function TutorialLibraryPage() {
         {/* Video Modal */}
         {selectedVideo && (
           <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
-            <div className="bg-slate-800 rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
               <div className="p-6">
                 <div className="flex justify-between items-start mb-4">
-                  <h2 className="text-2xl font-bold text-slate-100">{selectedVideo.title}</h2>
+                  <h2 className="text-2xl font-bold text-slate-900">{selectedVideo.title}</h2>
                   <Button 
                     variant="ghost" 
                     onClick={() => setSelectedVideo(null)}
-                    className="text-slate-400 hover:text-slate-200"
+                    className="text-slate-600 hover:text-slate-800"
                   >
                     ✕
                   </Button>
                 </div>
                 
                 <div className="aspect-video bg-slate-700 rounded-lg mb-6">
-                  <iframe
-                    width="100%"
-                    height="100%"
-                    src={selectedVideo.videoUrl}
-                    title={selectedVideo.title}
-                    frameBorder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                    className="rounded-lg"
-                  ></iframe>
+                  {selectedVideo.videoUrl.includes('.mp4') ? (
+                    <video
+                      width="100%"
+                      height="100%"
+                      controls
+                      className="rounded-lg"
+                    >
+                      <source src={selectedVideo.videoUrl} type="video/mp4" />
+                      Your browser does not support the video tag.
+                    </video>
+                  ) : (
+                    <iframe
+                      width="100%"
+                      height="100%"
+                      src={selectedVideo.videoUrl}
+                      title={selectedVideo.title}
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      className="rounded-lg"
+                    ></iframe>
+                  )}
                 </div>
 
                 <div className="space-y-4">
-                  <p className="text-slate-300">{selectedVideo.description}</p>
+                  <p className="text-slate-700">{selectedVideo.description}</p>
                   
                   <div className="flex items-center gap-4">
                     <Badge className={getDifficultyColor(selectedVideo.difficulty)}>
                       {selectedVideo.difficulty}
                     </Badge>
-                    <div className="flex items-center gap-1 text-slate-400">
+                    <div className="flex items-center gap-1 text-slate-600">
                       <Clock className="w-4 h-4" />
                       {selectedVideo.duration}
                     </div>
                   </div>
 
-                  <div className="flex gap-2 flex-wrap">
-                    {selectedVideo.tags.map((tag: string) => (
-                      <Badge key={tag} variant="secondary" className="bg-slate-700 text-slate-300">
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
+
                 </div>
               </div>
             </div>
