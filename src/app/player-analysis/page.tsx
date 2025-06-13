@@ -16,6 +16,7 @@ import { useFirebase } from '@/contexts/FirebaseContext';
 import { collection, addDoc, deleteDoc, doc, getDocs, query, where, orderBy, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { VideoAnnotationCanvas } from '@/components/VideoAnnotationCanvas';
+import VideoControlBar from '@/components/VideoControlBar';
 
 // Helper function to extract YouTube video ID from URL
 const extractYouTubeId = (url: string): string | null => {
@@ -135,6 +136,8 @@ const PlayerAnalysisPage = () => {
   const [editNotes, setEditNotes] = useState('');
   const [editPlayerName, setEditPlayerName] = useState('');
   const modalVideoRef = useRef<HTMLVideoElement>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [duration, setDuration] = useState(0);
 
   const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500MB max upload (before compression)
   const TARGET_COMPRESSED_SIZE = 50 * 1024 * 1024; // Target 50MB after compression (better quality)
@@ -143,6 +146,9 @@ const PlayerAnalysisPage = () => {
   const ACCEPTED_VIDEO_TYPES = ['video/mp4', 'video/quicktime', 'video/mov'];
   const ACCEPTED_IMAGE_TYPES = ['image/heic', 'image/heif'];
   
+  const videoContainerRef = useRef<HTMLDivElement>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
   // Load videos from Firestore
   useEffect(() => {
     const loadVideos = async () => {
@@ -1035,6 +1041,34 @@ const PlayerAnalysisPage = () => {
     }
   }, [selectedVideo]);
 
+  // Fullscreen API handlers
+  const handleEnterFullscreen = () => {
+    if (videoContainerRef.current) {
+      if (videoContainerRef.current.requestFullscreen) {
+        videoContainerRef.current.requestFullscreen();
+      } else if ((videoContainerRef.current as any).webkitRequestFullscreen) {
+        (videoContainerRef.current as any).webkitRequestFullscreen();
+      } else if ((videoContainerRef.current as any).msRequestFullscreen) {
+        (videoContainerRef.current as any).msRequestFullscreen();
+      }
+    }
+  };
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      const fsElement = document.fullscreenElement || (document as any).webkitFullscreenElement || (document as any).msFullscreenElement;
+      setIsFullscreen(!!fsElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('msfullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('msfullscreenchange', handleFullscreenChange);
+    };
+  }, []);
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
       {/* Header */}
@@ -1577,8 +1611,22 @@ const PlayerAnalysisPage = () => {
       
       {/* Video Detail Modal */}
       {selectedVideo && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
-          <Card className="bg-slate-900/90 border-slate-700/50 max-w-5xl w-full">
+        <div
+          className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50"
+          onClick={() => {
+            setSelectedVideo(null);
+            setIsAnnotationMode(false);
+            setVideoAnnotations([]);
+            setShowAnnotations(true);
+            setIsEditMode(false);
+            setEditNotes('');
+            setEditPlayerName('');
+          }}
+        >
+          <Card
+            className="bg-slate-900/90 border-slate-700/50 max-w-5xl w-full max-h-screen overflow-y-auto"
+            onClick={e => e.stopPropagation()}
+          >
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
@@ -1608,30 +1656,11 @@ const PlayerAnalysisPage = () => {
                       </button>
                     </div>
                   )}
-                  
-                  {/* Edit Button */}
-                  <Button
-                    variant={isEditMode ? 'default' : 'outline'}
-                    size="sm"
-                    className={`${
-                      isEditMode 
-                        ? 'bg-blue-600 hover:bg-blue-700 text-white border-blue-600' 
-                        : 'border-slate-600 bg-slate-800/50 text-slate-100 hover:bg-blue-600 hover:border-blue-600 hover:text-white'
-                    } font-medium`}
-                    onClick={toggleEditMode}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
-                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                    </svg>
-                    {isEditMode ? 'Cancel Edit' : 'Edit'}
-                  </Button>
-                  
                   {/* Annotate Button */}
                   <Button
                     variant={isAnnotationMode ? 'default' : 'outline'}
                     size="sm"
-                    className={`${
+                    className={`$${
                       isAnnotationMode 
                         ? 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600' 
                         : 'border-slate-600 bg-slate-800/50 text-slate-100 hover:bg-emerald-600 hover:border-emerald-600 hover:text-white'
@@ -1644,6 +1673,15 @@ const PlayerAnalysisPage = () => {
                     </svg>
                     {isAnnotationMode ? 'Exit Annotation' : 'Annotate'}
                   </Button>
+                  {/* Fullscreen button - now to the right of Annotate */}
+                  <button
+                    onClick={handleEnterFullscreen}
+                    className="z-30 bg-slate-800/80 hover:bg-slate-700 text-white rounded-full p-2 shadow-lg focus:outline-none"
+                    title="Fullscreen"
+                    style={{ pointerEvents: 'auto' }}
+                  >
+                    <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+                  </button>
                 </div>
               </div>
             </CardHeader>
@@ -1657,17 +1695,46 @@ const PlayerAnalysisPage = () => {
                     allowFullScreen
                   />
                 ) : (
-                  <>
+                  <div
+                    ref={videoContainerRef}
+                    className={`relative w-full h-full ${isFullscreen ? 'fixed inset-0 z-50 bg-black flex flex-col justify-center items-center' : ''}`}
+                    style={isFullscreen ? { width: '100vw', height: '100vh' } : {}}
+                  >
                     <video
                       ref={modalVideoRef}
                       src={selectedVideo.videoUrl}
                       className="w-full h-full"
-                      controls={!isAnnotationMode}
+                      controls={false}
                       onTimeUpdate={handleVideoTimeUpdate}
-                      style={{
-                        pointerEvents: isAnnotationMode ? 'none' : 'auto'
-                      }}
+                      onLoadedMetadata={() => setDuration(modalVideoRef.current?.duration || 0)}
+                      onPlay={() => setIsPlaying(true)}
+                      onPause={() => setIsPlaying(false)}
+                      style={{ pointerEvents: isAnnotationMode ? 'none' : 'auto' }}
                     />
+                    {/* Custom Video Control Bar - now above the annotation canvas */}
+                    <div className="absolute left-0 right-0 bottom-0 z-30 pointer-events-auto">
+                      <VideoControlBar
+                        videoRef={modalVideoRef}
+                        currentTime={currentVideoTime}
+                        duration={duration}
+                        isPlaying={isPlaying}
+                        onPlayPause={() => {
+                          if (!modalVideoRef.current) return;
+                          if (isPlaying) {
+                            modalVideoRef.current.pause();
+                          } else {
+                            modalVideoRef.current.play();
+                          }
+                        }}
+                        onSeek={(time) => {
+                          if (modalVideoRef.current) {
+                            modalVideoRef.current.currentTime = time;
+                            setCurrentVideoTime(time);
+                          }
+                        }}
+                        onScrubberInteract={() => setIsAnnotationMode(false)}
+                      />
+                    </div>
                     <VideoAnnotationCanvas
                       videoElement={modalVideoRef.current}
                       isAnnotationMode={isAnnotationMode}
@@ -1677,13 +1744,13 @@ const PlayerAnalysisPage = () => {
                       currentTime={currentVideoTime}
                       showAnnotations={showAnnotations}
                     />
-                  </>
+                  </div>
                 )}
               </div>
               
               {/* Annotation mode info banner */}
               {isAnnotationMode && (
-                <div className="mb-4 p-3 bg-emerald-800/30 rounded-lg border border-emerald-600/50">
+                <div className="mb-4 p-3 bg-emerald-800/30 rounded-lg border border-emerald-600/50 max-h-32 overflow-y-auto">
                   <div className="flex items-start gap-3">
                     <div className="flex-shrink-0 w-8 h-8 bg-emerald-600 rounded-full flex items-center justify-center">
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1695,14 +1762,8 @@ const PlayerAnalysisPage = () => {
                       <p className="text-sm text-emerald-200 mb-2 font-medium">
                         🎯 Annotation Mode Active - Draw directly on the video to highlight swing mechanics
                       </p>
-                      <div className="grid grid-cols-2 gap-2 text-xs text-emerald-300">
-                        <div>• <kbd className="px-1 py-0.5 bg-emerald-700 rounded text-xs">L</kbd> Line tool</div>
-                        <div>• <kbd className="px-1 py-0.5 bg-emerald-700 rounded text-xs">C</kbd> Circle tool</div>
-                        <div>• <kbd className="px-1 py-0.5 bg-emerald-700 rounded text-xs">A</kbd> Arrow tool</div>
-                        <div>• <kbd className="px-1 py-0.5 bg-emerald-700 rounded text-xs">F</kbd> Freehand tool</div>
-                      </div>
                       <p className="text-xs text-emerald-400 mt-2">
-                        💡 Tip: Pause the video first, then draw. Click "Save" when you finish each annotation.
+                        Use your mouse, touch, or stylus to draw. Click "Clear All" to erase drawings. Click "Exit Annotation" when finished.
                       </p>
                     </div>
                   </div>
@@ -1781,45 +1842,6 @@ const PlayerAnalysisPage = () => {
                       >
                         Clear All
                       </Button>
-                    </div>
-                    <div className="mt-2 space-y-2 max-h-32 overflow-y-auto">
-                      {videoAnnotations
-                        .sort((a, b) => a.timestamp - b.timestamp) // Sort by timestamp
-                        .map((annotation, index) => (
-                        <div key={annotation.id} className="flex items-center gap-2 text-sm group">
-                          <div 
-                            className="w-3 h-3 rounded-full border flex-shrink-0"
-                            style={{ backgroundColor: annotation.color }}
-                          />
-                          <button
-                            className="text-slate-400 hover:text-slate-300 font-mono text-xs"
-                            onClick={() => {
-                              if (modalVideoRef.current) {
-                                modalVideoRef.current.currentTime = annotation.timestamp;
-                              }
-                            }}
-                            title="Jump to timestamp"
-                          >
-                            {Math.floor(annotation.timestamp / 60)}:{(annotation.timestamp % 60).toFixed(1).padStart(4, '0')}s
-                          </button>
-                          <span className="text-slate-300 capitalize">{annotation.tool}</span>
-                          {annotation.notes && (
-                            <span className="text-slate-400 text-xs">- {annotation.notes}</span>
-                          )}
-                          <button
-                            className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity text-red-400 hover:text-red-300 p-1"
-                            onClick={() => handleAnnotationDelete(annotation.id)}
-                            title="Delete annotation"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <polyline points="3 6 5 6 21 6"/>
-                              <path d="m19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                              <line x1="10" y1="11" x2="10" y2="17"/>
-                              <line x1="14" y1="11" x2="14" y2="17"/>
-                            </svg>
-                          </button>
-                        </div>
-                      ))}
                     </div>
                     <div className="mt-2 text-xs text-slate-500">
                       💡 Tip: Click timestamps to jump to that moment, or click annotations on the video to delete them
