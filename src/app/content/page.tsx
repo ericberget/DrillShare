@@ -64,7 +64,7 @@ function ContentPageInner() {
     <div className="min-h-screen bg-slate-950">
       <div className="container mx-auto px-4 py-8">
         <div className="mb-10 flex flex-col items-center">
-          <div className="w-[600px] mb-6">
+          <div className="w-full max-w-[600px] sm:max-w-[600px] mx-auto mb-6 px-4 sm:px-0">
             <img 
               src="/logo.png" 
               alt="DrillHub Logo" 

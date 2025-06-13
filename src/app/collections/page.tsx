@@ -56,7 +56,7 @@ export default function CollectionsPage() {
         <div className="container mx-auto px-4 py-8">
           {/* Header Section */}
           <div className="mb-12 text-center">
-            <div className="w-[320px] mx-auto mb-6">
+            <div className="w-full max-w-[320px] sm:max-w-[320px] mx-auto mb-6 px-4 sm:px-0">
               <img 
                 src="/logo.png" 
                 alt="DrillShare Logo" 

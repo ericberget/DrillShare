@@ -1039,11 +1039,20 @@ const PlayerAnalysisPage = () => {
     <div className="min-h-screen bg-slate-950 text-slate-100">
       {/* Header */}
       <header className="border-b border-slate-800/30 bg-gradient-to-b from-slate-900/95 to-slate-950/95">
-        <div className="container mx-auto py-8">
-          <div className="flex flex-col items-center gap-6">
+        <div className="container mx-auto py-4 md:py-8">
+          <div className="flex flex-col items-center gap-4 md:gap-6">
+            {/* Centered Logo */}
+            <div className="text-center order-1 md:order-2">
+              <img 
+                src="/filmroom-logo.png" 
+                alt="Film Room" 
+                className="h-16 md:h-20 mx-auto"
+              />
+            </div>
+            
             {/* Navigation and Upload Button Row */}
-            <div className="flex items-center justify-between w-full mt-8">
-              <div className="flex items-center gap-4">
+            <div className="flex items-center justify-between w-full order-2 md:order-1 md:mt-8 md:-mb-16">
+              <div className="flex items-center gap-2 md:gap-4">
                 {activeTab === 'upload' && selectedVideo ? (
                   <button 
                     onClick={() => {
@@ -1057,17 +1066,17 @@ const PlayerAnalysisPage = () => {
                       setFile(null);
                       handleTabChange('myvideos');
                     }}
-                    className="flex items-center gap-4 text-slate-400 hover:text-slate-300 opacity-50 hover:opacity-100 transition-all"
+                    className="flex items-center gap-2 md:gap-4 text-slate-400 hover:text-slate-300 opacity-50 hover:opacity-100 transition-all text-sm md:text-base"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="md:w-6 md:h-6">
                       <path d="m12 19-7-7 7-7"/>
                       <path d="M19 12H5"/>
                     </svg>
                     <span className="font-medium">Back to My Videos</span>
                   </button>
                 ) : (
-                  <Link href="/" className="flex items-center gap-4 text-slate-400 hover:text-slate-300 opacity-50 hover:opacity-100 transition-all">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <Link href="/" className="flex items-center gap-2 md:gap-4 text-slate-400 hover:text-slate-300 opacity-50 hover:opacity-100 transition-all text-sm md:text-base">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="md:w-6 md:h-6">
                       <path d="m12 19-7-7 7-7"/>
                       <path d="M19 12H5"/>
                     </svg>
@@ -1077,23 +1086,15 @@ const PlayerAnalysisPage = () => {
               </div>
               <Button 
                 onClick={() => handleTabChange('upload')}
-                className="bg-white hover:bg-slate-100 text-slate-900 flex items-center gap-2"
-                size="lg"
+                className="bg-white hover:bg-slate-100 text-slate-900 flex items-center gap-2 text-sm md:text-base"
+                size="sm"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="md:w-4 md:h-4">
                   <path d="M12 5v14M5 12h14"/>
                 </svg>
-                Upload Video
+                <span className="hidden sm:inline">Upload Video</span>
+                <span className="sm:hidden">Upload</span>
               </Button>
-            </div>
-            
-            {/* Centered Logo */}
-            <div className="text-center -mt-24">
-              <img 
-                src="/filmroom-logo.png" 
-                alt="Film Room" 
-                className="h-20 mx-auto"
-              />
             </div>
           </div>
         </div>
