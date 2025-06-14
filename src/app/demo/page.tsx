@@ -356,7 +356,7 @@ export default function DemoPage() {
               {video.favorite ? (
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="#facc15" viewBox="0 0 24 24"><path d="M12 17.75l-6.172 3.245 1.179-6.873-5-4.873 6.9-1.002L12 2.25l3.093 6.997 6.9 1.002-5 4.873 1.179 6.873z"/></svg>
               ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="#facc15" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 17.75l-6.172 3.245 1.179-6.873-5-4.873 6.9-1.002L12 2.25l3.093 6.997 6.9 1.002-5 4.873 1.179 6.873z"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="#fff" strokeWidth="2" viewBox="0 0 24 24" opacity="0.7"><path d="M12 17.75l-6.172 3.245 1.179-6.873-5-4.873 6.9-1.002L12 2.25l3.093 6.997 6.9 1.002-5 4.873 1.179 6.873z"/></svg>
               )}
             </button>
             {video.isUserAdded && (
