@@ -16,11 +16,41 @@ import Link from 'next/link';
 import Image from 'next/image';
 
 export default function DemoPage() {
-  // DISABLED: Sample videos removed - users now start with clean libraries
+  // DEMO: Three YouTube videos for demo mode
   const sampleVideos = {
-    hitting: [],
-    pitching: [],
-    infield: [],
+    hitting: [
+      {
+        id: 'default-1',
+        title: 'How to Hit a Baseball',
+        url: 'https://www.youtube.com/watch?v=YY9tErIBVQw',
+        category: 'hitting',
+        skillLevel: 'beginner',
+        teachingCue: 'Good start to finish basics of hitting for a beginner player. Line up your knuckles. Load. Stride. etc. All the main components of a fundamental swing.',
+        tags: ['tball', 'coach pitch']
+      }
+    ],
+    pitching: [
+      {
+        id: 'default-2',
+        title: '3 Velocity Tips/Drills',
+        url: 'https://www.youtube.com/watch?v=mh5oBfiu6PA',
+        category: 'pitching',
+        skillLevel: 'highLevel',
+        teachingCue: 'Good video for high school level kids (maybe younger) looking to increase velocity.',
+        tags: ['12u', 'high school', 'velocity']
+      }
+    ],
+    infield: [
+      {
+        id: 'default-3',
+        title: 'Create Rhythm',
+        url: 'https://youtu.be/eD5FBGs6jMY?si=ppTX6F8gMfdYXXEx&t',
+        category: 'infield',
+        skillLevel: 'littleLeague',
+        teachingCue: 'Perfect illustration of right left for mid-level and high-level infielders.\nJump to the middle of the video to get to the meat of it.',
+        tags: ['12u']
+      }
+    ],
     catching: [],
     other: []
   };
@@ -283,6 +313,13 @@ export default function DemoPage() {
     setFormData(prev => ({ ...prev, newTag: e.target.value }));
   };
 
+  // Toggle favorite status
+  const toggleFavorite = (videoId: string) => {
+    setDemoVideos(prev => prev.map(v =>
+      v.id === videoId ? { ...v, favorite: !v.favorite } : v
+    ));
+  };
+
   // Video card component
   const VideoCard = ({ video, index }: { video: any; index: number }) => {
     const youtubeId = getYouTubeVideoId(video.url);
@@ -310,11 +347,18 @@ export default function DemoPage() {
             ) : (
               <div className="absolute inset-0 bg-gradient-to-br from-slate-600 to-slate-800"></div>
             )}
-            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-200">
-              <div className="w-8 md:w-12 h-8 md:h-12 bg-white/90 rounded-full flex items-center justify-center transform hover:scale-110 transition-transform duration-200">
-                <div className="w-0 h-0 border-l-[6px] md:border-l-[8px] border-l-slate-900 border-t-[4px] md:border-t-[6px] border-t-transparent border-b-[4px] md:border-b-[6px] border-b-transparent ml-1"></div>
-              </div>
-            </div>
+            {/* Favorite Star Button - bottom right */}
+            <button
+              onClick={e => { e.stopPropagation(); toggleFavorite(video.id); }}
+              className="absolute bottom-2 right-2 z-10 bg-black/40 rounded-full p-1 hover:bg-yellow-400/20 transition"
+              title={video.favorite ? 'Remove from Favorites' : 'Add to Favorites'}
+            >
+              {video.favorite ? (
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="#facc15" viewBox="0 0 24 24"><path d="M12 17.75l-6.172 3.245 1.179-6.873-5-4.873 6.9-1.002L12 2.25l3.093 6.997 6.9 1.002-5 4.873 1.179 6.873z"/></svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="#facc15" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 17.75l-6.172 3.245 1.179-6.873-5-4.873 6.9-1.002L12 2.25l3.093 6.997 6.9 1.002-5 4.873 1.179 6.873z"/></svg>
+              )}
+            </button>
             {video.isUserAdded && (
               <div className="absolute top-2 left-2">
                 <Badge className="bg-blue-600 text-white text-xs">Your Video</Badge>
@@ -325,11 +369,6 @@ export default function DemoPage() {
         </CardHeader>
         <CardContent className="pt-0 p-3 md:p-6">
           <p className="text-slate-400 text-xs md:text-sm mb-2 md:mb-3 line-clamp-2">{video.teachingCue}</p>
-          <div className="flex items-center justify-between mb-2 md:mb-3 gap-2">
-            <Badge className="bg-slate-700 text-slate-300 transition-colors duration-200 hover:bg-slate-600 text-xs">
-              {video.category}
-            </Badge>
-          </div>
           <div className="flex gap-1 flex-wrap">
             {video.tags?.filter((tag: string) => 
               tag !== 'Little League' && tag !== 'Advanced' && tag !== 'Intermediate' && tag !== 'High Level'
