@@ -40,7 +40,7 @@ const VideoCard = ({
   return (
     <Card className="bg-slate-900/30 border-slate-700/50">
       <CardContent className="p-4">
-        <div className={`bg-slate-800 rounded-lg overflow-hidden mb-4 ${
+        <div className={`relative bg-slate-800 rounded-lg overflow-hidden mb-2 ${
           video.orientation === 'vertical' ? 'aspect-[9/16]' : 'aspect-video'
         }`}>
           {video.videoType === 'youtube' ? (
@@ -58,21 +58,25 @@ const VideoCard = ({
             />
           )}
         </div>
-        <div className="space-y-2">
-          <h3 className="text-lg font-semibold text-slate-100">{video.playerName}</h3>
-          <p className="text-sm text-slate-400">Player: {video.category}</p>
-          <p className="text-sm text-slate-400">Added: {formatDate(video.createdAt)}</p>
-          {video.fileSize && (
-            <p className="text-sm text-slate-400">
-              Size: {(video.fileSize / (1024 * 1024)).toFixed(2)} MB
-            </p>
-          )}
+        {/* Player badge below video */}
+        <div className="flex items-center justify-between mt-2 mb-1">
+          <button
+            className="bg-emerald-700/90 hover:bg-emerald-600 text-white text-xs font-semibold px-3 py-1 rounded-full shadow focus:outline-none focus:ring-2 focus:ring-emerald-400 transition"
+            title={`Play video for ${video.playerName}`}
+            onClick={e => {
+              e.stopPropagation();
+              onView(video);
+            }}
+          >
+            {video.playerName}
+          </button>
+          <span className="text-xs text-slate-400 opacity-70">{formatDate(video.createdAt)}</span>
         </div>
-        <div className="flex gap-1 mt-4">
+        <div className="flex gap-1 mt-2">
           <Button 
             variant="ghost" 
             size="sm"
-            className="flex-1 text-slate-500 hover:text-slate-300 hover:bg-slate-800/50"
+            className="flex-1 text-slate-500 hover:text-slate-300 hover:bg-slate-800/50 py-1"
             onClick={() => onView(video)}
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
@@ -84,7 +88,7 @@ const VideoCard = ({
           <Button 
             variant="ghost"
             size="sm"
-            className="flex-1 text-slate-500 hover:text-red-400 hover:bg-red-900/20"
+            className="flex-1 text-slate-500 hover:text-red-400 hover:bg-red-900/20 py-1"
             onClick={() => onDelete(video.id)}
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
@@ -131,7 +135,6 @@ const PlayerAnalysisPage = () => {
   const [isAnnotationMode, setIsAnnotationMode] = useState(false);
   const [currentVideoTime, setCurrentVideoTime] = useState(0);
   const [videoAnnotations, setVideoAnnotations] = useState<VideoAnnotation[]>([]);
-  const [showAnnotations, setShowAnnotations] = useState(true);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editNotes, setEditNotes] = useState('');
   const [editPlayerName, setEditPlayerName] = useState('');
@@ -986,10 +989,6 @@ const PlayerAnalysisPage = () => {
     }
   };
 
-  const toggleShowAnnotations = () => {
-    setShowAnnotations(!showAnnotations);
-  };
-
   const toggleEditMode = () => {
     if (!isEditMode && selectedVideo) {
       // Entering edit mode - populate edit fields
@@ -1617,7 +1616,6 @@ const PlayerAnalysisPage = () => {
             setSelectedVideo(null);
             setIsAnnotationMode(false);
             setVideoAnnotations([]);
-            setShowAnnotations(true);
             setIsEditMode(false);
             setEditNotes('');
             setEditPlayerName('');
@@ -1638,23 +1636,7 @@ const PlayerAnalysisPage = () => {
                 <div className="flex items-center gap-4">
                   {/* Show Annotations Toggle - only show if annotations exist */}
                   {videoAnnotations.length > 0 && (
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm text-slate-300 font-medium">Annotations:</span>
-                      <button
-                        onClick={toggleShowAnnotations}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 ${
-                          showAnnotations 
-                            ? 'bg-emerald-600' 
-                            : 'bg-slate-600'
-                        }`}
-                      >
-                        <span
-                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                            showAnnotations ? 'translate-x-6' : 'translate-x-1'
-                          }`}
-                        />
-                      </button>
-                    </div>
+                    null
                   )}
                   {/* Annotate Button */}
                   <Button
@@ -1742,7 +1724,7 @@ const PlayerAnalysisPage = () => {
                       onAnnotationDelete={handleAnnotationDelete}
                       existingAnnotations={videoAnnotations}
                       currentTime={currentVideoTime}
-                      showAnnotations={showAnnotations}
+                      showAnnotations={true} // Always show annotations
                     />
                   </div>
                 )}
@@ -1871,13 +1853,11 @@ const PlayerAnalysisPage = () => {
             </CardContent>
             <CardFooter className="flex justify-end gap-2">
               <Button
-                variant="outline"
-                className="border-slate-700 text-slate-300 hover:text-slate-100"
+                className="bg-slate-700 hover:bg-slate-800 text-white font-semibold shadow"
                 onClick={() => {
                   setSelectedVideo(null);
                   setIsAnnotationMode(false);
                   setVideoAnnotations([]);
-                  setShowAnnotations(true); // Reset annotation visibility
                   setIsEditMode(false); // Reset edit mode
                   setEditNotes(''); // Reset edit fields
                   setEditPlayerName('');

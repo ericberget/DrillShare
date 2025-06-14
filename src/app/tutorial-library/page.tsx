@@ -58,7 +58,7 @@ export default function TutorialLibraryPage() {
         duration: '6:15',
         difficulty: 'Intermediate',
         thumbnail: '/tutorial-thumbnails/first-collection.jpg',
-        videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ'
+        videoUrl: '/tutorial-videos/collectionsTutorial.mp4'
       },
       {
         id: 'tutorial-5',
