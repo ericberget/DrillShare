@@ -506,6 +506,23 @@ export default function PracticePlannerPage() {
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-slate-950 text-white">
+        <header
+          className="w-full border-b border-slate-800/30 flex items-center justify-center"
+          style={{
+            backgroundImage: "url('/bgtexture.jpg')",
+            backgroundRepeat: "repeat-x",
+            backgroundSize: "auto 100%",
+            backgroundPosition: "center",
+            minHeight: '180px',
+          }}
+        >
+          <img 
+            src="/practiceTitle.png" 
+            alt="Practice Planner" 
+            className="h-12 md:h-16 lg:h-20 xl:h-24 mb-0"
+            style={{ marginTop: 0 }}
+          />
+        </header>
         <div className="container mx-auto px-4 py-6">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">

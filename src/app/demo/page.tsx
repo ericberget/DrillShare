@@ -688,32 +688,32 @@ export default function DemoPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">
-                  <div className="flex items-center gap-2">
-                    <img src="/baseball.png" alt="Baseball" className="w-4 h-4 opacity-80" />
+                  <div className="flex items-center gap-2 group">
+                    <img src="/baseball.png" alt="Baseball" className="w-4 h-4 opacity-80 transition-transform duration-300 group-hover:rotate-180" />
                     All
                   </div>
                 </SelectItem>
                 <SelectItem value="hitting">
-                  <div className="flex items-center gap-2">
-                    <img src="/baseball.png" alt="Baseball" className="w-4 h-4 opacity-80" />
+                  <div className="flex items-center gap-2 group">
+                    <img src="/baseball.png" alt="Baseball" className="w-4 h-4 opacity-80 transition-transform duration-300 group-hover:rotate-180" />
                     Hitting
                   </div>
                 </SelectItem>
                 <SelectItem value="infield">
-                  <div className="flex items-center gap-2">
-                    <img src="/baseball.png" alt="Baseball" className="w-4 h-4 opacity-80" />
+                  <div className="flex items-center gap-2 group">
+                    <img src="/baseball.png" alt="Baseball" className="w-4 h-4 opacity-80 transition-transform duration-300 group-hover:rotate-180" />
                     Infield
                   </div>
                 </SelectItem>
                 <SelectItem value="pitching">
-                  <div className="flex items-center gap-2">
-                    <img src="/baseball.png" alt="Baseball" className="w-4 h-4 opacity-80" />
+                  <div className="flex items-center gap-2 group">
+                    <img src="/baseball.png" alt="Baseball" className="w-4 h-4 opacity-80 transition-transform duration-300 group-hover:rotate-180" />
                     Pitching
                   </div>
                 </SelectItem>
                 <SelectItem value="catching">
-                  <div className="flex items-center gap-2">
-                    <img src="/baseball.png" alt="Baseball" className="w-4 h-4 opacity-80" />
+                  <div className="flex items-center gap-2 group">
+                    <img src="/baseball.png" alt="Baseball" className="w-4 h-4 opacity-80 transition-transform duration-300 group-hover:rotate-180" />
                     Catching
                   </div>
                 </SelectItem>
@@ -726,37 +726,57 @@ export default function DemoPage() {
             <TabsList className={`hidden md:flex w-full justify-center gap-4 mb-8 ${isInitialLoad ? 'animate-fade-in opacity-0' : ''}`} style={{ animationDelay: '150ms', animationFillMode: 'forwards' }}>
               <TabsTrigger 
                 value="all" 
-                className="min-w-[120px] data-[state=active]:bg-slate-600 data-[state=active]:text-white px-8 font-oswald flex flex-col items-center py-3 text-base rounded-md transition-all duration-200 hover:bg-slate-700/50 text-slate-300 hover:scale-105"
+                className="min-w-[120px] data-[state=active]:bg-slate-600 data-[state=active]:text-white px-8 font-oswald flex flex-col items-center py-3 text-base rounded-md transition-all duration-200 hover:bg-slate-700/50 text-slate-300 hover:scale-105 group"
               >
-                <img src="/baseball.png" alt="Baseball" className="w-5 h-5 mb-2 opacity-80" />
+                <img 
+                  src="/baseball.png" 
+                  alt="Baseball" 
+                  className="w-5 h-5 mb-2 opacity-80 transition-transform duration-300 group-hover:rotate-180 data-[state=active]:animate-spin-slow" 
+                />
                 All
               </TabsTrigger>
               <TabsTrigger 
                 value="hitting" 
-                className="min-w-[120px] data-[state=active]:bg-slate-600 data-[state=active]:text-white px-8 font-oswald flex flex-col items-center py-3 text-base rounded-md transition-all duration-200 hover:bg-slate-700/50 text-slate-300 hover:scale-105"
+                className="min-w-[120px] data-[state=active]:bg-slate-600 data-[state=active]:text-white px-8 font-oswald flex flex-col items-center py-3 text-base rounded-md transition-all duration-200 hover:bg-slate-700/50 text-slate-300 hover:scale-105 group"
               >
-                <img src="/baseball.png" alt="Baseball" className="w-5 h-5 mb-2 opacity-80" />
+                <img 
+                  src="/baseball.png" 
+                  alt="Baseball" 
+                  className="w-5 h-5 mb-2 opacity-80 transition-transform duration-300 group-hover:rotate-180 data-[state=active]:animate-spin-slow" 
+                />
                 Hitting
               </TabsTrigger>
               <TabsTrigger 
                 value="infield" 
-                className="min-w-[120px] data-[state=active]:bg-slate-600 data-[state=active]:text-white px-8 font-oswald flex flex-col items-center py-3 text-base rounded-md transition-all duration-200 hover:bg-slate-700/50 text-slate-300 hover:scale-105"
+                className="min-w-[120px] data-[state=active]:bg-slate-600 data-[state=active]:text-white px-8 font-oswald flex flex-col items-center py-3 text-base rounded-md transition-all duration-200 hover:bg-slate-700/50 text-slate-300 hover:scale-105 group"
               >
-                <img src="/baseball.png" alt="Baseball" className="w-5 h-5 mb-2 opacity-80" />
+                <img 
+                  src="/baseball.png" 
+                  alt="Baseball" 
+                  className="w-5 h-5 mb-2 opacity-80 transition-transform duration-300 group-hover:rotate-180 data-[state=active]:animate-spin-slow" 
+                />
                 Infield
               </TabsTrigger>
               <TabsTrigger 
                 value="pitching" 
-                className="min-w-[120px] data-[state=active]:bg-slate-600 data-[state=active]:text-white px-8 font-oswald flex flex-col items-center py-3 text-base rounded-md transition-all duration-200 hover:bg-slate-700/50 text-slate-300 hover:scale-105"
+                className="min-w-[120px] data-[state=active]:bg-slate-600 data-[state=active]:text-white px-8 font-oswald flex flex-col items-center py-3 text-base rounded-md transition-all duration-200 hover:bg-slate-700/50 text-slate-300 hover:scale-105 group"
               >
-                <img src="/baseball.png" alt="Baseball" className="w-5 h-5 mb-2 opacity-80" />
+                <img 
+                  src="/baseball.png" 
+                  alt="Baseball" 
+                  className="w-5 h-5 mb-2 opacity-80 transition-transform duration-300 group-hover:rotate-180 data-[state=active]:animate-spin-slow" 
+                />
                 Pitching
               </TabsTrigger>
               <TabsTrigger 
                 value="catching" 
-                className="min-w-[120px] data-[state=active]:bg-slate-600 data-[state=active]:text-white px-8 font-oswald flex flex-col items-center py-3 text-base rounded-md transition-all duration-200 hover:bg-slate-700/50 text-slate-300 hover:scale-105"
+                className="min-w-[120px] data-[state=active]:bg-slate-600 data-[state=active]:text-white px-8 font-oswald flex flex-col items-center py-3 text-base rounded-md transition-all duration-200 hover:bg-slate-700/50 text-slate-300 hover:scale-105 group"
               >
-                <img src="/baseball.png" alt="Baseball" className="w-5 h-5 mb-2 opacity-80" />
+                <img 
+                  src="/baseball.png" 
+                  alt="Baseball" 
+                  className="w-5 h-5 mb-2 opacity-80 transition-transform duration-300 group-hover:rotate-180 data-[state=active]:animate-spin-slow" 
+                />
                 Catching
               </TabsTrigger>
             </TabsList>

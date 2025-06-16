@@ -1071,11 +1071,19 @@ const PlayerAnalysisPage = () => {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
       {/* Header */}
-      <header className="border-b border-slate-800/30 bg-gradient-to-b from-slate-900/95 to-slate-950/95">
+      <header
+        className="border-b border-slate-800/30"
+        style={{
+          backgroundImage: "url('/bgtexture.jpg')",
+          backgroundRepeat: "repeat-x",
+          backgroundSize: "auto 100%",
+          backgroundPosition: "center",
+        }}
+      >
         <div className="container mx-auto py-4 md:py-8">
           <div className="flex flex-col items-center gap-4 md:gap-6">
             {/* Centered Logo */}
-            <div className="text-center order-1 md:order-2">
+            <div className="text-center order-1 md:order-2" style={{ marginTop: '-40px' }}>
               <img 
                 src="/filmroom-logo.png" 
                 alt="Film Room" 

@@ -3,9 +3,7 @@
 import React, { useState } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Play, Clock, Users, Star } from 'lucide-react';
 
 export default function TutorialLibraryPage() {
@@ -57,7 +55,7 @@ export default function TutorialLibraryPage() {
         description: 'Learn how to group related videos into shareable collections',
         duration: '6:15',
         difficulty: 'Intermediate',
-        thumbnail: '/tutorial-thumbnails/first-collection.jpg',
+        thumbnail: '/thumbnail-collections.jpg',
         videoUrl: '/tutorial-videos/collectionsTutorial.mp4'
       },
       {
@@ -112,14 +110,21 @@ export default function TutorialLibraryPage() {
     ]
   };
 
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case 'Beginner': return 'bg-green-500/20 text-green-400 border-green-500/30';
-      case 'Intermediate': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
-      case 'Advanced': return 'bg-red-500/20 text-red-400 border-red-500/30';
-      default: return 'bg-slate-500/20 text-slate-400 border-slate-500/30';
-    }
-  };
+  // Combine all videos from all categories into a single array
+  const allTutorialsRaw = Object.values(tutorialVideos).flat();
+  const collectionIndex = allTutorialsRaw.findIndex(v => v.videoUrl === '/tutorial-videos/collectionsTutorial.mp4');
+  let allTutorials = allTutorialsRaw;
+  if (collectionIndex > -1) {
+    const [collectionTutorial] = allTutorialsRaw.splice(collectionIndex, 1);
+    allTutorials = [allTutorialsRaw[0], collectionTutorial, ...allTutorialsRaw.slice(1)];
+  }
+
+  // After defining allTutorials, update the thumbnail for the collections tutorial
+  allTutorials = allTutorials.map(tut =>
+    tut.videoUrl === '/tutorial-videos/collectionsTutorial.mp4'
+      ? { ...tut, thumbnail: '/thumbnail-collections.jpg' }
+      : tut
+  );
 
   const VideoCard = ({ video }: { video: any }) => (
     <Card 
@@ -153,9 +158,6 @@ export default function TutorialLibraryPage() {
       <CardContent className="pt-0">
         <p className="text-slate-400 text-sm mb-3 line-clamp-2">{video.description}</p>
         <div className="flex items-center justify-between mb-3">
-          <Badge className={getDifficultyColor(video.difficulty)}>
-            {video.difficulty}
-          </Badge>
           <div className="flex items-center gap-1 text-slate-400 text-xs">
             <Clock className="w-3 h-3" />
             {video.duration}
@@ -183,25 +185,12 @@ export default function TutorialLibraryPage() {
             </div>
           </div>
 
-          {/* Tutorial Tabs */}
-          <Tabs defaultValue="getting-started" className="w-full">
-            <TabsList className="grid w-full grid-cols-4 mb-8">
-              <TabsTrigger value="getting-started">Getting Started</TabsTrigger>
-              <TabsTrigger value="collections">Collections</TabsTrigger>
-              <TabsTrigger value="player-analysis">Player Analysis</TabsTrigger>
-              <TabsTrigger value="tips-tricks">Tips & Tricks</TabsTrigger>
-            </TabsList>
-
-            {Object.entries(tutorialVideos).map(([category, videos]) => (
-              <TabsContent key={category} value={category}>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {videos.map((video) => (
-                    <VideoCard key={video.id} video={video} />
-                  ))}
-                </div>
-              </TabsContent>
+          {/* Tutorials Grid (no tabs) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {allTutorials.map((video) => (
+              <VideoCard key={video.id} video={video} />
             ))}
-          </Tabs>
+          </div>
         </div>
 
         {/* Video Modal */}
@@ -219,7 +208,6 @@ export default function TutorialLibraryPage() {
                     ✕
                   </Button>
                 </div>
-                
                 <div className="aspect-video bg-slate-700 rounded-lg mb-6">
                   {selectedVideo.videoUrl.includes('.mp4') ? (
                     <video
@@ -244,21 +232,14 @@ export default function TutorialLibraryPage() {
                     ></iframe>
                   )}
                 </div>
-
                 <div className="space-y-4">
                   <p className="text-slate-700">{selectedVideo.description}</p>
-                  
                   <div className="flex items-center gap-4">
-                    <Badge className={getDifficultyColor(selectedVideo.difficulty)}>
-                      {selectedVideo.difficulty}
-                    </Badge>
                     <div className="flex items-center gap-1 text-slate-600">
                       <Clock className="w-4 h-4" />
                       {selectedVideo.duration}
                     </div>
                   </div>
-
-
                 </div>
               </div>
             </div>

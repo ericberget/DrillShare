@@ -53,23 +53,24 @@ export default function CollectionsPage() {
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-slate-950">
+        <header
+          className="w-full border-b border-slate-800/30 flex items-center justify-center"
+          style={{
+            backgroundImage: "url('/bgtexture.jpg')",
+            backgroundRepeat: "repeat-x",
+            backgroundSize: "auto 100%",
+            backgroundPosition: "center",
+            minHeight: '180px',
+          }}
+        >
+          <img 
+            src="/collectionsTitle.png" 
+            alt="Collections" 
+            className="h-12 md:h-16 lg:h-20 xl:h-24 mb-0"
+            style={{ marginTop: 0 }}
+          />
+        </header>
         <div className="container mx-auto px-4 py-8">
-          {/* Header Section */}
-          <div className="mb-12 text-center">
-            <div className="w-full max-w-[320px] sm:max-w-[320px] mx-auto mb-6 px-4 sm:px-0">
-              <img 
-                src="/logo.png" 
-                alt="DrillShare Logo" 
-                className="w-full h-auto"
-              />
-            </div>
-            <img 
-              src="/collectionsTitle.png" 
-              alt="Collections" 
-              className="h-10 mb-4 mx-auto"
-            />
-          </div>
-
           {/* Collections Grid */}
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-2xl font-bold text-white">My Collections</h2>
