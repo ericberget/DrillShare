@@ -47,9 +47,9 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="min-h-screen bg-[#0D1529]">
       {/* Hero Section */}
-      <div className="relative min-h-[600px] md:min-h-[700px] bg-slate-950">
+      <div className="relative min-h-[600px] md:min-h-[700px] bg-[#0D1529]">
         <div className="absolute inset-0 bg-gradient-radial from-slate-800/20 via-transparent to-transparent" />
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-40" 

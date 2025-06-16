@@ -329,7 +329,7 @@ export default function SharedCollectionPage() {
   if (!collection) return null;
 
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="min-h-screen bg-[#0D1529]">
       <div className="container mx-auto px-4 py-8">
         {/* Header Section */}
         <div className="mb-12 text-center">

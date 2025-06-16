@@ -51,7 +51,7 @@ export function ContentCard({
 
   return (
     <Card 
-      className={`cursor-pointer h-full flex flex-col rounded-xl border-2 hover:border-drillhub-500/30 shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-1 relative overflow-hidden ${
+      className={`group cursor-pointer h-full flex flex-col rounded-xl border-2 hover:border-drillhub-500/30 shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-1 relative overflow-hidden ${
         content.isSample 
           ? 'bg-slate-800/50 border-drillhub-700/30 hover:bg-slate-700/50' 
           : 'bg-slate-900/30 border-slate-700/50 hover:bg-slate-800/40'
@@ -71,7 +71,7 @@ export function ContentCard({
             e.stopPropagation();
             onEdit(content);
           }}
-          className="absolute top-2 right-2 z-20 bg-slate-800/80 hover:bg-slate-700 text-emerald-600 hover:text-emerald-500"
+          className="absolute top-2 right-2 z-20 bg-slate-800/80 hover:bg-slate-700 text-emerald-600 hover:text-emerald-500 opacity-50 group-hover:opacity-100 transition-opacity"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -110,7 +110,7 @@ export function ContentCard({
       <CardHeader className="p-4 pb-0 flex-grow">
         <div className="flex flex-col gap-4 h-full">
           <div className="flex justify-between items-start">
-            <CardTitle className="text-xl font-semibold text-emerald-600 line-clamp-2 tracking-normal font-oswald">
+            <CardTitle className="text-xl font-semibold font-oswald" style={{ color: '#519872' }}>
               {content.title}
             </CardTitle>
             {content.isSample && (
@@ -163,7 +163,7 @@ export function ContentCard({
               </div>
             )}
           </div>
-          <div className="text-sm font-medium text-slate-300 line-clamp-2">
+          <div className="text-sm font-medium text-[#2EBFA5] line-clamp-2 opacity-50 group-hover:opacity-100 transition-opacity duration-200">
             {content.description}
           </div>
           <div className="flex flex-wrap gap-1.5 mt-auto mb-4">

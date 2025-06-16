@@ -171,7 +171,7 @@ export function ContentGrid({ onAddContent, onSelectContent, onEditContent }: Co
   const CurrentIcon = currentCategory.icon;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 bg-[#0D1529]">
       <FadeInUp>
         {/* Compact Search & Filters */}
         <div className="flex flex-col gap-4">
@@ -235,7 +235,7 @@ export function ContentGrid({ onAddContent, onSelectContent, onEditContent }: Co
               <Button 
                 variant="outline" 
                 onClick={() => window.location.href = '/collections'} 
-                className="w-full sm:w-auto bg-slate-600 hover:bg-slate-700 text-white border-0"
+                className="w-full sm:w-auto bg-[#2b3552] hover:bg-[#2b3552] text-white border-0"
               >
                 Collect & Share
               </Button>
@@ -379,7 +379,7 @@ export function ContentGrid({ onAddContent, onSelectContent, onEditContent }: Co
                   onClick={() => setActiveCategory(key as 'all' | ContentCategory)}
                   className={`min-w-[120px] px-8 py-3 font-oswald flex flex-col items-center text-base rounded-md transition-all duration-200 ${
                     isActive
-                      ? 'bg-slate-600 text-white'
+                      ? 'bg-[#1c263b] text-white'
                       : 'hover:bg-slate-700/50 text-slate-300'
                   }`}
                   whileHover={{

@@ -52,7 +52,7 @@ export default function CollectionsPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-slate-950">
+      <div className="min-h-screen bg-[#0D1529]">
         <header
           className="w-full border-b border-slate-800/30 flex items-center justify-center"
           style={{

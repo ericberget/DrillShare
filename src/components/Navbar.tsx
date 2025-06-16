@@ -119,7 +119,7 @@ export function Navbar() {
 
   return (
     <>
-      <nav className="bg-slate-950/95 border-b border-slate-800/50 backdrop-blur-sm relative z-50">
+      <nav className="bg-[#0d162d] border-b border-slate-800/50 backdrop-blur-sm relative z-50">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-14">
             {user && !loading && (

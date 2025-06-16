@@ -23,13 +23,13 @@ function MenuItem({ href, icon, title, description, gradient }: MenuItemProps) {
               {icon}
             </div>
             <div className="flex-1">
-              <h3 className="text-xl font-bold text-slate-100 mb-2 group-hover:text-white transition-colors font-oswald">
+              <h3 className="text-xl font-bold text-[#2EBFA5] mb-2 group-hover:text-white transition-colors font-oswald">
                 {title}
               </h3>
             </div>
             <ArrowRight className="w-6 h-6 text-slate-400 group-hover:text-slate-300 group-hover:translate-x-1 transition-all duration-300" />
           </div>
-          <p className="text-slate-400 group-hover:text-slate-300 transition-colors leading-relaxed">
+          <p className="text-[#2EBFA5] group-hover:text-slate-300 transition-colors leading-relaxed">
             {description}
           </p>
         </CardContent>

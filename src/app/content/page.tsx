@@ -61,7 +61,7 @@ function ContentPageInner() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="min-h-screen bg-[#0D1529]">
       <header
         className="w-full border-b border-slate-800/30 flex items-center justify-center py-8 animate-fade-in-down"
         style={{

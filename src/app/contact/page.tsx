@@ -212,6 +212,30 @@ const ContactPage = () => {
                   </Button>
                 </div>
               </form>
+              {/* Contact Info Section */}
+              <div className="mt-10 border-t border-slate-700 pt-8">
+                <h3 className="text-lg font-semibold text-slate-200 mb-4 flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="inline-block mr-1"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                  Other Ways to Reach Me
+                </h3>
+                <ul className="space-y-3 text-slate-300">
+                  <li className="flex items-center gap-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16v16H4z"/><polyline points="22,6 12,13 2,6"/></svg>
+                    <span>Email:</span>
+                    <a href="mailto:berget3333@gmail.com" className="text-emerald-400 hover:underline">berget3333@gmail.com</a>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37V7.5a2.5 2.5 0 0 0-5 0v3.87"/><path d="M12 17v.01"/></svg>
+                    <span>LinkedIn:</span>
+                    <a href="https://www.linkedin.com/in/ericberget/" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:underline">linkedin.com/in/ericberget</a>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10A15.3 15.3 0 0 1 12 2z"/></svg>
+                    <span>Website:</span>
+                    <a href="https://ericberget.com" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:underline">ericberget.com</a>
+                  </li>
+                </ul>
+              </div>
             </CardContent>
           </Card>
 
