@@ -120,7 +120,7 @@ export default function DemoPage() {
         return urlObj.searchParams.get('v');
       }
       if (urlObj.hostname === 'youtu.be') {
-        return urlObj.pathname.slice(1);
+        return urlObj.pathname.slice(1).split(/[\?&#]/)[0];
       }
       if (urlObj.pathname.includes('/shorts/')) {
         return urlObj.pathname.split('/shorts/')[1];

@@ -13,7 +13,8 @@ import {
   where, 
   Timestamp,
   serverTimestamp,
-  orderBy
+  orderBy,
+  writeBatch
 } from 'firebase/firestore';
 import { ContentItem } from '@/types/content';
 
@@ -32,9 +33,11 @@ export const createContent = async (
     }
     
     const contentRef = collection(db, CONTENT_COLLECTION);
+    const now = Date.now();
     const newContentData = {
       ...contentData,
       isSample: false, // ensure it's not marked as sample
+      sortOrder: now, // Set initial sort order to current timestamp
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     };
@@ -74,22 +77,48 @@ export const getAllContent = async (userId?: string): Promise<ContentItem[]> => 
     
     if (userId) {
       // If user is logged in, get only their content (no sample content)
-      const userContentQuery = query(
+      // First try to get content sorted by sortOrder
+      try {
+        const userContentQuery = query(
+          contentRef,
+          where('userId', '==', userId),
+          where('isSample', '==', false),
+          orderBy('sortOrder', 'asc')  // Sort by manual sort order first
+        );
+        
+        const userSnapshot = await getDocs(userContentQuery);
+        const userContent = userSnapshot.docs.map(doc => ({ 
+          id: doc.id, 
+          ...doc.data() 
+        }));
+        
+        console.log(`Retrieved ${userContent.length} user content items with sortOrder`);
+        
+        // If we got results, return them
+        if (userContent.length > 0) {
+          return userContent as ContentItem[];
+        }
+      } catch (sortOrderError) {
+        console.log('sortOrder query failed, falling back to createdAt:', sortOrderError);
+      }
+      
+      // Fallback: get content sorted by creation date (for existing content without sortOrder)
+      const fallbackQuery = query(
         contentRef,
         where('userId', '==', userId),
         where('isSample', '==', false),
         orderBy('createdAt', 'desc')
       );
       
-      const userSnapshot = await getDocs(userContentQuery);
-      const userContent = userSnapshot.docs.map(doc => ({ 
+      const fallbackSnapshot = await getDocs(fallbackQuery);
+      const fallbackContent = fallbackSnapshot.docs.map(doc => ({ 
         id: doc.id, 
         ...doc.data() 
       }));
       
-      console.log(`Retrieved ${userContent.length} user content items (sample content disabled)`);
+      console.log(`Retrieved ${fallbackContent.length} user content items with createdAt fallback`);
       
-      return userContent as ContentItem[];
+      return fallbackContent as ContentItem[];
     } else {
       // If no user, return empty array (no sample content)
       console.log('No user logged in - returning empty content array (sample content disabled)');
@@ -123,24 +152,53 @@ export const getUserContent = async (userId: string): Promise<ContentItem[]> => 
   try {
     console.log(`Getting content for user: ${userId}`);
     const contentRef = collection(db, CONTENT_COLLECTION);
-    const q = query(
+    
+    // First try to get content sorted by sortOrder
+    try {
+      const q = query(
+        contentRef, 
+        where('userId', '==', userId),
+        where('isSample', '==', false),
+        orderBy('sortOrder', 'asc')  // Sort by manual sort order first
+      );
+      
+      console.log('Executing user content query with sortOrder...');
+      const querySnapshot = await getDocs(q);
+      console.log(`Retrieved ${querySnapshot.docs.length} user content items with sortOrder`);
+      
+      // Log the IDs of the first few items for debugging
+      if (querySnapshot.docs.length > 0) {
+        const firstItems = querySnapshot.docs.slice(0, 3).map(doc => doc.id);
+        console.log(`First few content IDs: ${firstItems.join(', ')}`);
+      }
+      
+      return querySnapshot.docs.map(doc => ({ 
+        id: doc.id, 
+        ...doc.data() 
+      })) as ContentItem[];
+    } catch (sortOrderError) {
+      console.log('sortOrder query failed, falling back to createdAt:', sortOrderError);
+    }
+    
+    // Fallback: get content sorted by creation date (for existing content without sortOrder)
+    const fallbackQuery = query(
       contentRef, 
       where('userId', '==', userId),
       where('isSample', '==', false),
       orderBy('createdAt', 'desc')
     );
     
-    console.log('Executing user content query...');
-    const querySnapshot = await getDocs(q);
-    console.log(`Retrieved ${querySnapshot.docs.length} user content items`);
+    console.log('Executing user content query with createdAt fallback...');
+    const fallbackSnapshot = await getDocs(fallbackQuery);
+    console.log(`Retrieved ${fallbackSnapshot.docs.length} user content items with createdAt fallback`);
     
     // Log the IDs of the first few items for debugging
-    if (querySnapshot.docs.length > 0) {
-      const firstItems = querySnapshot.docs.slice(0, 3).map(doc => doc.id);
+    if (fallbackSnapshot.docs.length > 0) {
+      const firstItems = fallbackSnapshot.docs.slice(0, 3).map(doc => doc.id);
       console.log(`First few content IDs: ${firstItems.join(', ')}`);
     }
     
-    return querySnapshot.docs.map(doc => ({ 
+    return fallbackSnapshot.docs.map(doc => ({ 
       id: doc.id, 
       ...doc.data() 
     })) as ContentItem[];
@@ -243,13 +301,130 @@ export const toggleContentFavorite = async (contentId: string, currentStatus: bo
 // Update last viewed timestamp
 export const updateContentLastViewed = async (contentId: string): Promise<void> => {
   try {
-    const docRef = doc(db, CONTENT_COLLECTION, contentId);
-    await updateDoc(docRef, {
-      lastViewed: Date.now(),
-      updatedAt: serverTimestamp()
+    const contentRef = doc(db, CONTENT_COLLECTION, contentId);
+    await updateDoc(contentRef, {
+      lastViewed: Date.now()
     });
   } catch (error) {
     console.error('Error updating last viewed:', error);
+    throw error;
+  }
+};
+
+// Update sort order for a single content item
+export const updateContentSortOrder = async (contentId: string, sortOrder: number): Promise<void> => {
+  try {
+    const contentRef = doc(db, CONTENT_COLLECTION, contentId);
+    await updateDoc(contentRef, {
+      sortOrder: sortOrder,
+      updatedAt: serverTimestamp()
+    });
+  } catch (error) {
+    console.error('Error updating sort order:', error);
+    throw error;
+  }
+};
+
+// Update sort orders for multiple content items (bulk update)
+export const updateContentSortOrders = async (sortOrderUpdates: { id: string; sortOrder: number }[]): Promise<void> => {
+  try {
+    console.log(`Updating sort orders for ${sortOrderUpdates.length} items`);
+    
+    // Use batch writes for better performance
+    const batch = writeBatch(db);
+    
+    sortOrderUpdates.forEach(({ id, sortOrder }) => {
+      const contentRef = doc(db, CONTENT_COLLECTION, id);
+      batch.update(contentRef, {
+        sortOrder: sortOrder,
+        updatedAt: serverTimestamp()
+      });
+    });
+    
+    await batch.commit();
+    console.log('Successfully updated sort orders');
+  } catch (error) {
+    console.error('Error updating sort orders:', error);
+    throw error;
+  }
+};
+
+// Reset sort orders to match creation date order (newest first)
+export const resetContentSortOrders = async (userId: string): Promise<void> => {
+  try {
+    console.log(`Resetting sort orders for user: ${userId}`);
+    
+    // Get all user content sorted by creation date (newest first)
+    const contentRef = collection(db, CONTENT_COLLECTION);
+    const q = query(
+      contentRef,
+      where('userId', '==', userId),
+      where('isSample', '==', false),
+      orderBy('createdAt', 'desc')
+    );
+    
+    const querySnapshot = await getDocs(q);
+    const contentItems = querySnapshot.docs.map(doc => ({ 
+      id: doc.id, 
+      ...doc.data() 
+    })) as ContentItem[];
+    
+    // Create sort order updates (newest items get lower sort order numbers)
+    const sortOrderUpdates = contentItems.map((item, index) => ({
+      id: item.id,
+      sortOrder: index + 1
+    }));
+    
+    // Update all sort orders
+    await updateContentSortOrders(sortOrderUpdates);
+    console.log(`Reset sort orders for ${contentItems.length} items`);
+  } catch (error) {
+    console.error('Error resetting sort orders:', error);
+    throw error;
+  }
+};
+
+// Initialize sortOrder for existing content that doesn't have it
+export const initializeContentSortOrders = async (userId: string): Promise<void> => {
+  try {
+    console.log(`Initializing sort orders for user: ${userId}`);
+    
+    // Get all user content sorted by creation date (newest first)
+    const contentRef = collection(db, CONTENT_COLLECTION);
+    const q = query(
+      contentRef,
+      where('userId', '==', userId),
+      where('isSample', '==', false),
+      orderBy('createdAt', 'desc')
+    );
+    
+    const querySnapshot = await getDocs(q);
+    const contentItems = querySnapshot.docs.map(doc => ({ 
+      id: doc.id, 
+      ...doc.data() 
+    })) as ContentItem[];
+    
+    // Filter items that don't have sortOrder yet
+    const itemsWithoutSortOrder = contentItems.filter(item => item.sortOrder === undefined);
+    
+    if (itemsWithoutSortOrder.length === 0) {
+      console.log('All content already has sortOrder initialized');
+      return;
+    }
+    
+    console.log(`Found ${itemsWithoutSortOrder.length} items without sortOrder, initializing...`);
+    
+    // Create sort order updates (newest items get lower sort order numbers)
+    const sortOrderUpdates = itemsWithoutSortOrder.map((item, index) => ({
+      id: item.id,
+      sortOrder: Date.now() + index // Use timestamp + index to ensure unique values
+    }));
+    
+    // Update sort orders for items that don't have them
+    await updateContentSortOrders(sortOrderUpdates);
+    console.log(`Initialized sort orders for ${itemsWithoutSortOrder.length} items`);
+  } catch (error) {
+    console.error('Error initializing sort orders:', error);
     throw error;
   }
 };

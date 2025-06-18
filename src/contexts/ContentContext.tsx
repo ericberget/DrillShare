@@ -1,7 +1,8 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { ContentItem, ContentContextType, ContentCreationData } from '@/types/content';
+import { ContentItem, ContentCreationData } from '@/types/content';
+import { ContentContextType } from '@/types/content';
 import { useFirebase } from './FirebaseContext';
 import {
   createContent,
@@ -11,7 +12,10 @@ import {
   updateContent as updateContentService,
   deleteContent as deleteContentService,
   toggleContentFavorite,
-  updateContentLastViewed
+  updateContentLastViewed,
+  updateContentSortOrders,
+  resetContentSortOrders,
+  initializeContentSortOrders
 } from '@/services/contentService';
 import { Timestamp } from 'firebase/firestore';
 import { useToast } from './ToastContext';
@@ -22,11 +26,14 @@ const ContentContext = createContext<ContentContextType>({
   userContentItems: [],
   sampleContentItems: [],
   isLoading: true,
+  isReordering: false,
   addContent: async () => '',
   updateContent: async () => {},
   deleteContent: async () => {},
   toggleFavorite: async () => {},
-  updateLastViewed: async () => {}
+  updateLastViewed: async () => {},
+  updateSortOrders: async () => {},
+  resetSortOrders: async () => {}
 });
 
 export function ContentProvider({ children }: { children: React.ReactNode }) {
@@ -36,6 +43,7 @@ export function ContentProvider({ children }: { children: React.ReactNode }) {
   const [userContentItems, setUserContentItems] = useState<ContentItem[]>([]);
   const [sampleContentItems, setSampleContentItems] = useState<ContentItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isReordering, setIsReordering] = useState(false);
 
   // Load content when user changes
   useEffect(() => {
@@ -62,6 +70,16 @@ export function ContentProvider({ children }: { children: React.ReactNode }) {
           const userContent = await getUserContent(user.uid);
           setUserContentItems(userContent);
           console.log(`Loaded ${userContent.length} user content items`);
+          
+          // Initialize sortOrder for existing content that doesn't have it
+          if (userContent.length > 0) {
+            try {
+              await initializeContentSortOrders(user.uid);
+              console.log('Initialized sortOrder for existing content');
+            } catch (initError) {
+              console.log('Could not initialize sortOrder, continuing with existing data:', initError);
+            }
+          }
           
           // Get all content (just user's content now, no sample content)
           const allContent = await getAllContent(user.uid);
@@ -90,8 +108,8 @@ export function ContentProvider({ children }: { children: React.ReactNode }) {
     
     // Set up content refresh when needed
     const refreshInterval = setInterval(() => {
-      // Only refresh if we're not already loading
-      if (!isLoading && user) {
+      // Only refresh if we're not already loading or reordering
+      if (!isLoading && !isReordering && user) {
         console.log('Refreshing content in background');
         loadContent();
       }
@@ -217,6 +235,42 @@ export function ContentProvider({ children }: { children: React.ReactNode }) {
     setSampleContentItems(updatedSampleItems);
   };
 
+  // Update sort orders for multiple content items
+  const updateSortOrders = async (sortOrderUpdates: { id: string; sortOrder: number }[]) => {
+    if (!user) throw new Error('User must be logged in to update sort orders');
+    setIsReordering(true);
+    await updateContentSortOrders(sortOrderUpdates);
+    // Update state with new sort orders
+    const updatedItems = contentItems.map(item => {
+      const update = sortOrderUpdates.find(u => u.id === item.id);
+      return update ? { ...item, sortOrder: update.sortOrder } : item;
+    });
+    const updatedUserItems = userContentItems.map(item => {
+      const update = sortOrderUpdates.find(u => u.id === item.id);
+      return update ? { ...item, sortOrder: update.sortOrder } : item;
+    });
+    // Sort by sortOrder
+    const sortedItems = updatedItems.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+    const sortedUserItems = updatedUserItems.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+    setContentItems(sortedItems);
+    setUserContentItems(sortedUserItems);
+    setIsReordering(false);
+  };
+
+  // Reset sort orders to match creation date order
+  const resetSortOrders = async () => {
+    if (!user) throw new Error('User must be logged in to reset sort orders');
+    
+    await resetContentSortOrders(user.uid);
+    
+    // Reload content to get the updated sort orders
+    const userContent = await getUserContent(user.uid);
+    const allContent = await getAllContent(user.uid);
+    
+    setUserContentItems(userContent);
+    setContentItems(allContent);
+  };
+
   return (
     <ContentContext.Provider
       value={{
@@ -224,11 +278,14 @@ export function ContentProvider({ children }: { children: React.ReactNode }) {
         userContentItems,
         sampleContentItems,
         isLoading,
+        isReordering,
         addContent,
         updateContent,
         deleteContent,
         toggleFavorite,
-        updateLastViewed
+        updateLastViewed,
+        updateSortOrders,
+        resetSortOrders
       }}
     >
       {children}

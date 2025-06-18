@@ -238,41 +238,6 @@ const ContactPage = () => {
               </div>
             </CardContent>
           </Card>
-
-          {/* Additional Contact Info */}
-          <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card className="bg-slate-900/30 border-slate-700/50">
-              <CardContent className="p-6">
-                <h3 className="text-lg font-medium text-slate-200 mb-2">Support Hours</h3>
-                <p className="text-slate-400">
-                  Monday - Friday: 9am - 5pm EST<br />
-                  Saturday - Sunday: Closed
-                </p>
-              </CardContent>
-            </Card>
-            <Card className="bg-slate-900/30 border-slate-700/50">
-              <CardContent className="p-6">
-                <h3 className="text-lg font-medium text-slate-200 mb-2">Quick Links</h3>
-                <ul className="space-y-2 text-slate-400">
-                  <li>
-                    <Link href="/faq" className="hover:text-emerald-400 transition-colors">
-                      Frequently Asked Questions
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="/privacy" className="hover:text-emerald-400 transition-colors">
-                      Privacy Policy
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="/terms" className="hover:text-emerald-400 transition-colors">
-                      Terms of Service
-                    </Link>
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
-          </div>
         </div>
       </main>
     </div>

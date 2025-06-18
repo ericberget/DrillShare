@@ -14,6 +14,7 @@ import { useStorage } from '@/hooks/useStorage';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useFirebase } from '@/contexts/FirebaseContext';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Trash } from 'lucide-react';
 
 interface ContentUploaderProps {
   isOpen: boolean;
@@ -25,7 +26,7 @@ interface ContentUploaderProps {
 // Function to extract video IDs from different video platforms
 function extractVideoInfo(url: string): { platform: string; id: string | null } {
   // YouTube standard URL
-  let match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&#]+)/);
+  let match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^\?&#]+)/);
   if (match) return { platform: 'youtube', id: match[1] };
 
   // YouTube Shorts URL
@@ -35,7 +36,7 @@ function extractVideoInfo(url: string): { platform: string; id: string | null } 
   // Facebook Video URL - different patterns
   if (url.includes('facebook.com') || url.includes('fb.watch')) {
     // Try to extract Facebook video ID from various URL formats
-    match = url.match(/facebook\.com\/(?:watch\/\?v=|video\.php\?v=|watch\?v=)(\d+)/);
+    match = url.match(/facebook\.com\/(?:watch\/?v=|video\.php\?v=|watch\?v=)(\d+)/);
     if (match) return { platform: 'facebook', id: match[1] };
     
     match = url.match(/facebook\.com\/[^/]+\/videos\/(\d+)/);
@@ -50,6 +51,14 @@ function extractVideoInfo(url: string): { platform: string; id: string | null } 
     }
   }
 
+  // Improved extraction for youtu.be links with query params/fragments
+  try {
+    const urlObj = new URL(url);
+    if (urlObj.hostname === 'youtu.be') {
+      return { platform: 'youtube', id: urlObj.pathname.slice(1).split(/[\?&#]/)[0] };
+    }
+  } catch (e) {}
+
   return { platform: 'unknown', id: null };
 }
 
@@ -57,11 +66,7 @@ function extractVideoInfo(url: string): { platform: string; id: string | null } 
 function generateThumbnailUrl(url: string): string | null {
   const { platform, id } = extractVideoInfo(url);
   
-  if (platform === 'youtube' && id) {
-    return `https://img.youtube.com/vi/${id}/maxresdefault.jpg`;
-  }
-  
-  if (platform === 'youtube-shorts' && id) {
+  if ((platform === 'youtube' || platform === 'youtube-shorts') && id) {
     return `https://img.youtube.com/vi/${id}/maxresdefault.jpg`;
   }
   
@@ -510,7 +515,7 @@ export function ContentUploader({ isOpen, onClose, onDelete, existingContent }: 
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="isTeamContent"
-                  checked={formData.isTeamContent}
+                  checked={!!formData.isTeamContent}
                   onCheckedChange={(checked: boolean | 'indeterminate') => 
                     setFormData(prev => ({ ...prev, isTeamContent: checked === true }))
                   }
@@ -666,12 +671,12 @@ export function ContentUploader({ isOpen, onClose, onDelete, existingContent }: 
           {isEdit && existingContent && !existingContent.isSample && (
             <Button
               type="button"
-              variant="outline"
+              variant="ghost"
               onClick={handleDelete}
               disabled={isSubmitting}
-              className="border-red-700 text-red-400 hover:text-red-300 hover:bg-red-900/30 hover:border-red-600"
+              className="bg-red-500/10 text-red-400 hover:text-red-200 hover:bg-red-600/20 border-0 shadow-none flex items-center gap-2 transition-all"
             >
-              Delete
+              <Trash className="w-4 h-4 mr-1 opacity-80" /> Delete
             </Button>
           )}
           
@@ -681,17 +686,17 @@ export function ContentUploader({ isOpen, onClose, onDelete, existingContent }: 
               variant="outline"
               onClick={handleClose}
               disabled={isSubmitting}
-              className="border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-slate-200"
+              className="border-0 text-slate-500 hover:text-slate-800 hover:bg-slate-200 font-semibold"
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              className="bg-emerald-600 hover:bg-emerald-700"
+              className="bg-[#519872] hover:bg-[#417a5a] text-white font-semibold shadow-none border-0"
               disabled={isSubmitting}
               onClick={handleSubmit}
             >
-              {isSubmitting ? 'Saving...' : isEdit ? 'Update' : 'Save Content'}
+              {isSubmitting ? 'Saving...' : isEdit ? 'Update' : 'Add'}
             </Button>
           </div>
         </div>

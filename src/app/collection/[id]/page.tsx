@@ -85,7 +85,7 @@ export default function CollectionDetailPage() {
         return urlObj.searchParams.get('v');
       }
       if (urlObj.hostname === 'youtu.be') {
-        return urlObj.pathname.slice(1);
+        return urlObj.pathname.slice(1).split(/[\?&#]/)[0];
       }
     } catch (e) {
       console.error('Invalid URL:', e);

@@ -298,6 +298,9 @@ export default function HomePage() {
               <Link href="/contact" className="text-slate-400 hover:text-slate-300 text-sm hover-scale animate-fade-in stagger-4 text-center">
                 Contact
               </Link>
+              <Link href="/faq" className="text-slate-400 hover:text-slate-300 text-sm hover-scale animate-fade-in stagger-5 text-center">
+                FAQ
+              </Link>
             </div>
           </div>
         </div>

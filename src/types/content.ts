@@ -23,6 +23,7 @@ export interface ContentItem {
   favorite?: boolean;
   lastViewed?: number;
   isTeamContent?: boolean;  // Flag to indicate if this is team content
+  sortOrder?: number;  // Manual sort order for custom arrangement
 }
 
 export interface Collection {
@@ -59,11 +60,14 @@ export interface ContentContextType {
   userContentItems: ContentItem[];
   sampleContentItems: ContentItem[];
   isLoading: boolean;
+  isReordering: boolean;
   addContent: (content: ContentCreationData) => Promise<string>;
   updateContent: (content: ContentItem) => Promise<void>;
   deleteContent: (contentId: string) => Promise<void>;
   toggleFavorite: (contentId: string) => Promise<void>;
   updateLastViewed: (contentId: string) => Promise<void>;
+  updateSortOrders: (sortOrderUpdates: { id: string; sortOrder: number }[]) => Promise<void>;
+  resetSortOrders: () => Promise<void>;
 }
 
 export interface PlayerAnalysisVideo {

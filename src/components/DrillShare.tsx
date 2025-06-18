@@ -89,7 +89,7 @@ const CoachingApp = () => {
   }, [videos]);
 
   // Extract YouTube video ID from URL
-  const getYouTubeVideoId = (url) => {
+  const getYouTubeVideoId = (url: string): string | null => {
     if (!url) return null;
     try {
       const urlObj = new URL(url);
@@ -97,7 +97,8 @@ const CoachingApp = () => {
         return urlObj.searchParams.get('v');
       }
       if (urlObj.hostname === 'youtu.be') {
-        return urlObj.pathname.slice(1);
+        // Remove query params/fragments for youtu.be links
+        return urlObj.pathname.slice(1).split(/[\?&#]/)[0];
       }
     } catch (e) {
       console.error('Invalid URL:', e);
