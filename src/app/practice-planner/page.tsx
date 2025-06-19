@@ -196,7 +196,11 @@ export default function PracticePlannerPage() {
     }
 
     if (savedTitle) setPracticeTitle(savedTitle);
-    if (savedDate) setPracticeDate(savedDate);
+    if (savedDate && !isNaN(Date.parse(savedDate))) {
+      setPracticeDate(savedDate);
+    } else {
+      setPracticeDate(new Date().toISOString().split('T')[0]);
+    }
   }, []);
 
   // Mark as unsaved when data changes
@@ -408,9 +412,14 @@ export default function PracticePlannerPage() {
 
   // Template functions
   const loadTemplates = async () => {
-    if (!user) return;
+    if (!user) {
+      console.log('No user found in loadTemplates');
+      return;
+    }
     try {
+      console.log('Loading templates for user:', user);
       const userTemplates = await practicePlanService.getUserTemplates(user.uid);
+      console.log('Loaded templates:', userTemplates);
       setTemplates(userTemplates);
     } catch (error) {
       console.error('Error loading templates:', error);
@@ -431,14 +440,15 @@ export default function PracticePlannerPage() {
     try {
       // Filter out phases with no drills for cleaner templates
       const filteredPhases = phases.filter(phase => phase.drills.length > 0);
-      
-      await practicePlanService.saveTemplate({
+      const templateData = {
         name: templateName,
         description: templateDescription,
         phases: filteredPhases,
         totalTime: getTotalTime(),
         userId: user.uid,
-      });
+      };
+      console.log('Saving template with data:', templateData);
+      await practicePlanService.saveTemplate(templateData);
 
       setTemplateName('');
       setTemplateDescription('');
@@ -505,7 +515,15 @@ export default function PracticePlannerPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-[#0D1529] text-white">
+      <div
+        className="min-h-screen w-full relative text-white"
+        style={{
+          backgroundImage: "url('/bg-baseballfield.jpg')",
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+        }}
+      >
         <header
           className="w-full border-b border-slate-800/30 flex items-center justify-center"
           style={{
@@ -641,7 +659,16 @@ export default function PracticePlannerPage() {
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
               {/* Drill Gallery */}
               <div className="lg:col-span-1">
-                <Card className="bg-slate-800/50 border-slate-700 h-fit">
+                <Card className="h-fit mt-2"
+                  style={{
+                    backgroundImage: "linear-gradient(rgba(13,21,41,0.85), rgba(13,21,41,0.85)), url('/bg-5.jpg')",
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat',
+                    borderColor: 'rgba(100,116,139,0.2)',
+                    backgroundClip: 'padding-box',
+                  }}
+                >
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-xl font-oswald text-emerald-400">Drills and Skills Library</CardTitle>
@@ -790,7 +817,17 @@ export default function PracticePlannerPage() {
               <div className="lg:col-span-3">
                 <div className="space-y-6">
                   {phases.map((phase) => (
-                    <Card key={phase.id} className={cn("border-2", phase.color)}>
+                    <Card key={phase.id} className={cn("border-2", phase.color)}
+                      style={{
+                        backgroundImage: "linear-gradient(rgba(13,21,41,0.85), rgba(13,21,41,0.85)), url('/bg-5.jpg')",
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        backgroundRepeat: 'no-repeat',
+                        borderRadius: '0.75rem',
+                        borderWidth: 2,
+                        borderColor: 'rgba(100,116,139,0.2)', // subtle border
+                      }}
+                    >
                       <CardHeader className="pb-3">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2 flex-1">
@@ -951,7 +988,7 @@ export default function PracticePlannerPage() {
                                             placeholder="Today's focus..."
                                             value={drill.focus}
                                             onChange={(e) => updateDrill(phase.id, drill.id, { focus: e.target.value })}
-                                            className="h-16 text-xs bg-slate-700 border-slate-500 resize-none"
+                                            className="h-8 text-[11px] bg-slate-700/30 border-slate-200/10 resize-none px-2 py-1 text-slate-400 placeholder:text-slate-500/70 focus:bg-slate-700/40 transition-all"
                                           />
                                         </div>
                                       </div>

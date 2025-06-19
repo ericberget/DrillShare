@@ -117,7 +117,15 @@ export default function SharedPracticePlanPage() {
   const practiceDate = new Date(practicePlan.practiceDate);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
+    <div
+      className="min-h-screen text-white"
+      style={{
+        backgroundImage: "linear-gradient(rgba(13,21,41,0.5), rgba(13,21,41,0.5)), url('/bg-baseballfield.jpg')",
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+      }}
+    >
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Header */}
         <div className="text-center mb-8">
