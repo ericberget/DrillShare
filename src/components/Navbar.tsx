@@ -18,7 +18,12 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { FadeInUp } from '@/components/animations'
 
-export function Navbar() {
+interface NavbarProps {
+  demoMode?: boolean;
+  onShowSignupOverlay?: () => void;
+}
+
+export function Navbar({ demoMode = false, onShowSignupOverlay }: NavbarProps) {
   const { user, loading } = useFirebase()
   const { signOut } = useAuth()
   const router = useRouter()
@@ -122,7 +127,7 @@ export function Navbar() {
       <nav className="bg-[#0d162d] border-b border-slate-800/50 backdrop-blur-sm relative z-50">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-14">
-            {user && !loading && (
+            {(user || demoMode) && !loading && (
               <motion.div
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -181,6 +186,19 @@ export function Navbar() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+            ) : demoMode ? (
+              <div className="flex items-center space-x-4">
+                <Link href="/auth/signin">
+                  <Button variant="ghost" className="text-slate-300 hover:text-slate-100 hover:bg-slate-800/50">
+                    Sign In
+                  </Button>
+                </Link>
+                <Link href="/auth/signup">
+                  <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                    Sign Up
+                  </Button>
+                </Link>
+              </div>
             ) : (
               <div className="flex items-center space-x-4">
                 <Link href="/auth/signin">
@@ -201,7 +219,7 @@ export function Navbar() {
 
       {/* Full-Width Navigation Menu */}
       <AnimatePresence>
-        {isMenuOpen && user && (
+        {isMenuOpen && (user || demoMode) && (
           <>
             {/* Backdrop */}
             <motion.div 
@@ -228,45 +246,70 @@ export function Navbar() {
                 >
                   {navigationItems.map((item, index) => (
                     <motion.div key={item.href} variants={itemVariants}>
-                      <Link
-                        href={item.href}
-                        className="group"
-                        onClick={() => setIsMenuOpen(false)}
-                      >
-                        <motion.div 
-                          className="bg-slate-900/50 border border-slate-700/50 hover:border-slate-600/50 rounded-lg p-6 transition-all duration-300"
-                          whileHover={{
-                            scale: 1.02,
-                            y: -4,
-                            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3)',
-                          }}
-                          whileTap={{
-                            scale: 0.98,
-                          }}
+                      {demoMode ? (
+                        <div
+                          onClick={onShowSignupOverlay}
+                          className={`cursor-pointer group relative p-4 rounded-lg ${item.gradient} hover:opacity-90 transition-all duration-200 hover:scale-105`}
                         >
-                          <div className="flex flex-col items-center text-center">
-                            <motion.div 
-                              className={`w-16 h-16 rounded-xl ${item.gradient} flex items-center justify-center mb-4`}
-                              whileHover={{
-                                scale: 1.1,
-                                rotate: 5,
-                              }}
-                              transition={{
-                                duration: 0.3,
-                                ease: [0.25, 0.25, 0, 1],
-                              }}
-                            >
-                              {item.icon}
-                            </motion.div>
-                            <h3 className="text-lg font-bold text-slate-100 mb-2 group-hover:text-white transition-colors">
-                              {item.title}
-                            </h3>
-                            <p className="text-sm text-slate-400 group-hover:text-slate-300 transition-colors leading-relaxed">
-                              {item.description}
-                            </p>
-                          </div>
-                        </motion.div>
-                      </Link>
+                          <motion.div 
+                            className="bg-slate-900/50 border border-slate-700/50 hover:border-slate-600/50 rounded-lg p-6 transition-all duration-300"
+                            whileHover={{
+                              scale: 1.02,
+                              y: -4,
+                              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3)',
+                            }}
+                            whileTap={{
+                              scale: 0.98,
+                            }}
+                          >
+                            <div className="flex flex-col items-center text-center">
+                              <motion.div 
+                                className={`w-16 h-16 rounded-xl ${item.gradient} flex items-center justify-center mb-4`}
+                                whileHover={{
+                                  scale: 1.1,
+                                  rotate: 5,
+                                }}
+                              >
+                                {item.icon}
+                              </motion.div>
+                              <h3 className="text-lg font-semibold text-slate-200 mb-2">{item.title}</h3>
+                              <p className="text-sm text-slate-400">{item.description}</p>
+                            </div>
+                          </motion.div>
+                        </div>
+                      ) : (
+                        <Link
+                          href={item.href}
+                          className="group"
+                          onClick={() => setIsMenuOpen(false)}
+                        >
+                          <motion.div 
+                            className="bg-slate-900/50 border border-slate-700/50 hover:border-slate-600/50 rounded-lg p-6 transition-all duration-300"
+                            whileHover={{
+                              scale: 1.02,
+                              y: -4,
+                              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3)',
+                            }}
+                            whileTap={{
+                              scale: 0.98,
+                            }}
+                          >
+                            <div className="flex flex-col items-center text-center">
+                              <motion.div 
+                                className={`w-16 h-16 rounded-xl ${item.gradient} flex items-center justify-center mb-4`}
+                                whileHover={{
+                                  scale: 1.1,
+                                  rotate: 5,
+                                }}
+                              >
+                                {item.icon}
+                              </motion.div>
+                              <h3 className="text-lg font-semibold text-slate-200 mb-2">{item.title}</h3>
+                              <p className="text-sm text-slate-400">{item.description}</p>
+                            </div>
+                          </motion.div>
+                        </Link>
+                      )}
                     </motion.div>
                   ))}
                 </motion.div>

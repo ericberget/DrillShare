@@ -5,6 +5,7 @@ import { Inter, Oswald } from 'next/font/google'
 import { Providers } from '../components/Providers'
 import { PageTransition } from '@/components/animations'
 import { FooterClientOnly } from '../components/FooterClientOnly'
+import PageTracker from '@/components/PageTracker'
 import Link from 'next/link';
 
 const inter = Inter({ subsets: ['latin'] })
@@ -41,6 +42,7 @@ export default function RootLayout({
       </head>
       <body className={`${inter.className} ${oswald.variable} min-h-screen bg-slate-900 text-slate-200 bg-gradient-glow bg-mesh bg-glow`}>
         <Providers>
+          <PageTracker />
           <PageTransition>
             {children}
             <FooterClientOnly />

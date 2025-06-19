@@ -10,6 +10,12 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
+    function isAdmin() {
+      return isAuthenticated() && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+
     // Content rules
     match /content/{contentId} {
       allow read: if true;
@@ -54,7 +60,16 @@ service cloud.firestore {
     // User rules
     match /users/{userId} {
       allow read: if true;
-      allow write: if isOwner(userId);
+      allow write: if isOwner(userId) || isAdmin();
+    }
+
+    // Analytics rules - only admins can read/write
+    match /pageViews/{pageViewId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /userSessions/{sessionId} {
+      allow read, write: if isAdmin();
     }
   }
 }
