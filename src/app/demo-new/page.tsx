@@ -58,11 +58,11 @@ export default function DemoPage() {
             Get a feel for DrillShare's key features through these video demos.
           </p>
           <div className="flex justify-center gap-4 mt-4">
-            <div className="bg-slate-500/20 text-slate-400 px-4 py-2 rounded-full text-sm font-medium">
+            <div className="bg-slate-500/20 text-slate-400 px-4 py-2 rounded-full text-sm font-medium shadow-lg">
               DEMO MODE
             </div>
             <Link href="/auth/signup">
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+              <Button className="bg-emerald-600 hover:bg-emerald-700 text-white">
                 Sign Up Free
               </Button>
             </Link>
@@ -107,10 +107,17 @@ export default function DemoPage() {
             Sign up now for free and get access to all these features.
           </p>
           <Link href="/auth/signup">
-            <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg py-3 px-8">
+            <Button size="lg" className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-lg py-3 px-8">
               SIGN UP FOR FREE
             </Button>
           </Link>
+          <div className="mt-6">
+            <Link href="/faq">
+              <Button variant="ghost" className="text-slate-400 hover:text-slate-300 text-sm">
+                Have questions? Check out our FAQ
+              </Button>
+            </Link>
+          </div>
         </div>
 
       </div>

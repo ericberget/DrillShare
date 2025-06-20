@@ -8,6 +8,7 @@ import { practicePlanService, PracticePlan } from '@/services/practicePlanServic
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import Image from 'next/image';
+import Link from 'next/link';
 
 interface PracticeDrill {
   id: string;
@@ -120,7 +121,7 @@ export default function SharedPracticePlanPage() {
     <div
       className="min-h-screen text-white"
       style={{
-        backgroundImage: "linear-gradient(rgba(13,21,41,0.5), rgba(13,21,41,0.5)), url('/bg-baseballfield.jpg')",
+        backgroundImage: "url('/bg-baseballfield-green.jpg')",
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
@@ -147,14 +148,14 @@ export default function SharedPracticePlanPage() {
               {teamInfo.name && (
                 <div className="text-left">
                   <h2 className="text-2xl font-bold text-white">{teamInfo.name}</h2>
-                  <p className="text-slate-400 text-sm">Practice Plan</p>
+                  <p className="text-slate-200 text-sm">Practice Plan</p>
                 </div>
               )}
             </div>
           )}
           
-          <h1 className="text-4xl font-bold text-emerald-400 mb-2">{practicePlan.title}</h1>
-          <div className="flex items-center justify-center gap-6 text-slate-300">
+          <h1 className="text-4xl font-bold text-white mb-2">{practicePlan.title}</h1>
+          <div className="flex items-center justify-center gap-6 text-slate-100">
             <div className="flex items-center gap-2">
               <Calendar className="h-5 w-5" />
               <span>{practiceDate.toLocaleDateString()}</span>
@@ -174,7 +175,7 @@ export default function SharedPracticePlanPage() {
             const phaseTime = phase.drills.reduce((total, drill) => total + drill.duration, 0);
             
             return (
-              <Card key={phase.id} className="bg-slate-900/50 border-slate-700">
+              <Card key={phase.id} className="bg-slate-900/80 border-slate-700">
                 <CardHeader className="pb-4">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-2xl font-oswald text-emerald-400">
@@ -193,7 +194,7 @@ export default function SharedPracticePlanPage() {
                     'grid-cols-1'
                   }`}>
                     {phase.drills.map((drill, index) => (
-                      <div key={drill.id} className="bg-slate-800/50 rounded-lg p-4 border border-slate-600">
+                      <div key={drill.id} className="bg-slate-800/80 rounded-lg p-4 border border-slate-600">
                         <div className="flex items-center justify-between mb-2">
                           <h4 className="font-semibold text-white">
                             {phase.layout === 'sequential' ? `${index + 1}. ` : ''}{drill.title}
@@ -209,7 +210,7 @@ export default function SharedPracticePlanPage() {
                         )}
                         
                         {drill.focus && (
-                          <div className="bg-slate-700/50 rounded p-2 mt-2">
+                          <div className="bg-slate-700/80 rounded p-2 mt-2">
                             <p className="text-emerald-300 text-sm font-medium">Today's Focus:</p>
                             <p className="text-slate-200 text-sm">{drill.focus}</p>
                           </div>
@@ -227,7 +228,7 @@ export default function SharedPracticePlanPage() {
                   
                   {phase.layout !== 'sequential' && (
                     <div className="mt-4 text-center">
-                      <span className="text-xs text-slate-500 bg-slate-800/50 px-2 py-1 rounded">
+                      <span className="text-xs text-slate-500 bg-slate-800/80 px-2 py-1 rounded">
                         {phase.layout === 'two-column' ? 'Two simultaneous stations' : 'Three simultaneous stations'}
                       </span>
                     </div>
@@ -240,9 +241,11 @@ export default function SharedPracticePlanPage() {
 
         {/* Footer */}
         <div className="text-center mt-12 pt-8 border-t border-slate-800">
-          <p className="text-slate-500 text-sm">
-            Created with DrillShare Practice Planner
-          </p>
+          <Link href="https://www.drillshare.us" target="_blank" rel="noopener noreferrer">
+            <p className="text-slate-300 text-sm hover:text-white transition-colors">
+              Created with DrillShare Practice Planner
+            </p>
+          </Link>
         </div>
       </div>
     </div>

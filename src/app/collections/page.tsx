@@ -79,7 +79,7 @@ export default function CollectionsPage() {
                 setCurrentCollection(null);
                 setIsCreateDialogOpen(true);
               }}
-              className="bg-slate-600 hover:bg-slate-700 text-white"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white"
             >
               <Plus className="mr-2 h-4 w-4" /> Create Collection
             </Button>
@@ -102,7 +102,7 @@ export default function CollectionsPage() {
                   setCurrentCollection(null);
                   setIsCreateDialogOpen(true);
                 }}
-                className="bg-slate-600 hover:bg-slate-700 text-white"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white"
                 size="lg"
               >
                 <Plus className="mr-2 h-5 w-5" /> Create Your First Collection
