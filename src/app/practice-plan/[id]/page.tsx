@@ -9,6 +9,8 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import Image from 'next/image';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
+import { StaggerContainer, itemVariants } from '@/components/animations/StaggerContainer';
 
 interface PracticeDrill {
   id: string;
@@ -128,6 +130,18 @@ export default function SharedPracticePlanPage() {
       }}
     >
       <div className="container mx-auto px-4 py-8 max-w-4xl">
+        {/* Logo */}
+        <div className="text-center mb-8">
+          <Image
+            src="/logo-small.png"
+            alt="DrillShare"
+            width={240}
+            height={40}
+            className="mx-auto"
+            unoptimized
+          />
+        </div>
+
         {/* Header */}
         <div className="text-center mb-8">
           {/* Team Info Section */}
@@ -154,7 +168,7 @@ export default function SharedPracticePlanPage() {
             </div>
           )}
           
-          <h1 className="text-4xl font-bold text-white mb-2">{practicePlan.title}</h1>
+          <h1 className="text-4xl font-bold font-oswald text-white mb-2">{practicePlan.title}</h1>
           <div className="flex items-center justify-center gap-6 text-slate-100">
             <div className="flex items-center gap-2">
               <Calendar className="h-5 w-5" />
@@ -168,82 +182,84 @@ export default function SharedPracticePlanPage() {
         </div>
 
         {/* Practice Phases */}
-        <div className="space-y-6">
+        <StaggerContainer className="space-y-6">
           {phases.map((phase) => {
             if (phase.drills.length === 0) return null;
             
             const phaseTime = phase.drills.reduce((total, drill) => total + drill.duration, 0);
             
             return (
-              <Card key={phase.id} className="bg-slate-900/80 border-slate-700">
-                <CardHeader className="pb-4">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-2xl font-oswald text-emerald-400">
-                      {phase.name}
-                    </CardTitle>
-                    <div className="flex items-center gap-1 text-slate-400">
-                      <Clock className="h-4 w-4" />
-                      <span className="text-sm">{phaseTime} min</span>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-4">
-                  <div className={`grid gap-4 ${
-                    phase.layout === 'two-column' ? 'grid-cols-1 md:grid-cols-2' : 
-                    phase.layout === 'three-column' ? 'grid-cols-1 md:grid-cols-3' : 
-                    'grid-cols-1'
-                  }`}>
-                    {phase.drills.map((drill, index) => (
-                      <div key={drill.id} className="bg-slate-800/80 rounded-lg p-4 border border-slate-600">
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-semibold text-white">
-                            {phase.layout === 'sequential' ? `${index + 1}. ` : ''}{drill.title}
-                          </h4>
-                          <div className="flex items-center gap-1 text-slate-400">
-                            <Clock className="h-3 w-3" />
-                            <span className="text-sm">{drill.duration}min</span>
-                          </div>
-                        </div>
-                        
-                        {drill.notes && drill.notes !== drill.title && (
-                          <p className="text-slate-300 text-sm mb-2">{drill.notes}</p>
-                        )}
-                        
-                        {drill.focus && (
-                          <div className="bg-slate-700/80 rounded p-2 mt-2">
-                            <p className="text-emerald-300 text-sm font-medium">Today's Focus:</p>
-                            <p className="text-slate-200 text-sm">{drill.focus}</p>
-                          </div>
-                        )}
-                        
-                        {drill.players && (
-                          <div className="flex items-center gap-1 mt-2 text-slate-400">
-                            <User className="h-3 w-3" />
-                            <span className="text-xs">{drill.players} players</span>
-                          </div>
-                        )}
+              <motion.div variants={itemVariants}>
+                <Card key={phase.id} className="bg-slate-900/80 border-slate-700">
+                  <CardHeader className="pb-4">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-2xl font-oswald text-emerald-400">
+                        {phase.name}
+                      </CardTitle>
+                      <div className="flex items-center gap-1 text-slate-400">
+                        <Clock className="h-4 w-4" />
+                        <span className="text-sm">{phaseTime} min</span>
                       </div>
-                    ))}
-                  </div>
-                  
-                  {phase.layout !== 'sequential' && (
-                    <div className="mt-4 text-center">
-                      <span className="text-xs text-slate-500 bg-slate-800/80 px-2 py-1 rounded">
-                        {phase.layout === 'two-column' ? 'Two simultaneous stations' : 'Three simultaneous stations'}
-                      </span>
                     </div>
-                  )}
-                </CardContent>
-              </Card>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    <div className={`grid gap-4 ${
+                      phase.layout === 'two-column' ? 'grid-cols-1 md:grid-cols-2' : 
+                      phase.layout === 'three-column' ? 'grid-cols-1 md:grid-cols-3' : 
+                      'grid-cols-1'
+                    }`}>
+                      {phase.drills.map((drill, index) => (
+                        <div key={drill.id} className="bg-slate-800/80 rounded-lg p-4 border border-slate-600">
+                          <div className="flex items-center justify-between mb-2">
+                            <h4 className="font-semibold text-white">
+                              {phase.layout === 'sequential' ? `${index + 1}. ` : ''}{drill.title}
+                            </h4>
+                            <div className="flex items-center gap-1 text-slate-400">
+                              <Clock className="h-3 w-3" />
+                              <span className="text-sm">{drill.duration}min</span>
+                            </div>
+                          </div>
+                          
+                          {drill.notes && drill.notes !== drill.title && (
+                            <p className="text-slate-300 text-sm mb-2">{drill.notes}</p>
+                          )}
+                          
+                          {drill.focus && (
+                            <div className="bg-slate-700/80 rounded p-2 mt-2">
+                              <p className="text-emerald-300 text-sm font-medium">Today's Focus:</p>
+                              <p className="text-slate-200 text-sm">{drill.focus}</p>
+                            </div>
+                          )}
+                          
+                          {drill.players && (
+                            <div className="flex items-center gap-1 mt-2 text-slate-400">
+                              <User className="h-3 w-3" />
+                              <span className="text-xs">{drill.players} players</span>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    
+                    {phase.layout !== 'sequential' && (
+                      <div className="mt-4 text-center">
+                        <span className="text-xs text-slate-500 bg-slate-800/80 px-2 py-1 rounded">
+                          {phase.layout === 'two-column' ? 'Two simultaneous stations' : 'Three simultaneous stations'}
+                        </span>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </motion.div>
             );
           })}
-        </div>
+        </StaggerContainer>
 
         {/* Footer */}
         <div className="text-center mt-12 pt-8 border-t border-slate-800">
           <Link href="https://www.drillshare.us" target="_blank" rel="noopener noreferrer">
             <p className="text-slate-300 text-sm hover:text-white transition-colors">
-              Created with DrillShare Practice Planner
+              Coaching Tools for Baseball Players and Coaches
             </p>
           </Link>
         </div>

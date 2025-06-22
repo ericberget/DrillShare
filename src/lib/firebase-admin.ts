@@ -1,78 +1,58 @@
-import { initializeApp, getApps, cert } from 'firebase-admin/app';
-import { getAuth } from 'firebase-admin/auth';
-import { getFirestore } from 'firebase-admin/firestore';
+import { initializeApp, getApps, cert, App } from 'firebase-admin/app';
+import { getAuth, Auth } from 'firebase-admin/auth';
+import { getFirestore, Firestore } from 'firebase-admin/firestore';
 
-// Check if we're in a build environment or if credentials are missing
-const isCredentialsAvailable = () => {
-  return process.env.FIREBASE_PROJECT_ID && 
-         process.env.FIREBASE_CLIENT_EMAIL && 
-         process.env.FIREBASE_PRIVATE_KEY;
-};
-
-let app: any = null;
-
-// Lazy initialization function
-const initializeFirebaseAdmin = () => {
-  if (app) return app;
-
-  if (!isCredentialsAvailable()) {
-    console.warn('Firebase Admin credentials not available. Some features may not work.');
-    return null;
+// This function ensures Firebase Admin is initialized only once.
+function getAdminApp(): App | null {
+  // If the app is already initialized, return it.
+  if (getApps().length > 0) {
+    return getApps()[0];
   }
 
   try {
-    const apps = getApps();
-    
-    if (apps.length > 0) {
-      app = apps[0];
-    } else {
-      const firebaseAdminConfig = {
-        credential: cert({
-          projectId: process.env.FIREBASE_PROJECT_ID!,
-          clientEmail: process.env.FIREBASE_CLIENT_EMAIL!,
-          privateKey: process.env.FIREBASE_PRIVATE_KEY!.replace(/\\n/g, '\n'),
-        }),
-      };
-      
-      app = initializeApp(firebaseAdminConfig);
+    const serviceAccount = {
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      // This line is crucial for parsing the private key from a single-line env var.
+      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+    };
+
+    // Verify that all required service account properties are available.
+    if (!serviceAccount.projectId || !serviceAccount.clientEmail || !serviceAccount.privateKey) {
+      console.error('Firebase Admin credentials are not fully available in environment variables.');
+      return null;
     }
-    
-    console.log('Firebase Admin initialized successfully');
+
+    console.log('Attempting to initialize Firebase Admin...');
+    const app = initializeApp({
+      credential: cert(serviceAccount),
+      databaseURL: `https://${serviceAccount.projectId}.firebaseio.com`,
+      storageBucket: `${serviceAccount.projectId}.appspot.com`,
+    });
+    console.log('Firebase Admin initialized successfully.');
     return app;
-  } catch (error) {
-    console.error('Error initializing Firebase Admin:', error);
+  } catch (error: any) {
+    console.error('!!! Critical Error Initializing Firebase Admin !!!');
+    console.error(error.message);
+    if (error.errorInfo) {
+      console.error('Firebase Admin Error Info:', error.errorInfo);
+    }
     return null;
   }
-};
+}
 
-// Export lazy-initialized services
-export const getAdminAuth = () => {
-  const adminApp = initializeFirebaseAdmin();
-  return adminApp ? getAuth(adminApp) : null;
-};
+// Export functions that provide the initialized services.
+// They will return null if the initialization failed.
+export function getAdminAuth(): Auth | null {
+  const app = getAdminApp();
+  return app ? getAuth(app) : null;
+}
 
-export const getAdminDb = () => {
-  const adminApp = initializeFirebaseAdmin();
-  return adminApp ? getFirestore(adminApp) : null;
-};
+export function getAdminDb(): Firestore | null {
+  const app = getAdminApp();
+  return app ? getFirestore(app) : null;
+}
 
-// For backward compatibility
-export const auth = new Proxy({} as any, {
-  get(target, prop) {
-    const adminAuth = getAdminAuth();
-    if (!adminAuth) {
-      throw new Error('Firebase Admin Auth not available. Check your credentials.');
-    }
-    return adminAuth[prop as keyof typeof adminAuth];
-  }
-});
-
-export const adminDb = new Proxy({} as any, {
-  get(target, prop) {
-    const db = getAdminDb();
-    if (!db) {
-      throw new Error('Firebase Admin Firestore not available. Check your credentials.');
-    }
-    return db[prop as keyof typeof db];
-  }
-}); 
+// Export the initialized DB instance directly for convenience.
+// Code using this must handle the possibility of it being null.
+export const adminDb = getAdminDb();

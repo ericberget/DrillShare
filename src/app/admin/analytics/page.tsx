@@ -7,8 +7,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, Users, Eye, Clock, TrendingUp, Monitor, Smartphone, Tablet, Globe, Calendar, BarChart3, Activity } from 'lucide-react';
-import AdminProtectedRoute from '@/components/AdminProtectedRoute';
+import Link from 'next/link';
 import { getAnalyticsData, PageView, UserSession } from '@/lib/analytics';
+import { AdminProtectedRoute } from '@/components/AdminProtectedRoute';
+
+// Helper to format numbers with commas
+const formatNumber = (num: number) => {
+  return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+};
 
 interface AnalyticsData {
   totalPageViews: number;
@@ -21,6 +27,7 @@ interface AnalyticsData {
   dailyData: Record<string, number>;
   recentPageViews: PageView[];
   recentSessions: UserSession[];
+  topLocations: { location: string; count: number }[];
 }
 
 export default function AdminAnalyticsPage() {
@@ -130,7 +137,7 @@ export default function AdminAnalyticsPage() {
                     <Eye className="h-4 w-4 text-emerald-500" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-white">{data.totalPageViews.toLocaleString()}</div>
+                    <div className="text-2xl font-bold text-white">{formatNumber(data.totalPageViews)}</div>
                   </CardContent>
                 </Card>
 
@@ -140,7 +147,7 @@ export default function AdminAnalyticsPage() {
                     <Clock className="h-4 w-4 text-blue-500" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-white">{data.totalSessions.toLocaleString()}</div>
+                    <div className="text-2xl font-bold text-white">{formatNumber(data.totalSessions)}</div>
                   </CardContent>
                 </Card>
 
@@ -150,7 +157,7 @@ export default function AdminAnalyticsPage() {
                     <Users className="h-4 w-4 text-purple-500" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-white">{data.uniqueUsers.toLocaleString()}</div>
+                    <div className="text-2xl font-bold text-white">{formatNumber(data.uniqueUsers)}</div>
                   </CardContent>
                 </Card>
 
@@ -160,7 +167,7 @@ export default function AdminAnalyticsPage() {
                     <Globe className="h-4 w-4 text-orange-500" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-white">{data.anonymousUsers.toLocaleString()}</div>
+                    <div className="text-2xl font-bold text-white">{formatNumber(data.anonymousUsers)}</div>
                   </CardContent>
                 </Card>
               </div>
@@ -170,13 +177,14 @@ export default function AdminAnalyticsPage() {
                 <TabsList className="bg-slate-800 border-slate-700">
                   <TabsTrigger value="overview" className="data-[state=active]:bg-emerald-600">Overview</TabsTrigger>
                   <TabsTrigger value="pages" className="data-[state=active]:bg-emerald-600">Top Pages</TabsTrigger>
+                  <TabsTrigger value="locations" className="data-[state=active]:bg-emerald-600">Locations</TabsTrigger>
                   <TabsTrigger value="devices" className="data-[state=active]:bg-emerald-600">Devices</TabsTrigger>
                   <TabsTrigger value="browsers" className="data-[state=active]:bg-emerald-600">Browsers</TabsTrigger>
                   <TabsTrigger value="recent" className="data-[state=active]:bg-emerald-600">Recent Activity</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="overview" className="space-y-6">
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                     {/* Top Pages */}
                     <Card className="bg-slate-900 border-slate-700">
                       <CardHeader>
@@ -193,7 +201,7 @@ export default function AdminAnalyticsPage() {
                                 </Badge>
                                 <span className="text-slate-300">{formatPath(page.path)}</span>
                               </div>
-                              <span className="text-emerald-400 font-medium">{page.count}</span>
+                              <span className="text-emerald-400 font-medium">{formatNumber(page.count)}</span>
                             </div>
                           ))}
                         </div>
@@ -214,7 +222,30 @@ export default function AdminAnalyticsPage() {
                                 {getDeviceIcon(device)}
                                 <span className="text-slate-300 capitalize">{device}</span>
                               </div>
-                              <span className="text-emerald-400 font-medium">{count}</span>
+                              <span className="text-emerald-400 font-medium">{formatNumber(count)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    {/* Top Locations */}
+                    <Card className="bg-slate-900 border-slate-700">
+                      <CardHeader>
+                        <CardTitle className="text-white">Top Locations</CardTitle>
+                        <CardDescription className="text-slate-400">Visitor locations by city</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-3">
+                          {data.topLocations.slice(0, 5).map((loc, index) => (
+                            <div key={loc.location} className="flex items-center justify-between">
+                              <div className="flex items-center space-x-3">
+                                <Badge variant="secondary" className="bg-slate-700 text-slate-300">
+                                  #{index + 1}
+                                </Badge>
+                                <span className="text-slate-300">{loc.location}</span>
+                              </div>
+                              <span className="text-emerald-400 font-medium">{formatNumber(loc.count)}</span>
                             </div>
                           ))}
                         </div>
@@ -243,11 +274,35 @@ export default function AdminAnalyticsPage() {
                               </div>
                             </div>
                             <div className="text-right">
-                              <div className="text-emerald-400 font-medium">{page.count}</div>
+                              <div className="text-emerald-400 font-medium">{formatNumber(page.count)}</div>
                               <div className="text-slate-500 text-sm">
                                 {((page.count / data.totalPageViews) * 100).toFixed(1)}%
                               </div>
                             </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+                
+                <TabsContent value="locations" className="space-y-6">
+                  <Card className="bg-slate-900 border-slate-700">
+                    <CardHeader>
+                      <CardTitle className="text-white">All Locations</CardTitle>
+                      <CardDescription className="text-slate-400">Complete list of visitor locations</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {data.topLocations.map((loc, index) => (
+                          <div key={loc.location} className="flex items-center justify-between p-3 bg-slate-800 rounded-lg">
+                            <div className="flex items-center space-x-3">
+                              <Badge variant="secondary" className="bg-slate-700 text-slate-300">
+                                #{index + 1}
+                              </Badge>
+                              <div className="text-slate-300 font-medium">{loc.location}</div>
+                            </div>
+                            <span className="text-emerald-400 font-bold">{formatNumber(loc.count)}</span>
                           </div>
                         ))}
                       </div>
@@ -270,7 +325,7 @@ export default function AdminAnalyticsPage() {
                               <span className="text-slate-300 capitalize font-medium">{device}</span>
                             </div>
                             <div className="text-right">
-                              <div className="text-emerald-400 font-medium">{count}</div>
+                              <div className="text-emerald-400 font-medium">{formatNumber(count)}</div>
                               <div className="text-slate-500 text-sm">
                                 {((count / data.totalPageViews) * 100).toFixed(1)}%
                               </div>
@@ -294,7 +349,7 @@ export default function AdminAnalyticsPage() {
                           <div key={browser} className="flex items-center justify-between p-3 bg-slate-800 rounded-lg">
                             <span className="text-slate-300 font-medium">{browser}</span>
                             <div className="text-right">
-                              <div className="text-emerald-400 font-medium">{count}</div>
+                              <div className="text-emerald-400 font-medium">{formatNumber(count)}</div>
                               <div className="text-slate-500 text-sm">
                                 {((count / data.totalPageViews) * 100).toFixed(1)}%
                               </div>

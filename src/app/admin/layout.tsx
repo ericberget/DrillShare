@@ -15,7 +15,7 @@ import {
   Menu,
   X
 } from 'lucide-react';
-import AdminProtectedRoute from '@/components/AdminProtectedRoute';
+import { AdminProtectedRoute } from '@/components/AdminProtectedRoute';
 
 const adminNavItems = [
   {
@@ -66,62 +66,66 @@ export default function AdminLayout({
         )}
 
         {/* Sidebar */}
-        <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 border-r border-slate-700 transform transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
+        <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 border-r border-slate-700 transform transition-transform duration-200 ease-in-out lg:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}>
-          <div className="flex items-center justify-between h-16 px-6 border-b border-slate-700">
-            <h1 className="text-xl font-bold text-white">Admin Panel</h1>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setSidebarOpen(false)}
-              className="lg:hidden"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
+          <div className="flex flex-col h-full">
+            <div> {/* Wrapper for top section */}
+              <div className="flex items-center justify-between h-16 px-6 border-b border-slate-700">
+                <h1 className="text-xl font-bold text-white">Admin Panel</h1>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSidebarOpen(false)}
+                  className="lg:hidden"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
 
-          <nav className="p-4 space-y-2">
-            {adminNavItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = pathname === item.href;
-              
-              return (
-                <Link key={item.href} href={item.href}>
-                  <Card className={`cursor-pointer transition-all duration-200 hover:bg-slate-800 ${
-                    isActive ? 'bg-emerald-600/20 border-emerald-600/50' : 'bg-slate-800/50 border-slate-700'
-                  }`}>
-                    <CardContent className="p-4">
-                      <div className="flex items-center space-x-3">
-                        <Icon className={`h-5 w-5 ${
-                          isActive ? 'text-emerald-400' : 'text-slate-400'
-                        }`} />
-                        <div>
-                          <div className={`font-medium ${
-                            isActive ? 'text-emerald-400' : 'text-white'
-                          }`}>
-                            {item.title}
+              <nav className="p-4 space-y-2">
+                {adminNavItems.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = pathname === item.href;
+                  
+                  return (
+                    <Link key={item.href} href={item.href}>
+                      <Card className={`cursor-pointer transition-all duration-200 hover:bg-slate-800 ${
+                        isActive ? 'bg-emerald-600/20 border-emerald-600/50' : 'bg-slate-800/50 border-slate-700'
+                      }`}>
+                        <CardContent className="p-4">
+                          <div className="flex items-center space-x-3">
+                            <Icon className={`h-5 w-5 ${
+                              isActive ? 'text-emerald-400' : 'text-slate-400'
+                            }`} />
+                            <div>
+                              <div className={`font-medium ${
+                                isActive ? 'text-emerald-400' : 'text-white'
+                              }`}>
+                                {item.title}
+                              </div>
+                              <div className="text-xs text-slate-500">
+                                {item.description}
+                              </div>
+                            </div>
                           </div>
-                          <div className="text-xs text-slate-500">
-                            {item.description}
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              );
-            })}
-          </nav>
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  );
+                })}
+              </nav>
+            </div>
 
-          {/* Back to site */}
-          <div className="absolute bottom-4 left-4 right-4">
-            <Link href="/">
-              <Button variant="outline" className="w-full border-slate-700 text-slate-300 hover:bg-slate-800">
-                <Home className="h-4 w-4 mr-2" />
-                Back to Site
-              </Button>
-            </Link>
+            {/* Back to site */}
+            <div className="mt-auto p-4">
+              <Link href="/">
+                <Button variant="outline" className="w-full border-slate-700 text-slate-300 hover:bg-slate-800">
+                  <Home className="h-4 w-4 mr-2" />
+                  Back to Site
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
 

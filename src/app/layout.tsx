@@ -27,7 +27,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <title>DrillShare</title>
-        <meta name="description" content="Share and discover baseball drills" />
+        <meta name="description" content="Share and discover baseball drills and practice plans" />
         
         {/* Favicon */}
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />

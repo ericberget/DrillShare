@@ -301,6 +301,9 @@ export default function HomePage() {
               <Link href="/faq" className="text-slate-400 hover:text-slate-300 text-sm hover-scale animate-fade-in stagger-5 text-center">
                 FAQ
               </Link>
+              <Link href="/pricing" className="text-slate-400 hover:text-slate-300 text-sm hover-scale animate-fade-in stagger-6 text-center">
+                Pricing
+              </Link>
             </div>
           </div>
         </div>

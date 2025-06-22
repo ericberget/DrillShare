@@ -34,28 +34,33 @@ export function FooterClientOnly() {
             <h3 className="text-slate-300 font-semibold mb-4">Quick Links</h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/" className="text-slate-400 hover:text-slate-300 text-sm transition-colors">
-                  Home
+                <Link href="/content" className="text-slate-400 hover:text-slate-300 text-sm transition-colors">
+                  My Video Library
+                </Link>
+              </li>
+              <li>
+                <Link href="/collections" className="text-slate-400 hover:text-slate-300 text-sm transition-colors">
+                  Collections
+                </Link>
+              </li>
+              <li>
+                <Link href="/practice-planner" className="text-slate-400 hover:text-slate-300 text-sm transition-colors">
+                  Quick Practice Planner
                 </Link>
               </li>
               <li>
                 <Link href="/player-analysis" className="text-slate-400 hover:text-slate-300 text-sm transition-colors">
-                  Player Analysis
-                </Link>
-              </li>
-              <li>
-                <Link href="/drill-library" className="text-slate-400 hover:text-slate-300 text-sm transition-colors">
-                  Drill Library
-                </Link>
-              </li>
-              <li>
-                <Link href="/film-room" className="text-slate-400 hover:text-slate-300 text-sm transition-colors">
                   Film Room
                 </Link>
               </li>
               <li>
                 <Link href="/faq" className="text-slate-400 hover:text-slate-300 text-sm transition-colors">
                   FAQ
+                </Link>
+              </li>
+              <li>
+                <Link href="/pricing" className="text-slate-400 hover:text-slate-300 text-sm transition-colors">
+                  Pricing
                 </Link>
               </li>
             </ul>

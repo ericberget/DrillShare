@@ -87,6 +87,25 @@ const generateSessionId = () => {
   return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 };
 
+// Get location data
+const getLocationData = async () => {
+  try {
+    const response = await fetch('/api/analytics/location');
+    if (!response.ok) {
+      return { ipAddress: 'Unknown', country: 'Unknown', city: 'Unknown' };
+    }
+    const data = await response.json();
+    return {
+      ipAddress: data.ip,
+      country: data.country,
+      city: data.city,
+    };
+  } catch (error) {
+    console.error('Error fetching location data:', error);
+    return { ipAddress: 'Unknown', country: 'Unknown', city: 'Unknown' };
+  }
+};
+
 // Track page view
 export const trackPageView = async (
   path: string, 
@@ -112,6 +131,7 @@ export const trackPageView = async (
 
     const { browser, os } = getBrowserInfo();
     const deviceType = getDeviceType();
+    const locationData = await getLocationData();
 
     const pageView: Omit<PageView, 'id'> = {
       path,
@@ -124,14 +144,15 @@ export const trackPageView = async (
       sessionId,
       deviceType,
       browser,
-      os
+      os,
+      ...locationData,
     };
 
     // Store in Firestore
     await addDoc(collection(db, 'pageViews'), pageView);
 
     // Update session
-    await updateSession(sessionId, userId, userEmail, deviceType, browser, os);
+    await updateSession(sessionId, userId, userEmail, deviceType, browser, os, locationData);
 
   } catch (error) {
     console.error('Error tracking page view:', error);
@@ -145,7 +166,8 @@ const updateSession = async (
   userEmail?: string,
   deviceType?: 'desktop' | 'mobile' | 'tablet',
   browser?: string,
-  os?: string
+  os?: string,
+  locationData?: { ipAddress?: string; country?: string; city?: string }
 ) => {
   try {
     const sessionsRef = collection(db, 'userSessions');
@@ -163,16 +185,24 @@ const updateSession = async (
         userAgent: navigator.userAgent,
         deviceType: deviceType || getDeviceType(),
         browser: browser || getBrowserInfo().browser,
-        os: os || getBrowserInfo().os
+        os: os || getBrowserInfo().os,
+        ...locationData,
       };
       await addDoc(sessionsRef, session);
     } else {
       // Update existing session
       const sessionDoc = querySnapshot.docs[0];
-      await updateDoc(sessionDoc.ref, {
+      const updateData: any = {
         pageViews: (sessionDoc.data().pageViews || 0) + 1,
         endTime: serverTimestamp()
-      });
+      };
+
+      if (userId && !sessionDoc.data().userId) {
+        updateData.userId = userId;
+        updateData.userEmail = userEmail;
+      }
+      
+      await updateDoc(sessionDoc.ref, updateData);
     }
   } catch (error) {
     console.error('Error updating session:', error);
@@ -181,9 +211,12 @@ const updateSession = async (
 
 // Get analytics data for admin dashboard
 export const getAnalyticsData = async (days: number = 30) => {
+  console.log(`Fetching analytics data for the last ${days} days...`);
+  
   try {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
+    console.log(`Querying data since: ${startDate.toISOString()}`);
 
     // Get page views
     const pageViewsRef = collection(db, 'pageViews');
@@ -193,6 +226,7 @@ export const getAnalyticsData = async (days: number = 30) => {
       orderBy('timestamp', 'desc')
     );
     const pageViewsSnapshot = await getDocs(pageViewsQuery);
+    console.log(`Found ${pageViewsSnapshot.size} page views.`);
 
     // Get sessions
     const sessionsRef = collection(db, 'userSessions');
@@ -202,6 +236,24 @@ export const getAnalyticsData = async (days: number = 30) => {
       orderBy('startTime', 'desc')
     );
     const sessionsSnapshot = await getDocs(sessionsQuery);
+    console.log(`Found ${sessionsSnapshot.size} sessions.`);
+
+    if (pageViewsSnapshot.empty && sessionsSnapshot.empty) {
+      console.warn('No analytics data found for the selected time range.');
+      return {
+        totalPageViews: 0,
+        totalSessions: 0,
+        uniqueUsers: 0,
+        anonymousUsers: 0,
+        topPages: [],
+        deviceCounts: {},
+        browserCounts: {},
+        topLocations: [],
+        dailyData: {},
+        recentPageViews: [],
+        recentSessions: [],
+      };
+    }
 
     const pageViews = pageViewsSnapshot.docs.map(doc => ({
       id: doc.id,
@@ -227,22 +279,36 @@ export const getAnalyticsData = async (days: number = 30) => {
 
     const topPages = Object.entries(pageCounts)
       .map(([path, count]) => ({ path, count: count as number }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 10);
+      .sort((a, b) => b.count - a.count);
 
-    // Device breakdown
-    const deviceCounts = pageViews.reduce((acc: any, pv) => {
-      acc[pv.deviceType] = (acc[pv.deviceType] || 0) + 1;
+    // Device counts
+    const deviceCounts = sessions.reduce((acc: any, s) => {
+      const device = s.deviceType || 'unknown';
+      acc[device] = (acc[device] || 0) + 1;
       return acc;
     }, {});
 
-    // Browser breakdown
-    const browserCounts = pageViews.reduce((acc: any, pv) => {
-      acc[pv.browser] = (acc[pv.browser] || 0) + 1;
+    // Browser counts
+    const browserCounts = sessions.reduce((acc: any, s) => {
+      const browser = s.browser || 'unknown';
+      acc[browser] = (acc[browser] || 0) + 1;
       return acc;
     }, {});
 
-    // Daily breakdown
+    // Location counts
+    const locationCounts = sessions.reduce((acc: any, s) => {
+      if (s.country && s.city) {
+        const location = `${s.city}, ${s.country}`;
+        acc[location] = (acc[location] || 0) + 1;
+      }
+      return acc;
+    }, {});
+    
+    const topLocations = Object.entries(locationCounts)
+      .map(([location, count]) => ({ location, count: count as number }))
+      .sort((a, b) => b.count - a.count);
+
+    // Daily data
     const dailyData = pageViews.reduce((acc: any, pv) => {
       const date = pv.timestamp?.toDate?.() || new Date();
       const dayKey = date.toISOString().split('T')[0];
@@ -250,6 +316,7 @@ export const getAnalyticsData = async (days: number = 30) => {
       return acc;
     }, {});
 
+    console.log('Successfully processed analytics data.');
     return {
       totalPageViews,
       totalSessions,
@@ -258,13 +325,14 @@ export const getAnalyticsData = async (days: number = 30) => {
       topPages,
       deviceCounts,
       browserCounts,
+      topLocations,
       dailyData,
-      recentPageViews: pageViews.slice(0, 50),
-      recentSessions: sessions.slice(0, 50)
+      recentPageViews: pageViews.slice(0, 10),
+      recentSessions: sessions.slice(0, 10)
     };
   } catch (error) {
-    console.error('Error getting analytics data:', error);
-    return null;
+    console.error('Error fetching analytics data:', error);
+    throw error; // Re-throw the error to be caught by the UI
   }
 };
 

@@ -5,7 +5,6 @@ export async function POST(request: NextRequest) {
   try {
     const { email, adminSecret } = await request.json();
 
-    // Verify admin secret (you should set this as an environment variable)
     const expectedSecret = process.env.ADMIN_SECRET || 'drillshare-admin-2024';
     if (adminSecret !== expectedSecret) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

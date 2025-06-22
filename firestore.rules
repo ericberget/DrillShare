@@ -63,13 +63,16 @@ service cloud.firestore {
       allow write: if isOwner(userId) || isAdmin();
     }
 
-    // Analytics rules - only admins can read/write
-    match /pageViews/{pageViewId} {
-      allow read, write: if isAdmin();
+    // Analytics rules
+    // Allow any authenticated user to create analytics data.
+    // Only admins can read, update, or delete analytics data.
+    match /{path=**}/pageViews/{pageViewId} {
+      allow write: if isAuthenticated();
+      allow read: if isAdmin();
     }
-
-    match /userSessions/{sessionId} {
-      allow read, write: if isAdmin();
+    match /{path=**}/userSessions/{sessionId} {
+      allow write: if isAuthenticated();
+      allow read: if isAdmin();
     }
   }
 }
