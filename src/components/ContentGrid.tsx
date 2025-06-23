@@ -13,7 +13,7 @@ import { ContentCard } from './ContentCard';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { ChevronDown, Target, Users, Zap, Hand, Circle, GripVertical, RotateCcw } from 'lucide-react';
+import { ChevronDown, Target, Users, Zap, Hand, Circle, GripVertical, RotateCcw, Star, List, Grid } from 'lucide-react';
 import { CategoryTransition, StaggerContainer, FadeInUp } from '@/components/animations';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -73,6 +73,12 @@ const categoryConfig = {
     title: 'Catching',
     description: 'Receiving techniques, framing, and game management',
     gradient: 'from-purple-600 to-purple-700'
+  },
+  favorites: {
+    icon: Star,
+    title: 'Favorites',
+    description: 'Your hand-picked collection of top drills and videos',
+    gradient: 'from-yellow-500 to-yellow-600'
   }
 };
 
@@ -84,6 +90,7 @@ interface SortableContentCardProps {
   activeTag: string | null;
   onEdit?: (content: ContentItem) => void;
   onFavoriteToggle?: (contentId: string, e: React.MouseEvent) => void;
+  viewMode: 'grid' | 'list';
 }
 
 function SortableContentCard({ 
@@ -92,7 +99,8 @@ function SortableContentCard({
   onTagClick, 
   activeTag,
   onEdit,
-  onFavoriteToggle
+  onFavoriteToggle,
+  viewMode
 }: SortableContentCardProps) {
   const {
     attributes,
@@ -118,6 +126,7 @@ function SortableContentCard({
         activeTag={activeTag}
         onEdit={onEdit}
         onFavoriteToggle={onFavoriteToggle}
+        viewMode={viewMode}
       />
       {/* Drag Handle */}
       <div
@@ -145,6 +154,7 @@ export function ContentGrid({ onAddContent, onSelectContent, onEditContent }: Co
   const [isReordering, setIsReordering] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [sortOrder, setSortOrder] = useState<'manual' | 'date' | 'alphabetical'>('manual');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   // Drag & Drop sensors
   const sensors = useSensors(
@@ -337,6 +347,19 @@ export function ContentGrid({ onAddContent, onSelectContent, onEditContent }: Co
     };
   }, []);
 
+  const filteredContent = getFilteredContent();
+
+  const handleCategorySelect = (category: 'all' | ContentCategory | 'favorites') => {
+    if (category === 'favorites') {
+      setShowFavoritesOnly(true);
+      setActiveCategory('all');
+    } else {
+      setShowFavoritesOnly(false);
+      setActiveCategory(category);
+    }
+    setActiveTag(null);
+  };
+
   return (
     <div className="space-y-6 bg-[#0D1529]">
       <FadeInUp>
@@ -347,49 +370,19 @@ export function ContentGrid({ onAddContent, onSelectContent, onEditContent }: Co
             {/* Mobile: Combined Filters Dropdown */}
             <div className="md:hidden w-full">
               <Select 
-                value="filters"
-                onValueChange={(value) => {
-                  if (value === 'filters') {
-                    setShowFilters(!showFilters);
-                  } else if (value.startsWith('category-')) {
-                    setActiveCategory(value.replace('category-', '') as 'all' | ContentCategory);
-                  }
-                }}
+                value={showFavoritesOnly ? 'favorites' : activeCategory} 
+                onValueChange={(value) => handleCategorySelect(value as any)}
               >
-                <SelectTrigger className="bg-slate-800 border-slate-700 text-slate-200">
-                  <SelectValue>
-                    <div className="flex items-center gap-2">
-                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                      </svg>
-                      <span>Filters</span>
-                      {(activeSkillLevel || showFavoritesOnly || activeTag || searchQuery || activeCategory !== 'all') && (
-                        <span className="ml-1 px-1.5 py-0.5 bg-blue-500 text-white text-xs rounded-full">
-                          {[activeSkillLevel, showFavoritesOnly && 'fav', activeTag, searchQuery && 'search', activeCategory !== 'all' && 'cat'].filter(Boolean).length}
-                        </span>
-                      )}
-                    </div>
-                  </SelectValue>
+                <SelectTrigger className="w-full bg-slate-700 border-slate-600 text-slate-100">
+                  <SelectValue placeholder="Select a category..." />
                 </SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-700 text-slate-200 max-h-[400px]">
-                  <SelectItem value="filters">
-                    <div className="flex items-center gap-2">
-                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                      </svg>
-                      Toggle Filter Panel
-                    </div>
-                  </SelectItem>
-                  <div className="h-px bg-slate-600 my-2"></div>
-                  <div className="text-xs text-slate-400 px-2 py-1">Categories</div>
-                  {Object.entries(categoryConfig).map(([key, config]) => (
-                    <SelectItem key={key} value={`category-${key}`}>
-                      <div className="flex items-center gap-2">
-                        <img src="/baseball.png" alt="Baseball" className="w-4 h-4 opacity-80" />
-                        {config.title}
-                      </div>
-                    </SelectItem>
-                  ))}
+                <SelectContent className="bg-slate-800 border-slate-700 text-slate-100">
+                  <SelectItem value="all">All Content</SelectItem>
+                  <SelectItem value="hitting">Hitting</SelectItem>
+                  <SelectItem value="infield">Infield</SelectItem>
+                  <SelectItem value="pitching">Pitching</SelectItem>
+                  <SelectItem value="catching">Catching</SelectItem>
+                  <SelectItem value="favorites">Favorites</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -713,6 +706,7 @@ export function ContentGrid({ onAddContent, onSelectContent, onEditContent }: Co
                         activeTag={activeTag}
                         onEdit={onEditContent}
                         onFavoriteToggle={handleFavoriteToggle}
+                        viewMode={viewMode}
                       />
                     ))}
                     {getFilteredContent().length === 0 && (
@@ -736,6 +730,7 @@ export function ContentGrid({ onAddContent, onSelectContent, onEditContent }: Co
                     activeTag={activeTag}
                     onEdit={onEditContent}
                     onFavoriteToggle={handleFavoriteToggle}
+                    viewMode={viewMode}
                   />
                 ))}
                 {getFilteredContent().length === 0 && (

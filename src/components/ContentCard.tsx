@@ -13,6 +13,7 @@ interface ContentCardProps {
   activeTag: string | null;
   onEdit?: (content: ContentItem) => void;
   onFavoriteToggle?: (contentId: string, e: React.MouseEvent) => void;
+  viewMode?: 'grid' | 'list';
 }
 
 export function ContentCard({ 
@@ -21,7 +22,8 @@ export function ContentCard({
   onTagClick, 
   activeTag,
   onEdit,
-  onFavoriteToggle
+  onFavoriteToggle,
+  viewMode = 'grid'
 }: ContentCardProps) {
   const { user } = useFirebase();
   // Extract YouTube video ID for thumbnail
@@ -49,6 +51,39 @@ export function ContentCard({
     if (!userId) return '?';
     return userId.substring(0, 2).toUpperCase();
   };
+
+  if (viewMode === 'list') {
+    return (
+      <div 
+        className="group flex items-center gap-4 p-3 rounded-lg border-2 border-slate-800/50 hover:bg-slate-800/40 hover:border-slate-700/50 transition-all duration-200 cursor-pointer"
+        onClick={() => onSelect(content)}
+      >
+        <div className="flex-shrink-0 w-20 h-16 relative rounded-md overflow-hidden ring-1 ring-slate-700/50">
+          {content.thumbnailUrl ? (
+            <img src={content.thumbnailUrl} alt="Thumbnail" className="w-full h-full object-cover" />
+          ) : youtubeId ? (
+            <img src={`https://img.youtube.com/vi/${youtubeId}/0.jpg`} alt="Thumbnail" className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full bg-slate-800 flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+            </div>
+          )}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-base font-semibold text-slate-200 truncate group-hover:text-emerald-400">{content.title}</p>
+          <p className="text-sm text-slate-400 truncate">{content.description}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          {content.tags.slice(0, 2).map(tag => (
+            <Badge key={tag} variant="secondary" className="hidden sm:inline-flex">{tag}</Badge>
+          ))}
+          {user && user.uid === content.userId && !content.isSample && onEdit && (
+            <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); onEdit(content); }} className="w-8 h-8 opacity-0 group-hover:opacity-100"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></Button>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <Card 
