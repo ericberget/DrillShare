@@ -173,16 +173,18 @@ export function ContentUploader({ isOpen, onClose, onDelete, existingContent }: 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ videoUrl: url }),
       });
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error || 'Failed to fetch Facebook thumbnail.');
-      }
       const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch Facebook thumbnail.');
+      }
+      
       if (data.thumbnailUrl) {
         setAutoThumbnail(data.thumbnailUrl);
       }
     } catch (err: any) {
-      setError(err.message);
+      console.error("Error fetching Facebook thumbnail:", err);
+      setError(`Facebook API Error: ${err.message}`);
       setAutoThumbnail(null);
     }
   };
