@@ -550,6 +550,21 @@ export function ContentUploader({ isOpen, onClose, onDelete, existingContent }: 
                   )}
                 </div>
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="orientation" className="text-slate-300">Video Orientation</Label>
+                <Select 
+                  value={formData.orientation}
+                  onValueChange={(value: ContentOrientation) => setFormData(prev => ({ ...prev, orientation: value }))}
+                >
+                  <SelectTrigger id="orientation" className="bg-slate-800 border-slate-700 text-slate-200">
+                    <SelectValue placeholder="Select orientation" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-800 border-slate-700 text-slate-200">
+                    <SelectItem value="vertical">Vertical</SelectItem>
+                    <SelectItem value="landscape">Landscape</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
                <div className="space-y-2">
                  <Label className="text-slate-300">Tags</Label>
                  <div className="flex flex-wrap gap-2 mb-2">
