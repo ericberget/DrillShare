@@ -344,115 +344,46 @@ export function ContentGrid({ onAddContent, onSelectContent, onEditContent }: Co
         <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 mb-6">
           {/* Left: Filter and Settings Buttons */}
           <div className="flex items-center gap-2 w-full sm:w-auto">
-            {/* Filters Button */}
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 transform flex-1 sm:flex-none ${
-                showFilters
-                  ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30 shadow-lg shadow-blue-500/10'
-                  : 'bg-slate-800/50 text-slate-300 border border-slate-700 hover:bg-blue-500/8 hover:border-blue-500/15 hover:text-blue-300 hover:shadow-md hover:shadow-blue-500/5 hover:scale-105'
-              }`}
-            >
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-              <span className="hidden sm:inline">Filters</span>
-              {(activeSkillLevel || showFavoritesOnly || activeTag || searchQuery) && (
-                <span className="ml-1 px-1.5 py-0.5 bg-blue-500 text-white text-xs rounded-full">
-                  {[activeSkillLevel, showFavoritesOnly && 'fav', activeTag, searchQuery && 'search'].filter(Boolean).length}
-                </span>
-              )}
-              <svg className={`h-4 w-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-
-            {/* Settings Button */}
-            <div className="relative">
-              <button
-                onClick={() => setShowSettings(!showSettings)}
-                className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 transform ${
-                  showSettings
-                    ? 'bg-slate-600/20 text-slate-300 border border-slate-500/30 shadow-lg shadow-slate-500/10'
-                    : 'bg-slate-800/50 text-slate-300 border border-slate-700 hover:bg-slate-600/8 hover:border-slate-500/15 hover:text-slate-200 hover:shadow-md hover:shadow-slate-500/5 hover:scale-105'
-                }`}
-              >
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                <span className="hidden sm:inline">Sort</span>
-                <svg className={`h-4 w-4 transition-transform ${showSettings ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-
-              {/* Settings Dropdown */}
-              {showSettings && (
-                <div ref={settingsDropdownRef} className="absolute top-full left-0 mt-2 w-48 bg-slate-800 border border-slate-700 rounded-lg shadow-xl z-50">
-                  <div className="p-2">
-                    <div className="text-xs text-slate-400 px-2 py-1">Sort Order</div>
-                    <button
-                      onClick={() => {
-                        setSortOrder('manual');
-                        setShowSettings(false);
-                      }}
-                      className={`w-full text-left px-2 py-2 rounded text-sm transition-colors ${
-                        sortOrder === 'manual'
-                          ? 'bg-blue-500/20 text-blue-400'
-                          : 'text-slate-300 hover:bg-slate-700'
-                      }`}
-                    >
-                      Manual (drag & drop)
-                    </button>
-                    <button
-                      onClick={() => {
-                        setSortOrder('date');
-                        setShowSettings(false);
-                      }}
-                      className={`w-full text-left px-2 py-2 rounded text-sm transition-colors ${
-                        sortOrder === 'date'
-                          ? 'bg-blue-500/20 text-blue-400'
-                          : 'text-slate-300 hover:bg-slate-700'
-                      }`}
-                    >
-                      Date (newest first)
-                    </button>
-                    <button
-                      onClick={() => {
-                        setSortOrder('alphabetical');
-                        setShowSettings(false);
-                      }}
-                      className={`w-full text-left px-2 py-2 rounded text-sm transition-colors ${
-                        sortOrder === 'alphabetical'
-                          ? 'bg-blue-500/20 text-blue-400'
-                          : 'text-slate-300 hover:bg-slate-700'
-                      }`}
-                    >
-                      Alphabetical (A-Z)
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Center: Category Tabs */}
-          <div className="flex-1 flex justify-center w-full sm:w-auto">
-            {/* Mobile: Dropdown */}
-            <div className="md:hidden w-full max-w-xs">
+            {/* Mobile: Combined Filters Dropdown */}
+            <div className="md:hidden w-full">
               <Select 
-                value={activeCategory} 
-                onValueChange={(value: 'all' | ContentCategory) => setActiveCategory(value)}
+                value="filters"
+                onValueChange={(value) => {
+                  if (value === 'filters') {
+                    setShowFilters(!showFilters);
+                  } else if (value.startsWith('category-')) {
+                    setActiveCategory(value.replace('category-', '') as 'all' | ContentCategory);
+                  }
+                }}
               >
                 <SelectTrigger className="bg-slate-800 border-slate-700 text-slate-200">
                   <SelectValue>
-                    {categoryConfig[activeCategory]?.title || 'All Content'}
+                    <div className="flex items-center gap-2">
+                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                      </svg>
+                      <span>Filters</span>
+                      {(activeSkillLevel || showFavoritesOnly || activeTag || searchQuery || activeCategory !== 'all') && (
+                        <span className="ml-1 px-1.5 py-0.5 bg-blue-500 text-white text-xs rounded-full">
+                          {[activeSkillLevel, showFavoritesOnly && 'fav', activeTag, searchQuery && 'search', activeCategory !== 'all' && 'cat'].filter(Boolean).length}
+                        </span>
+                      )}
+                    </div>
                   </SelectValue>
                 </SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-700 text-slate-200 max-h-[300px]">
+                <SelectContent className="bg-slate-800 border-slate-700 text-slate-200 max-h-[400px]">
+                  <SelectItem value="filters">
+                    <div className="flex items-center gap-2">
+                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                      </svg>
+                      Toggle Filter Panel
+                    </div>
+                  </SelectItem>
+                  <div className="h-px bg-slate-600 my-2"></div>
+                  <div className="text-xs text-slate-400 px-2 py-1">Categories</div>
                   {Object.entries(categoryConfig).map(([key, config]) => (
-                    <SelectItem key={key} value={key}>
+                    <SelectItem key={key} value={`category-${key}`}>
                       <div className="flex items-center gap-2">
                         <img src="/baseball.png" alt="Baseball" className="w-4 h-4 opacity-80" />
                         {config.title}
@@ -463,6 +394,104 @@ export function ContentGrid({ onAddContent, onSelectContent, onEditContent }: Co
               </Select>
             </div>
             
+            {/* Desktop: Separate Filter and Settings Buttons */}
+            <div className="hidden md:flex gap-2">
+              {/* Filters Button */}
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 transform ${
+                  showFilters
+                    ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30 shadow-lg shadow-blue-500/10'
+                    : 'bg-slate-800/50 text-slate-300 border border-slate-700 hover:bg-blue-500/8 hover:border-blue-500/15 hover:text-blue-300 hover:shadow-md hover:shadow-blue-500/5 hover:scale-105'
+                }`}
+              >
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+                <span>Filters</span>
+                {(activeSkillLevel || showFavoritesOnly || activeTag || searchQuery) && (
+                  <span className="ml-1 px-1.5 py-0.5 bg-blue-500 text-white text-xs rounded-full">
+                    {[activeSkillLevel, showFavoritesOnly && 'fav', activeTag, searchQuery && 'search'].filter(Boolean).length}
+                  </span>
+                )}
+                <svg className={`h-4 w-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {/* Settings Button */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowSettings(!showSettings)}
+                  className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 transform ${
+                    showSettings
+                      ? 'bg-slate-600/20 text-slate-300 border border-slate-500/30 shadow-lg shadow-slate-500/10'
+                      : 'bg-slate-800/50 text-slate-300 border border-slate-700 hover:bg-slate-600/8 hover:border-slate-500/15 hover:text-slate-200 hover:shadow-md hover:shadow-slate-500/5 hover:scale-105'
+                  }`}
+                >
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <span>Sort</span>
+                  <svg className={`h-4 w-4 transition-transform ${showSettings ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {/* Settings Dropdown */}
+                {showSettings && (
+                  <div ref={settingsDropdownRef} className="absolute top-full left-0 mt-2 w-48 bg-slate-800 border border-slate-700 rounded-lg shadow-xl z-50">
+                    <div className="p-2">
+                      <div className="text-xs text-slate-400 px-2 py-1">Sort Order</div>
+                      <button
+                        onClick={() => {
+                          setSortOrder('manual');
+                          setShowSettings(false);
+                        }}
+                        className={`w-full text-left px-2 py-2 rounded text-sm transition-colors ${
+                          sortOrder === 'manual'
+                            ? 'bg-blue-500/20 text-blue-400'
+                            : 'text-slate-300 hover:bg-slate-700'
+                        }`}
+                      >
+                        Manual (drag & drop)
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSortOrder('date');
+                          setShowSettings(false);
+                        }}
+                        className={`w-full text-left px-2 py-2 rounded text-sm transition-colors ${
+                          sortOrder === 'date'
+                            ? 'bg-blue-500/20 text-blue-400'
+                            : 'text-slate-300 hover:bg-slate-700'
+                        }`}
+                      >
+                        Date (newest first)
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSortOrder('alphabetical');
+                          setShowSettings(false);
+                        }}
+                        className={`w-full text-left px-2 py-2 rounded text-sm transition-colors ${
+                          sortOrder === 'alphabetical'
+                            ? 'bg-blue-500/20 text-blue-400'
+                            : 'text-slate-300 hover:bg-slate-700'
+                        }`}
+                      >
+                        Alphabetical (A-Z)
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Center: Category Tabs */}
+          <div className="flex-1 flex justify-center w-full sm:w-auto">
             {/* Desktop: Horizontal Tabs */}
             <div className="hidden md:flex gap-4">
               {Object.entries(categoryConfig).map(([key, config]) => {

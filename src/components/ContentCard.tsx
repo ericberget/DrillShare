@@ -90,10 +90,10 @@ export function ContentCard({
             e.stopPropagation();
             onFavoriteToggle(content.id, e);
           }}
-          className={`absolute top-2 ${user && user.uid === content.userId && !content.isSample && onEdit ? 'right-2' : 'right-10'} z-20 w-6 h-6 p-1 bg-slate-800/60 hover:bg-slate-700/80 opacity-40 hover:opacity-100 group-hover:opacity-100 rounded-full flex items-center justify-center transition-all duration-200 ${
+          className={`absolute bottom-2 right-2 z-20 w-6 h-6 p-1 bg-slate-800/60 hover:bg-slate-700/80 opacity-40 hover:opacity-100 group-hover:opacity-100 rounded-full flex items-center justify-center transition-all duration-200 ${
             content.favorite 
-              ? 'text-yellow-400 hover:text-yellow-300' 
-              : 'text-slate-400 hover:text-yellow-400'
+              ? 'text-white hover:text-yellow-300' 
+              : 'text-white hover:text-yellow-300'
           }`}
         >
           <svg 
