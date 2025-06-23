@@ -12,6 +12,7 @@ export interface ContentItem {
   url: string;
   youtubeId?: string;
   thumbnailUrl?: string;
+  embedHtml?: string;
   category: ContentCategory;
   skillLevel: SkillLevel;
   tags: string[];

@@ -113,7 +113,7 @@ export function ContentUploader({ isOpen, onClose, onDelete, existingContent }: 
         orientation: existingContent.orientation,
         thumbnailUrl: existingContent.thumbnailUrl || '',
         isSample: existingContent.isSample,
-        isTeamContent: existingContent.isTeamContent
+        isTeamContent: existingContent.isTeamContent || false
       });
       
       if (existingContent.thumbnailUrl) {
@@ -163,6 +163,28 @@ export function ContentUploader({ isOpen, onClose, onDelete, existingContent }: 
   const handleClose = () => {
     resetForm();
     onClose();
+  };
+
+  const fetchFacebookThumbnail = async (url: string) => {
+    setError(null);
+    try {
+      const response = await fetch('/api/facebook-video', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ videoUrl: url }),
+      });
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to fetch Facebook thumbnail.');
+      }
+      const data = await response.json();
+      if (data.thumbnailUrl) {
+        setAutoThumbnail(data.thumbnailUrl);
+      }
+    } catch (err: any) {
+      setError(err.message);
+      setAutoThumbnail(null);
+    }
   };
 
   const handleDelete = async () => {
@@ -285,32 +307,18 @@ export function ContentUploader({ isOpen, onClose, onDelete, existingContent }: 
 
   const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newUrl = e.target.value;
-    
-    // Update the URL in form data
     setFormData(prev => ({ ...prev, url: newUrl }));
-    
-    // Extract information about video type
-    const { platform, id } = extractVideoInfo(newUrl);
-    
-    // If we have a valid platform and ID, set some sensible defaults
+
+    const { platform } = extractVideoInfo(newUrl);
+
     if (platform === 'youtube' || platform === 'youtube-shorts') {
-      // For YouTube Shorts, set orientation to vertical
-      if (platform === 'youtube-shorts') {
-        setFormData(prev => ({ ...prev, orientation: 'vertical' }));
-      }
-    }
-    
-    if (platform === 'facebook') {
-      // Add a note about Facebook videos in the description if it's empty
-      if (!formData.description) {
-        setFormData(prev => ({ 
-          ...prev, 
-          description: 'This is a Facebook video. Note that Facebook videos will open in a new tab.'
-        }));
-      }
-      
-      // Clear any existing thumbnail URL since we can't get one from Facebook
-      setFormData(prev => ({ ...prev, thumbnailUrl: '' }));
+      const thumbnail = generateThumbnailUrl(newUrl);
+      setAutoThumbnail(thumbnail);
+    } else if (platform === 'facebook') {
+      fetchFacebookThumbnail(newUrl);
+    } 
+    else {
+      setAutoThumbnail(null);
     }
   };
 
@@ -415,7 +423,7 @@ export function ContentUploader({ isOpen, onClose, onDelete, existingContent }: 
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-4xl bg-slate-900/95 backdrop-blur-md border-slate-700 text-slate-100">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold text-emerald-400">
@@ -423,159 +431,59 @@ export function ContentUploader({ isOpen, onClose, onDelete, existingContent }: 
           </DialogTitle>
         </DialogHeader>
         
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="title" className="text-slate-300">Title</Label>
-              <Input 
-                id="title"
-                value={formData.title}
-                onChange={e => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                placeholder="Enter content title"
-                className="bg-slate-800 border-slate-700 text-slate-200 placeholder:text-slate-500"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="url" className="text-slate-300">Video URL</Label>
-              <Input 
-                id="url"
-                value={formData.url}
-                onChange={handleUrlChange}
-                placeholder="YouTube or Facebook URL"
-                className="bg-slate-800 border-slate-700 text-slate-200 placeholder:text-slate-500"
-              />
-              <p className="text-xs text-slate-400">Supports YouTube, YouTube Shorts, and Facebook videos</p>
-              
-              {/* Show video type information */}
-              {formData.url && (
-                <div className="mt-1">
-                  <Badge className="bg-slate-700 text-slate-300">
-                    {(() => {
-                      const { platform } = extractVideoInfo(formData.url);
-                      switch (platform) {
-                        case 'youtube': return 'YouTube Video';
-                        case 'youtube-shorts': return 'YouTube Short';
-                        case 'facebook': return 'Facebook Video';
-                        default: return 'Unknown Video Type';
-                      }
-                    })()}
-                  </Badge>
-                </div>
-              )}
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="description" className="text-slate-300">Description</Label>
-              <Textarea 
-                id="description"
-                value={formData.description}
-                onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Enter a description of this content"
-                className="bg-slate-800 border-slate-700 min-h-24 text-slate-200 placeholder:text-slate-500"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="category" className="text-slate-300">Category</Label>
-              <Select 
-                value={formData.category} 
-                onValueChange={(value: ContentCategory) => setFormData(prev => ({ ...prev, category: value }))}
-              >
-                <SelectTrigger id="category" className="bg-slate-800 border-slate-700 text-slate-200">
-                  <SelectValue placeholder="Select a category" />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-700 text-slate-200">
-                  <SelectItem value="hitting">Hitting</SelectItem>
-                  <SelectItem value="pitching">Pitching</SelectItem>
-                  <SelectItem value="infield">Infield</SelectItem>
-                  <SelectItem value="catching">Catching</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="skillLevel" className="text-slate-300">Skill Level</Label>
-              <Select 
-                value={formData.skillLevel} 
-                onValueChange={(value: SkillLevel) => setFormData(prev => ({ ...prev, skillLevel: value }))}
-              >
-                <SelectTrigger id="skillLevel" className="bg-slate-800 border-slate-700 text-slate-200">
-                  <SelectValue placeholder="Select a skill level" />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-700 text-slate-200">
-                  <SelectItem value="beginner">Beginner</SelectItem>
-                  <SelectItem value="littleLeague">Little League</SelectItem>
-                  <SelectItem value="highLevel">High Level</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
+            {/* Left Column: Form Fields */}
             <div className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="isTeamContent"
-                  checked={!!formData.isTeamContent}
-                  onCheckedChange={(checked: boolean | 'indeterminate') => 
-                    setFormData(prev => ({ ...prev, isTeamContent: checked === true }))
-                  }
-                  className="border-slate-700 bg-slate-800 text-emerald-500"
+              <div className="space-y-2">
+                <Label htmlFor="title" className="text-slate-300">Title</Label>
+                <Input 
+                  id="title"
+                  value={formData.title}
+                  onChange={e => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                  placeholder="Enter content title"
+                  className="bg-slate-800 border-slate-700 text-slate-200 placeholder:text-slate-500"
                 />
-                <Label htmlFor="isTeamContent" className="text-slate-300 cursor-pointer">
-                  Mark as Program Content
-                </Label>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="url" className="text-slate-300">Video URL</Label>
+                <Input 
+                  id="url"
+                  value={formData.url}
+                  onChange={handleUrlChange}
+                  placeholder="YouTube or Facebook URL"
+                  className="bg-slate-800 border-slate-700 text-slate-200 placeholder:text-slate-500"
+                />
+                 <p className="text-xs text-slate-400">Supports YouTube, YouTube Shorts, and Facebook videos</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="description" className="text-slate-300">Description</Label>
+                <Textarea 
+                  id="description"
+                  value={formData.description}
+                  onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Enter a description of this content"
+                  className="bg-slate-800 border-slate-700 min-h-24 text-slate-200 placeholder:text-slate-500"
+                />
               </div>
             </div>
-          </div>
 
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="thumbnail" className="text-slate-300">Thumbnail Image</Label>
-              <div className="mt-2">
-                {imagePreview ? (
-                  <div className="relative w-full aspect-video mb-2">
-                    <img 
-                      src={imagePreview} 
-                      alt="Thumbnail preview" 
-                      className="rounded-md w-full h-full object-cover ring-1 ring-slate-700"
-                    />
-                    <Button
-                      type="button"
-                      onClick={() => {
-                        setImagePreview(null);
-                        setFormData(prev => ({ ...prev, thumbnailUrl: '' }));
-                        setUseAutoThumbnail(false);
-                      }}
-                      className="absolute top-2 right-2 bg-red-600 hover:bg-red-700"
-                      size="sm"
-                    >
-                      Remove
-                    </Button>
-                  </div>
-                ) : (
-                  <>
-                    {/* Auto thumbnail if available */}
-                    {autoThumbnail && !useAutoThumbnail ? (
-                      <div className="mb-3">
-                        <div className="relative w-full aspect-video mb-2">
-                          <img 
-                            src={autoThumbnail} 
-                            alt="Auto thumbnail" 
-                            className="rounded-md w-full h-full object-cover opacity-70 ring-1 ring-emerald-800"
-                          />
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <Button
-                              onClick={handleUseAutoThumbnail}
-                              className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                            >
-                              Use Auto Thumbnail
-                            </Button>
-                          </div>
-                        </div>
-                        <p className="text-xs text-slate-400 text-center">Automatically generated from the video URL</p>
-                      </div>
-                    ) : null}
-                    
+            {/* Right Column: Thumbnail and Settings */}
+            <div className="space-y-4">
+               <div>
+                <Label htmlFor="thumbnail" className="text-slate-300">Thumbnail Image</Label>
+                <div className="mt-2">
+                  {imagePreview ? (
+                    <div className="relative w-full aspect-video mb-2">
+                      <img 
+                        src={imagePreview} 
+                        alt="Thumbnail preview" 
+                        className="rounded-md w-full h-full object-cover ring-1 ring-slate-700"
+                      />
+                    </div>
+                  ) : (
                     <div className="w-full aspect-video bg-slate-800 border border-slate-700 rounded-md flex items-center justify-center cursor-pointer hover:bg-slate-700 relative">
                       <input
                         type="file"
@@ -590,97 +498,22 @@ export function ContentUploader({ isOpen, onClose, onDelete, existingContent }: 
                         <div className="text-sm text-slate-400">Click to upload custom thumbnail</div>
                       </div>
                     </div>
-                  </>
-                )}
-                {progress > 0 && progress < 100 && (
-                  <div className="w-full bg-slate-700 rounded-full h-2 mt-2">
-                    <div 
-                      className="bg-emerald-500 h-2 rounded-full" 
-                      style={{ width: `${progress}%` }}
-                    ></div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="orientation" className="text-slate-300">Video Orientation</Label>
-              <Select 
-                value={formData.orientation}
-                onValueChange={(value: ContentOrientation) => setFormData(prev => ({ ...prev, orientation: value }))}
-              >
-                <SelectTrigger id="orientation" className="bg-slate-800 border-slate-700 text-slate-200">
-                  <SelectValue placeholder="Select orientation" />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-700 text-slate-200">
-                  <SelectItem value="vertical">Vertical</SelectItem>
-                  <SelectItem value="landscape">Landscape</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-slate-300">Tags</Label>
-              <div className="flex flex-wrap gap-2 mb-2">
-                {formData.tags.map(tag => (
-                  <Badge 
-                    key={tag}
-                    variant="secondary"
-                    className="cursor-pointer bg-slate-800 text-slate-200 hover:bg-slate-700"
-                    onClick={() => handleRemoveTag(tag)}
-                  >
-                    {tag} ×
-                  </Badge>
-                ))}
-              </div>
-              
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Add a tag"
-                  value={newTag}
-                  onChange={(e) => setNewTag(e.target.value)}
-                  className="flex-1 bg-slate-800 border-slate-700 text-slate-200 placeholder:text-slate-500"
-                  disabled={isSubmitting}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleAddTag();
-                    }
-                  }}
-                />
-                <Button 
-                  type="button" 
-                  onClick={handleAddTag} 
-                  className="bg-emerald-600 hover:bg-emerald-700"
-                  disabled={isSubmitting}
-                >
-                  Add
-                </Button>
+                  )}
+                  {autoThumbnail && !imagePreview && (
+                    <div className="mt-2 text-center">
+                       <Button
+                          onClick={handleUseAutoThumbnail}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                        >
+                          Use Auto Thumbnail
+                        </Button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
-        </div>
-
-        {error && (
-          <div className="p-3 mt-4 bg-red-900/50 border border-red-700 text-red-200 rounded-md">
-            {error}
-          </div>
-        )}
-
-        <div className="flex justify-between gap-4 pt-4 mt-4">
-          {isEdit && existingContent && !existingContent.isSample && (
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={handleDelete}
-              disabled={isSubmitting}
-              className="bg-red-500/10 text-red-400 hover:text-red-200 hover:bg-red-600/20 border-0 shadow-none flex items-center gap-2 transition-all"
-            >
-              <Trash className="w-4 h-4 mr-1 opacity-80" /> Delete
-            </Button>
-          )}
-          
-          <div className="ml-auto flex gap-2">
+          <div className="flex justify-between gap-4 pt-4 mt-4">
             <Button
               type="button"
               variant="outline"
@@ -694,12 +527,11 @@ export function ContentUploader({ isOpen, onClose, onDelete, existingContent }: 
               type="submit"
               className="bg-[#519872] hover:bg-[#417a5a] text-white font-semibold shadow-none border-0"
               disabled={isSubmitting}
-              onClick={handleSubmit}
             >
               {isSubmitting ? 'Saving...' : isEdit ? 'Update' : 'Add'}
             </Button>
           </div>
-        </div>
+        </form>
       </DialogContent>
     </Dialog>
   );
