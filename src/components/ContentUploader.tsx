@@ -605,23 +605,37 @@ export function ContentUploader({ isOpen, onClose, onDelete, existingContent }: 
                </div>
             </div>
           </div>
-          <div className="flex justify-between gap-4 pt-4 mt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleClose}
-              disabled={isSubmitting}
-              className="border-0 text-slate-500 hover:text-slate-800 hover:bg-slate-200 font-semibold"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              className="bg-[#519872] hover:bg-[#417a5a] text-white font-semibold shadow-none border-0"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? 'Saving...' : isEdit ? 'Update' : 'Add'}
-            </Button>
+          <div className="flex justify-between items-center gap-4 pt-4 mt-4 border-t border-slate-700">
+            <div>
+              {isEdit && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={handleDelete}
+                  disabled={isSubmitting}
+                  className="text-slate-400 hover:bg-slate-800 hover:text-slate-100"
+                >
+                  <Trash className="mr-2 h-4 w-4" /> Delete
+                </Button>
+              )}
+            </div>
+            <div className="flex items-center gap-4">
+              <Button
+                type="button"
+                onClick={handleClose}
+                disabled={isSubmitting}
+                className="border-slate-600 bg-slate-700 text-slate-300 hover:bg-slate-600"
+              >
+                {isEdit ? 'Close' : 'Cancel'}
+              </Button>
+              <Button
+                type="submit"
+                className="bg-[#519872] hover:bg-[#417a5a] text-white font-semibold shadow-none border-0"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Saving...' : isEdit ? 'Update' : 'Add'}
+              </Button>
+            </div>
           </div>
         </form>
       </DialogContent>
