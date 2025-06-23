@@ -120,7 +120,7 @@ export default function NewPracticeItemPage() {
                 <SelectTrigger className="bg-slate-800 border-slate-700 text-slate-100">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="max-h-[200px] sm:max-h-[300px]">
                   <SelectItem value="station">Station</SelectItem>
                   <SelectItem value="drill">Drill</SelectItem>
                   <SelectItem value="game">Game</SelectItem>
@@ -151,7 +151,7 @@ export default function NewPracticeItemPage() {
                 <SelectTrigger className="bg-slate-800 border-slate-700 text-slate-100">
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="max-h-[200px] sm:max-h-[300px]">
                   <SelectItem value="hitting">Hitting</SelectItem>
                   <SelectItem value="infield">Infield</SelectItem>
                   <SelectItem value="pitching">Pitching</SelectItem>
@@ -170,7 +170,7 @@ export default function NewPracticeItemPage() {
                 <SelectTrigger className="bg-slate-800 border-slate-700 text-slate-100">
                   <SelectValue placeholder="Select skill level" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="max-h-[200px] sm:max-h-[300px]">
                   <SelectItem value="beginner">Beginner</SelectItem>
                   <SelectItem value="littleLeague">Little League</SelectItem>
                   <SelectItem value="highLevel">High Level</SelectItem>

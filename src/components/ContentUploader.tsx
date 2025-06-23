@@ -426,7 +426,7 @@ export function ContentUploader({ isOpen, onClose, onDelete, existingContent }: 
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl bg-slate-900/95 backdrop-blur-md border-slate-700 text-slate-100">
+      <DialogContent className="max-w-4xl w-[95vw] max-h-[90vh] overflow-y-auto bg-slate-900/95 backdrop-blur-md border-slate-700 text-slate-100">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold text-emerald-400">
             {isEdit ? 'Edit Content' : 'Add New Content'}
@@ -434,7 +434,7 @@ export function ContentUploader({ isOpen, onClose, onDelete, existingContent }: 
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 mt-4">
             {/* Left Column: Form Fields */}
             <div className="space-y-4">
               <div className="space-y-2">
@@ -471,7 +471,7 @@ export function ContentUploader({ isOpen, onClose, onDelete, existingContent }: 
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="category" className="text-slate-300">Category</Label>
                   <Select 
@@ -481,7 +481,7 @@ export function ContentUploader({ isOpen, onClose, onDelete, existingContent }: 
                     <SelectTrigger id="category" className="bg-slate-800 border-slate-700 text-slate-200">
                       <SelectValue placeholder="Select a category" />
                     </SelectTrigger>
-                    <SelectContent className="bg-slate-800 border-slate-700 text-slate-200">
+                    <SelectContent className="bg-slate-800 border-slate-700 text-slate-200 max-h-[200px] sm:max-h-[300px]">
                       <SelectItem value="hitting">Hitting</SelectItem>
                       <SelectItem value="infield">Infield</SelectItem>
                       <SelectItem value="pitching">Pitching</SelectItem>
@@ -498,7 +498,7 @@ export function ContentUploader({ isOpen, onClose, onDelete, existingContent }: 
                     <SelectTrigger id="skillLevel" className="bg-slate-800 border-slate-700 text-slate-200">
                       <SelectValue placeholder="Select a skill level" />
                     </SelectTrigger>
-                    <SelectContent className="bg-slate-800 border-slate-700 text-slate-200">
+                    <SelectContent className="bg-slate-800 border-slate-700 text-slate-200 max-h-[200px] sm:max-h-[300px]">
                       <SelectItem value="beginner">Beginner</SelectItem>
                       <SelectItem value="littleLeague">Little League</SelectItem>
                       <SelectItem value="highLevel">High Level</SelectItem>
@@ -559,7 +559,7 @@ export function ContentUploader({ isOpen, onClose, onDelete, existingContent }: 
                   <SelectTrigger id="orientation" className="bg-slate-800 border-slate-700 text-slate-200">
                     <SelectValue placeholder="Select orientation" />
                   </SelectTrigger>
-                  <SelectContent className="bg-slate-800 border-slate-700 text-slate-200">
+                  <SelectContent className="bg-slate-800 border-slate-700 text-slate-200 max-h-[200px] sm:max-h-[300px]">
                     <SelectItem value="vertical">Vertical</SelectItem>
                     <SelectItem value="landscape">Landscape</SelectItem>
                   </SelectContent>

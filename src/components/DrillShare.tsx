@@ -82,6 +82,7 @@ const CoachingApp = () => {
     const saved = localStorage.getItem('baseballVideos');
     return saved ? JSON.parse(saved) : initialVideos;
   });
+  const [activeTab, setActiveTab] = useState('hitting');
 
   // Save to localStorage whenever videos change
   useEffect(() => {
@@ -213,7 +214,7 @@ const CoachingApp = () => {
                 <SelectTrigger className="bg-slate-700 border-slate-600 text-slate-100">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="max-h-[200px] sm:max-h-[300px]">
                   <SelectItem value="beginner">Beginner</SelectItem>
                   <SelectItem value="littleLeague">Little League</SelectItem>
                   <SelectItem value="highLevel">High Level</SelectItem>
@@ -315,7 +316,7 @@ const CoachingApp = () => {
                 <SelectTrigger className="bg-slate-700 border-slate-600 text-slate-100">
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="max-h-[200px] sm:max-h-[300px]">
                   <SelectItem value="hitting">Hitting</SelectItem>
                   <SelectItem value="infield">Infield</SelectItem>
                   <SelectItem value="pitching">Pitching</SelectItem>
@@ -334,7 +335,7 @@ const CoachingApp = () => {
                 <SelectTrigger className="bg-slate-700 border-slate-600 text-slate-100">
                   <SelectValue placeholder="Select skill level" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="max-h-[200px] sm:max-h-[300px]">
                   <SelectItem value="beginner">Beginner</SelectItem>
                   <SelectItem value="littleLeague">Little League</SelectItem>
                   <SelectItem value="highLevel">High Level</SelectItem>
@@ -406,8 +407,34 @@ const CoachingApp = () => {
         <Button onClick={() => setShowAddForm(true)} className="bg-emerald-600 hover:bg-emerald-700 text-white">+ Add Content</Button>
       </div>
       
-      <Tabs defaultValue="hitting" className="flex-1 flex flex-col">
-        <TabsList className="w-full justify-start px-4 bg-slate-800 border-b border-slate-700">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+        {/* Mobile: Dropdown for category selection */}
+        <div className="md:hidden p-4 border-b border-slate-700 bg-slate-800">
+          <Select 
+            value={activeTab} 
+            onValueChange={(value) => setActiveTab(value)}
+          >
+            <SelectTrigger className="bg-slate-700 border-slate-600 text-slate-100">
+              <SelectValue>
+                {activeTab === 'hitting' && 'Hitting'}
+                {activeTab === 'infield' && 'Infield'}
+                {activeTab === 'pitching' && 'Pitching'}
+                {activeTab === 'catching' && 'Catching'}
+                {activeTab === 'other' && 'Other'}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent className="bg-slate-700 border-slate-600 text-slate-100 max-h-[300px]">
+              <SelectItem value="hitting">Hitting</SelectItem>
+              <SelectItem value="infield">Infield</SelectItem>
+              <SelectItem value="pitching">Pitching</SelectItem>
+              <SelectItem value="catching">Catching</SelectItem>
+              <SelectItem value="other">Other</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        {/* Desktop: Horizontal Tabs */}
+        <TabsList className="hidden md:flex w-full justify-start px-4 bg-slate-800 border-b border-slate-700">
           <TabsTrigger value="hitting" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">Hitting</TabsTrigger>
           <TabsTrigger value="infield" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">Infield</TabsTrigger>
           <TabsTrigger value="pitching" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">Pitching</TabsTrigger>
