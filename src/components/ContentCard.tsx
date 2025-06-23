@@ -12,6 +12,7 @@ interface ContentCardProps {
   onTagClick: (tag: string, e: React.MouseEvent) => void;
   activeTag: string | null;
   onEdit?: (content: ContentItem) => void;
+  onFavoriteToggle?: (contentId: string, e: React.MouseEvent) => void;
 }
 
 export function ContentCard({ 
@@ -19,7 +20,8 @@ export function ContentCard({
   onSelect, 
   onTagClick, 
   activeTag,
-  onEdit
+  onEdit,
+  onFavoriteToggle
 }: ContentCardProps) {
   const { user } = useFirebase();
   // Extract YouTube video ID for thumbnail
@@ -75,6 +77,38 @@ export function ContentCard({
           <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-2 h-2 relative top-[1px]">
             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+          </svg>
+        </Button>
+      )}
+      
+      {/* Favorite Star Button */}
+      {onFavoriteToggle && (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={(e) => {
+            e.stopPropagation();
+            onFavoriteToggle(content.id, e);
+          }}
+          className={`absolute top-2 ${user && user.uid === content.userId && !content.isSample && onEdit ? 'right-2' : 'right-10'} z-20 w-6 h-6 p-1 bg-slate-800/60 hover:bg-slate-700/80 opacity-40 hover:opacity-100 group-hover:opacity-100 rounded-full flex items-center justify-center transition-all duration-200 ${
+            content.favorite 
+              ? 'text-yellow-400 hover:text-yellow-300' 
+              : 'text-slate-400 hover:text-yellow-400'
+          }`}
+        >
+          <svg 
+            xmlns="http://www.w3.org/2000/svg" 
+            width="14" 
+            height="14" 
+            viewBox="0 0 24 24" 
+            fill={content.favorite ? "currentColor" : "none"} 
+            stroke="currentColor" 
+            strokeWidth="2" 
+            strokeLinecap="round" 
+            strokeLinejoin="round"
+            className="w-3 h-3"
+          >
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
           </svg>
         </Button>
       )}

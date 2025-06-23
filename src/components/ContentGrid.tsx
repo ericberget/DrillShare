@@ -83,6 +83,7 @@ interface SortableContentCardProps {
   onTagClick: (tag: string, e: React.MouseEvent) => void;
   activeTag: string | null;
   onEdit?: (content: ContentItem) => void;
+  onFavoriteToggle?: (contentId: string, e: React.MouseEvent) => void;
 }
 
 function SortableContentCard({ 
@@ -90,7 +91,8 @@ function SortableContentCard({
   onSelect, 
   onTagClick, 
   activeTag,
-  onEdit 
+  onEdit,
+  onFavoriteToggle
 }: SortableContentCardProps) {
   const {
     attributes,
@@ -115,6 +117,7 @@ function SortableContentCard({
         onTagClick={onTagClick}
         activeTag={activeTag}
         onEdit={onEdit}
+        onFavoriteToggle={onFavoriteToggle}
       />
       {/* Drag Handle */}
       <div
@@ -261,7 +264,7 @@ export function ContentGrid({ onAddContent, onSelectContent, onEditContent }: Co
   };
 
   // Handle favorite toggle
-  const handleFavoriteToggle = (e: React.MouseEvent, contentId: string) => {
+  const handleFavoriteToggle = (contentId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     toggleFavorite(contentId);
   };
@@ -680,6 +683,7 @@ export function ContentGrid({ onAddContent, onSelectContent, onEditContent }: Co
                         onTagClick={handleTagClick}
                         activeTag={activeTag}
                         onEdit={onEditContent}
+                        onFavoriteToggle={handleFavoriteToggle}
                       />
                     ))}
                     {getFilteredContent().length === 0 && (
@@ -702,6 +706,7 @@ export function ContentGrid({ onAddContent, onSelectContent, onEditContent }: Co
                     onTagClick={handleTagClick}
                     activeTag={activeTag}
                     onEdit={onEditContent}
+                    onFavoriteToggle={handleFavoriteToggle}
                   />
                 ))}
                 {getFilteredContent().length === 0 && (
