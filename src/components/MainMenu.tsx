@@ -84,7 +84,25 @@ export function MainMenu() {
         <p className="text-slate-400 text-lg">Select a section to get started with your baseball training content</p>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+      {/* Mobile Menu: Compact List */}
+      <div className="md:hidden space-y-3">
+        {menuItems.map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className="flex items-center gap-4 p-4 bg-slate-800/50 border border-slate-700/50 rounded-lg text-slate-200 hover:bg-slate-800 transition-colors"
+          >
+            <div className={`w-12 h-12 rounded-lg ${item.gradient} flex items-center justify-center`}>
+              {React.cloneElement(item.icon, { className: 'w-6 h-6 text-white' })}
+            </div>
+            <span className="text-lg font-semibold">{item.title}</span>
+            <ArrowRight className="w-5 h-5 text-slate-400 ml-auto" />
+          </Link>
+        ))}
+      </div>
+
+      {/* Desktop Menu: Full Cards */}
+      <div className="hidden md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
         {menuItems.map((item, index) => (
           <MenuItem
             key={item.href}
