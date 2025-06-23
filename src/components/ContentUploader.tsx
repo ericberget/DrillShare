@@ -470,6 +470,43 @@ export function ContentUploader({ isOpen, onClose, onDelete, existingContent }: 
                   className="bg-slate-800 border-slate-700 min-h-24 text-slate-200 placeholder:text-slate-500"
                 />
               </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="category" className="text-slate-300">Category</Label>
+                  <Select 
+                    value={formData.category} 
+                    onValueChange={(value: ContentCategory) => setFormData(prev => ({ ...prev, category: value }))}
+                  >
+                    <SelectTrigger id="category" className="bg-slate-800 border-slate-700 text-slate-200">
+                      <SelectValue placeholder="Select a category" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-800 border-slate-700 text-slate-200">
+                      <SelectItem value="hitting">Hitting</SelectItem>
+                      <SelectItem value="infield">Infield</SelectItem>
+                      <SelectItem value="pitching">Pitching</SelectItem>
+                      <SelectItem value="catching">Catching</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="skillLevel" className="text-slate-300">Skill Level</Label>
+                  <Select 
+                    value={formData.skillLevel} 
+                    onValueChange={(value: SkillLevel) => setFormData(prev => ({ ...prev, skillLevel: value }))}
+                  >
+                    <SelectTrigger id="skillLevel" className="bg-slate-800 border-slate-700 text-slate-200">
+                      <SelectValue placeholder="Select a skill level" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-800 border-slate-700 text-slate-200">
+                      <SelectItem value="beginner">Beginner</SelectItem>
+                      <SelectItem value="littleLeague">Little League</SelectItem>
+                      <SelectItem value="highLevel">High Level</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
             </div>
 
             {/* Right Column: Thumbnail and Settings */}
@@ -513,6 +550,44 @@ export function ContentUploader({ isOpen, onClose, onDelete, existingContent }: 
                   )}
                 </div>
               </div>
+               <div className="space-y-2">
+                 <Label className="text-slate-300">Tags</Label>
+                 <div className="flex flex-wrap gap-2 mb-2">
+                   {formData.tags.map(tag => (
+                     <Badge 
+                       key={tag}
+                       variant="secondary"
+                       className="cursor-pointer bg-slate-800 text-slate-200 hover:bg-slate-700"
+                       onClick={() => handleRemoveTag(tag)}
+                     >
+                       {tag} ×
+                     </Badge>
+                   ))}
+                 </div>
+                 <div className="flex gap-2">
+                   <Input
+                     placeholder="Add a tag"
+                     value={newTag}
+                     onChange={(e) => setNewTag(e.target.value)}
+                     className="flex-1 bg-slate-800 border-slate-700 text-slate-200 placeholder:text-slate-500"
+                     disabled={isSubmitting}
+                     onKeyDown={(e) => {
+                       if (e.key === 'Enter') {
+                         e.preventDefault();
+                         handleAddTag();
+                       }
+                     }}
+                   />
+                   <Button 
+                     type="button" 
+                     onClick={handleAddTag} 
+                     className="bg-emerald-600 hover:bg-emerald-700"
+                     disabled={isSubmitting}
+                   >
+                     Add
+                   </Button>
+                 </div>
+               </div>
             </div>
           </div>
           <div className="flex justify-between gap-4 pt-4 mt-4">
