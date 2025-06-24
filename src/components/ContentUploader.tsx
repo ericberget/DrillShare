@@ -620,21 +620,21 @@ export function ContentUploader({ isOpen, onClose, onDelete, existingContent }: 
               )}
             </div>
             <div className="flex items-center gap-4">
-              <Button
-                type="button"
-                onClick={handleClose}
-                disabled={isSubmitting}
+            <Button
+              type="button"
+              onClick={handleClose}
+              disabled={isSubmitting}
                 className="border-slate-600 bg-slate-700 text-slate-300 hover:bg-slate-600"
-              >
+            >
                 {isEdit ? 'Close' : 'Cancel'}
-              </Button>
-              <Button
-                type="submit"
-                className="bg-[#519872] hover:bg-[#417a5a] text-white font-semibold shadow-none border-0"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? 'Saving...' : isEdit ? 'Update' : 'Add'}
-              </Button>
+            </Button>
+            <Button
+              type="submit"
+              className="bg-[#519872] hover:bg-[#417a5a] text-white font-semibold shadow-none border-0"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Saving...' : isEdit ? 'Update' : 'Add'}
+            </Button>
             </div>
           </div>
         </form>

@@ -13,7 +13,7 @@ import { ContentCard } from './ContentCard';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { ChevronDown, Target, Users, Zap, Hand, Circle, GripVertical, RotateCcw, Star, List, Grid } from 'lucide-react';
+import { ChevronDown, Target, Users, Zap, Hand, Circle, GripVertical, RotateCcw, Star, List, Grid, SlidersHorizontal, PlusCircle, X } from 'lucide-react';
 import { CategoryTransition, StaggerContainer, FadeInUp } from '@/components/animations';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -155,6 +155,7 @@ export function ContentGrid({ onAddContent, onSelectContent, onEditContent }: Co
   const [showSettings, setShowSettings] = useState(false);
   const [sortOrder, setSortOrder] = useState<'manual' | 'date' | 'alphabetical'>('manual');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
 
   // Drag & Drop sensors
   const sensors = useSensors(
@@ -264,7 +265,7 @@ export function ContentGrid({ onAddContent, onSelectContent, onEditContent }: Co
   // Handle tag click
   const handleTagClick = (tag: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setActiveTag(currentTag => currentTag === tag ? null : tag);
+    setActiveTag(activeTag === tag ? null : tag);
   };
 
   // Handle content selection
@@ -276,6 +277,7 @@ export function ContentGrid({ onAddContent, onSelectContent, onEditContent }: Co
   // Handle favorite toggle
   const handleFavoriteToggle = (contentId: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!user) return;
     toggleFavorite(contentId);
   };
 
@@ -311,22 +313,16 @@ export function ContentGrid({ onAddContent, onSelectContent, onEditContent }: Co
 
   // Handle reset sort order
   const handleResetSortOrder = async () => {
-    setIsReordering(true);
-    try {
+    if (window.confirm("Are you sure you want to reset the manual sort order for all content?")) {
       await resetSortOrders();
-    } catch (error) {
-      console.error('Error resetting sort orders:', error);
-    } finally {
-      setIsReordering(false);
     }
   };
 
   // Get content count for each category
-  const getCategoryCount = (category: 'all' | ContentCategory) => {
-    if (category === 'all') {
-      return contentItems.length;
-    }
-    return contentItems.filter(item => item.category === category).length;
+  const getCategoryCount = (category: 'all' | ContentCategory | 'favorites') => {
+    if (category === 'all') return contentItems.length;
+    if (category === 'favorites') return contentItems.filter(c => c.favorite).length;
+    return contentItems.filter(c => c.category === category).length;
   };
 
   const currentCategory = categoryConfig[activeCategory];
@@ -360,327 +356,154 @@ export function ContentGrid({ onAddContent, onSelectContent, onEditContent }: Co
     setActiveTag(null);
   };
 
+  // Mobile filter logic
+  const activeFilterCount = [
+    activeSkillLevel,
+    showFavoritesOnly && 'fav',
+    activeTag,
+    searchQuery && 'search',
+  ].filter(Boolean).length;
+
   return (
-    <div className="space-y-6 bg-[#0D1529]">
-      <FadeInUp>
-        {/* Top Navigation Bar */}
-        <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 mb-6">
-          {/* Left: Filter and Settings Buttons */}
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            {/* Mobile: Combined Filters Dropdown */}
-            <div className="md:hidden w-full">
-              <Select 
-                value={showFavoritesOnly ? 'favorites' : activeCategory} 
-                onValueChange={(value) => handleCategorySelect(value as any)}
-              >
-                <SelectTrigger className="w-full bg-slate-700 border-slate-600 text-slate-100">
-                  <SelectValue placeholder="Select a category..." />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-700 text-slate-100">
-                  <SelectItem value="all">All Content</SelectItem>
-                  <SelectItem value="hitting">Hitting</SelectItem>
-                  <SelectItem value="infield">Infield</SelectItem>
-                  <SelectItem value="pitching">Pitching</SelectItem>
-                  <SelectItem value="catching">Catching</SelectItem>
-                  <SelectItem value="favorites">Favorites</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {/* Desktop: Separate Filter and Settings Buttons */}
-            <div className="hidden md:flex gap-2">
-              {/* Filters Button */}
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 transform ${
-                  showFilters
-                    ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30 shadow-lg shadow-blue-500/10'
-                    : 'bg-slate-800/50 text-slate-300 border border-slate-700 hover:bg-blue-500/8 hover:border-blue-500/15 hover:text-blue-300 hover:shadow-md hover:shadow-blue-500/5 hover:scale-105'
-                }`}
-              >
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-                <span>Filters</span>
-                {(activeSkillLevel || showFavoritesOnly || activeTag || searchQuery) && (
-                  <span className="ml-1 px-1.5 py-0.5 bg-blue-500 text-white text-xs rounded-full">
-                    {[activeSkillLevel, showFavoritesOnly && 'fav', activeTag, searchQuery && 'search'].filter(Boolean).length}
-                  </span>
-                )}
-                <svg className={`h-4 w-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
+    <div className="flex flex-col md:flex-row h-[calc(100vh-160px)]">
+      {/* Mobile Header */}
+      <div className="md:hidden flex items-center justify-between p-4 border-b border-slate-800">
+        <Button
+          onClick={() => setIsMobileFiltersOpen(true)}
+          className="flex items-center gap-2 bg-slate-800 text-slate-200"
+        >
+          <SlidersHorizontal className="h-4 w-4" />
+          <span>Filters</span>
+          {activeFilterCount > 0 && <Badge className="ml-2">{activeFilterCount}</Badge>}
+        </Button>
+        <div className="flex items-center gap-2">
+           <Button
+            onClick={onAddContent}
+            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+          >
+            <PlusCircle className="h-4 w-4" />
+            <span>Add Content</span>
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
+            className="text-slate-400 hover:text-white hover:bg-slate-800"
+          >
+            {viewMode === 'grid' ? <List className="h-5 w-5" /> : <Grid className="h-5 w-5" />}
+          </Button>
+        </div>
+      </div>
 
-              {/* Settings Button */}
-              <div className="relative">
-                <button
-                  onClick={() => setShowSettings(!showSettings)}
-                  className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 transform ${
-                    showSettings
-                      ? 'bg-slate-600/20 text-slate-300 border border-slate-500/30 shadow-lg shadow-slate-500/10'
-                      : 'bg-slate-800/50 text-slate-300 border border-slate-700 hover:bg-slate-600/8 hover:border-slate-500/15 hover:text-slate-200 hover:shadow-md hover:shadow-slate-500/5 hover:scale-105'
-                  }`}
-                >
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                  <span>Sort</span>
-                  <svg className={`h-4 w-4 transition-transform ${showSettings ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-
-                {/* Settings Dropdown */}
-                {showSettings && (
-                  <div ref={settingsDropdownRef} className="absolute top-full left-0 mt-2 w-48 bg-slate-800 border border-slate-700 rounded-lg shadow-xl z-50">
-                    <div className="p-2">
-                      <div className="text-xs text-slate-400 px-2 py-1">Sort Order</div>
-                      <button
-                        onClick={() => {
-                          setSortOrder('manual');
-                          setShowSettings(false);
-                        }}
-                        className={`w-full text-left px-2 py-2 rounded text-sm transition-colors ${
-                          sortOrder === 'manual'
-                            ? 'bg-blue-500/20 text-blue-400'
-                            : 'text-slate-300 hover:bg-slate-700'
-                        }`}
-                      >
-                        Manual (drag & drop)
-                      </button>
-                      <button
-                        onClick={() => {
-                          setSortOrder('date');
-                          setShowSettings(false);
-                        }}
-                        className={`w-full text-left px-2 py-2 rounded text-sm transition-colors ${
-                          sortOrder === 'date'
-                            ? 'bg-blue-500/20 text-blue-400'
-                            : 'text-slate-300 hover:bg-slate-700'
-                        }`}
-                      >
-                        Date (newest first)
-                      </button>
-                      <button
-                        onClick={() => {
-                          setSortOrder('alphabetical');
-                          setShowSettings(false);
-                        }}
-                        className={`w-full text-left px-2 py-2 rounded text-sm transition-colors ${
-                          sortOrder === 'alphabetical'
-                            ? 'bg-blue-500/20 text-blue-400'
-                            : 'text-slate-300 hover:bg-slate-700'
-                        }`}
-                      >
-                        Alphabetical (A-Z)
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
+       {/* Mobile Filter Panel */}
+       {isMobileFiltersOpen && (
+        <div className="fixed inset-0 bg-slate-950 z-50 p-4 flex flex-col">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold text-white">Filters</h2>
+            <Button variant="ghost" size="icon" onClick={() => setIsMobileFiltersOpen(false)}>
+              <X className="h-6 w-6" />
+            </Button>
           </div>
-
-          {/* Center: Category Tabs */}
-          <div className="flex-1 flex justify-center w-full sm:w-auto">
-            {/* Desktop: Horizontal Tabs */}
-            <div className="hidden md:flex gap-4">
-              {Object.entries(categoryConfig).map(([key, config]) => {
-                const isActive = activeCategory === key;
+          <div className="flex-1 overflow-y-auto space-y-6">
+            <input 
+              type="text"
+              placeholder="Search content..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-slate-800 border-slate-700 rounded-md px-4 py-2 text-slate-200 placeholder:text-slate-500 mb-4"
+            />
+             <div>
+              <h3 className="text-sm font-semibold text-slate-400 px-2 mb-2">Categories</h3>
+              {(Object.keys(categoryConfig) as Array<keyof typeof categoryConfig>).map((key) => {
+                 if (key === 'favorites' && userContentItems.filter(c => c.favorite).length === 0) {
+                  return null;
+                }
+                const category = categoryConfig[key];
+                const isFavoriteCategory = key === 'favorites';
+                const isActive = showFavoritesOnly ? isFavoriteCategory : activeCategory === key;
                 return (
-                  <motion.button
+                  <Button
                     key={key}
-                    onClick={() => setActiveCategory(key as 'all' | ContentCategory)}
-                    className={`min-w-[120px] px-8 py-3 font-oswald flex flex-col items-center text-base rounded-md transition-all duration-200 ${
-                      isActive
-                        ? 'bg-[#1c263b] text-white'
-                        : 'hover:bg-slate-700/50 text-slate-300'
-                    }`}
-                    whileHover={{
-                      scale: 1.05,
-                      y: -2,
-                      transition: { duration: 0.2 }
-                    }}
-                    whileTap={{
-                      scale: 0.95,
-                      transition: { duration: 0.1 }
-                    }}
-                    animate={isActive ? {
-                      scale: 1.02,
-                      boxShadow: '0 8px 25px rgba(0, 0, 0, 0.3)',
-                    } : {
-                      scale: 1,
-                      boxShadow: '0 0px 0px rgba(0, 0, 0, 0)',
-                    }}
+                    onClick={() => handleCategorySelect(key as any)}
+                    variant="ghost"
+                    className={`w-full justify-start items-center space-x-3 ${isActive ? 'bg-slate-800 text-emerald-400' : 'text-slate-300'}`}
                   >
-                    <img src="/baseball.png" alt="Baseball" className="w-5 h-5 mb-2 opacity-80" />
-                    {config.title === 'All Content' ? 'All Content' : config.title}
-                  </motion.button>
+                    <category.icon className={`w-5 h-5 ${isActive ? 'text-emerald-400' : 'text-slate-400'}`} />
+                    <span>{category.title}</span>
+                    <Badge variant="secondary" className="ml-auto bg-slate-700 text-slate-300">{getCategoryCount(key as any)}</Badge>
+                  </Button>
                 );
               })}
             </div>
+            {/* Other filters like skill level can be added here */}
           </div>
+           <Button onClick={() => setIsMobileFiltersOpen(false)} className="mt-4 w-full bg-emerald-600 hover:bg-emerald-700">Apply Filters</Button>
+        </div>
+      )}
 
-          {/* Right: Add Content Button */}
-          <div className="w-full sm:w-auto">
+      {/* Main content area (search/filter + grid) */}
+      <div className="flex-1 flex flex-col">
+        {/* Desktop: Search and filter bar above grid */}
+        <div className="hidden md:flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 w-full">
+          <div className="flex-1">
+            <input 
+              type="text"
+              placeholder="Search videos..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-slate-800/50 border border-slate-700 rounded-lg pl-10 pr-4 py-2.5 text-sm text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={() => setShowFilters(!showFilters)}
+              className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 transform ${
+                showFilters
+                  ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30 shadow-lg shadow-blue-500/10'
+                  : 'bg-slate-800/50 text-slate-300 border border-slate-700 hover:bg-blue-500/8 hover:border-blue-500/15 hover:text-blue-300 hover:shadow-md hover:shadow-blue-500/5 hover:scale-105'
+              }`}
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+              <span>Filters</span>
+              {(activeSkillLevel || showFavoritesOnly || activeTag || searchQuery) && (
+                <span className="ml-1 px-1.5 py-0.5 bg-blue-500 text-white text-xs rounded-full">
+                  {[activeSkillLevel, showFavoritesOnly && 'fav', activeTag, searchQuery && 'search'].filter(Boolean).length}
+                </span>
+              )}
+              <svg className={`h-4 w-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </Button>
+          </div>
+            </div>
+        {/* --- Mobile: Dropdown and Add Content button only --- */}
+        <div className="md:hidden flex flex-col gap-2 p-4 border-b border-slate-800">
+          <div className="flex items-center gap-2">
+            <Select value={activeCategory} onValueChange={v => handleCategorySelect(v as any)}>
+              <SelectTrigger className="w-full bg-slate-800 border-slate-700 text-white">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-slate-800 border-slate-700 text-white">
+                {(Object.keys(categoryConfig) as Array<keyof typeof categoryConfig>).map((key) => (
+                  <SelectItem key={key} value={key} className="flex items-center gap-2">
+                    <span>{categoryConfig[key].title}</span>
+                    <Badge variant="secondary" className="ml-2 bg-slate-700 text-slate-300">{getCategoryCount(key as any)}</Badge>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Button
               onClick={onAddContent}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-md hover:shadow-lg transition-all duration-200 w-full sm:w-auto"
+              className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
             >
               + Add Content
             </Button>
           </div>
         </div>
-
-        {/* Add more space below the category tabs */}
-        <div className="mb-8"></div>
-
-        {/* Collapsible Filter Options with Search Bar inside */}
-        <AnimatePresence>
-          {showFilters && (
-            <motion.div
-              initial={{ 
-                opacity: 0,
-                scaleY: 0,
-                transformOrigin: "top"
-              }}
-              animate={{ 
-                opacity: 1,
-                scaleY: 1,
-                transformOrigin: "top"
-              }}
-              exit={{ 
-                opacity: 0,
-                scaleY: 0,
-                transformOrigin: "top"
-              }}
-              transition={{ 
-                duration: 0.25,
-                ease: [0.23, 1, 0.32, 1],
-                opacity: { duration: 0.2 }
-              }}
-              className="overflow-hidden"
-            >
-              <div className="bg-slate-800/30 border border-slate-700/50 rounded-lg p-4 relative overflow-hidden">
-                {/* Faded background image */}
-                <img src="/bg-5.jpg" alt="Background" className="absolute inset-0 w-full h-full object-cover opacity-20 pointer-events-none select-none" />
-                <div className="flex flex-col lg:flex-row gap-4 lg:gap-8 items-start w-full relative z-10">
-                  {/* Left Column: Skill Level and Quick Filters */}
-                  <div className="flex flex-col gap-4 flex-1 min-w-0 w-full">
-                    {/* Skill Level Filters */}
-                    <div className="flex flex-wrap items-center gap-2 mb-1">
-                      <span className="text-xs text-slate-400 mr-2 flex-shrink-0">Skill Level:</span>
-                      <button
-                        onClick={() => setActiveSkillLevel(activeSkillLevel === 'beginner' ? null : 'beginner')}
-                        className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 transform ${
-                          activeSkillLevel === 'beginner'
-                            ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30 shadow-lg shadow-blue-500/10'
-                            : 'bg-slate-700/50 text-slate-300 border border-slate-600 hover:bg-blue-500/10 hover:border-blue-500/20 hover:text-blue-300 hover:shadow-md hover:shadow-blue-500/5 hover:scale-105'
-                        }`}
-                      >
-                        Beginner
-                      </button>
-                      <button
-                        onClick={() => setActiveSkillLevel(activeSkillLevel === 'littleLeague' ? null : 'littleLeague')}
-                        className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 transform ${
-                          activeSkillLevel === 'littleLeague'
-                            ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 shadow-lg shadow-yellow-500/10'
-                            : 'bg-slate-700/50 text-slate-300 border border-slate-600 hover:bg-yellow-500/10 hover:border-yellow-500/20 hover:text-yellow-300 hover:shadow-md hover:shadow-yellow-500/5 hover:scale-105'
-                        }`}
-                      >
-                        Little League
-                      </button>
-                      <button
-                        onClick={() => setActiveSkillLevel(activeSkillLevel === 'highLevel' ? null : 'highLevel')}
-                        className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 transform ${
-                          activeSkillLevel === 'highLevel'
-                            ? 'bg-red-500/20 text-red-400 border border-red-500/30 shadow-lg shadow-red-500/10'
-                            : 'bg-slate-700/50 text-slate-300 border border-slate-600 hover:bg-red-500/10 hover:border-red-500/20 hover:text-red-300 hover:shadow-md hover:shadow-red-500/5 hover:scale-105'
-                        }`}
-                      >
-                        High Level
-                      </button>
-                    </div>
-                    {/* Quick Filters/Tags */}
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-xs text-slate-400 mr-1 flex-shrink-0">Quick Filters:</span>
-                      <button
-                        onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 transform ${
-                          showFavoritesOnly
-                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-lg shadow-emerald-500/10'
-                            : 'bg-slate-700/50 text-slate-300 border border-slate-600 hover:bg-emerald-500/10 hover:border-emerald-500/20 hover:text-emerald-300 hover:shadow-md hover:shadow-emerald-500/5 hover:scale-105'
-                        }`}
-                      >
-                        <svg className="h-3 w-3" fill={showFavoritesOnly ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                        </svg>
-                        Favorites
-                      </button>
-                      {getAllTags().slice(0, 4).map(tag => (
-                        <button
-                          key={tag}
-                          onClick={() => setActiveTag(activeTag === tag ? null : tag)}
-                          className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 transform ${
-                            activeTag === tag
-                              ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30 shadow-lg shadow-purple-500/10'
-                              : 'bg-slate-700/50 text-slate-300 border border-slate-600 hover:bg-purple-500/10 hover:border-purple-500/20 hover:text-purple-300 hover:shadow-md hover:shadow-purple-500/5 hover:scale-105'
-                          }`}
-                        >
-                          {tag}
-                        </button>
-                      ))}
-                    </div>
-                    {/* Clear All Filters */}
-                    {(activeSkillLevel || showFavoritesOnly || activeTag) && (
-                      <div className="mt-2">
-                        <button
-                          onClick={() => {
-                            setActiveSkillLevel(null);
-                            setShowFavoritesOnly(false);
-                            setActiveTag(null);
-                          }}
-                          className="text-xs text-slate-400 hover:text-slate-200 underline"
-                        >
-                          Clear All
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                  {/* Right Column: Search Bar */}
-                  <div className="flex-1 flex items-center justify-end min-w-0 w-full lg:min-w-[260px]">
-                    <div className="relative w-full max-w-xs">
-                      <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                      </svg>
-                      <input
-                        type="text"
-                        placeholder="Search videos..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full bg-slate-800/50 border border-slate-700 rounded-lg pl-10 pr-4 py-2.5 text-sm text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-                      />
-                      {searchQuery && (
-                        <button
-                          onClick={() => setSearchQuery('')}
-                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors"
-                        >
-                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </FadeInUp>
-
+        {/* Main content */}
+        <div className="flex-1 p-4 md:p-6 overflow-y-auto">
       {isLoading ? (
         <ContentLoader message="Loading your content..." />
       ) : (
@@ -705,8 +528,8 @@ export function ContentGrid({ onAddContent, onSelectContent, onEditContent }: Co
                         onTagClick={handleTagClick}
                         activeTag={activeTag}
                         onEdit={onEditContent}
-                        onFavoriteToggle={handleFavoriteToggle}
-                        viewMode={viewMode}
+                            onFavoriteToggle={handleFavoriteToggle}
+                            viewMode={viewMode}
                       />
                     ))}
                     {getFilteredContent().length === 0 && (
@@ -729,8 +552,8 @@ export function ContentGrid({ onAddContent, onSelectContent, onEditContent }: Co
                     onTagClick={handleTagClick}
                     activeTag={activeTag}
                     onEdit={onEditContent}
-                    onFavoriteToggle={handleFavoriteToggle}
-                    viewMode={viewMode}
+                        onFavoriteToggle={handleFavoriteToggle}
+                        viewMode={viewMode}
                   />
                 ))}
                 {getFilteredContent().length === 0 && (
@@ -743,6 +566,53 @@ export function ContentGrid({ onAddContent, onSelectContent, onEditContent }: Co
               </StaggerContainer>
             )}
           </CategoryTransition>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Sidebar - Desktop Category Navigation */}
+      <div className="hidden md:block w-64 p-4 space-y-2 bg-slate-900 border-r border-slate-800 overflow-y-auto">
+        <div className="flex justify-between items-center mb-4">
+           <h3 className="text-sm font-semibold text-slate-400 px-2">Categories</h3>
+            <Button
+              onClick={onAddContent}
+              size="sm"
+              className="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs"
+            >
+              <PlusCircle className="h-3 w-3" />
+              Add
+            </Button>
+        </div>
+        {(Object.keys(categoryConfig) as Array<keyof typeof categoryConfig>).map((key) => {
+          if (key === 'favorites' && userContentItems.filter(c => c.favorite).length === 0) {
+            return null; // Don't show favorites if there are none
+          }
+          const category = categoryConfig[key];
+          const isActive = activeCategory === key;
+          return (
+            <Button
+              key={key}
+              onClick={() => setActiveCategory(key as any)}
+              variant="ghost"
+              className={`w-full justify-start items-center space-x-3 ${isActive ? 'bg-slate-800 text-emerald-400' : 'text-slate-300'}`}
+            >
+              <category.icon className={`w-5 h-5 ${isActive ? 'text-emerald-400' : 'text-slate-400'}`} />
+              <span>{category.title}</span>
+              <Badge variant="secondary" className="ml-auto bg-slate-700 text-slate-300">{getCategoryCount(key as any)}</Badge>
+            </Button>
+          );
+        })}
+      </div>
+
+      {isReordering && (
+        <div className="fixed bottom-4 right-4 z-50 flex gap-2">
+          <Button
+            onClick={handleResetSortOrder}
+            className="bg-red-500 hover:bg-red-600 text-white"
+          >
+            Reset Sort Order
+          </Button>
         </div>
       )}
     </div>

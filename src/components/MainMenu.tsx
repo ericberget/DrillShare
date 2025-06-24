@@ -147,25 +147,25 @@ export function MainMenu() {
 
       {/* Main Content Area */}
       <div className="w-full p-4 md:p-8">
-        <div className="mb-12 text-center">
-          <h2 className="text-3xl font-bold text-slate-100 mb-4">Choose Your Destination</h2>
-          <p className="text-slate-400 text-lg">Select a section to get started with your baseball training content</p>
-        </div>
-        
+      <div className="mb-12 text-center">
+        <h2 className="text-3xl font-bold text-slate-100 mb-4">Choose Your Destination</h2>
+        <p className="text-slate-400 text-lg">Select a section to get started with your baseball training content</p>
+      </div>
+      
         {/* Desktop Menu: Full Cards */}
         <div className="hidden md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {menuItems.map((item) => (
-            <MenuItem
-              key={item.href}
-              href={item.href}
-              icon={item.icon}
-              title={item.title}
-              description={item.description}
-              gradient={item.gradient}
-            />
-          ))}
-        </div>
+          <MenuItem
+            key={item.href}
+            href={item.href}
+            icon={item.icon}
+            title={item.title}
+            description={item.description}
+            gradient={item.gradient}
+          />
+        ))}
       </div>
+    </div>
     </>
   );
 } 

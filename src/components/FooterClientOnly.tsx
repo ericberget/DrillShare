@@ -10,7 +10,10 @@ export function FooterClientOnly() {
     <footer 
       className="border-t border-slate-800/30 mt-0 relative z-10"
       style={{
-        backgroundImage: "url('/bg-5b.jpg')",
+        backgroundImage: `
+          linear-gradient(rgba(13,22,45,0.97), rgba(13,22,45,0.97)),
+          url('/bg-5b.jpg')
+        `,
         backgroundRepeat: "repeat-x",
         backgroundSize: "auto 100%",
         backgroundPosition: "center",
@@ -26,7 +29,7 @@ export function FooterClientOnly() {
               className="h-12 opacity-90"
             />
             <p className="text-slate-400 text-sm">
-              Professional video analysis and coaching tools for baseball players and coaches.
+              Coaching tools for baseball players and coaches.
             </p>
           </div>
           {/* Quick Links */}

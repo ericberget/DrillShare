@@ -130,24 +130,21 @@ export function Navbar({ demoMode = false, onShowSignupOverlay }: NavbarProps) {
             
             {/* Left side: Hamburger Menu (for logged-in users) and Logo */}
             <div className="flex items-center gap-2">
-              {(user || demoMode) && !loading && (
-                <motion.div
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+            {(user || demoMode) && !loading && (
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="group hover:bg-slate-800/50 hover:border-slate-600/50 border border-slate-700/50 transition-colors"
+                  onClick={() => setIsMenuOpen(!isMenuOpen)}
                 >
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="group hover:bg-slate-800/50 hover:border-slate-600/50 border border-slate-700/50 transition-colors"
-                    onClick={() => setIsMenuOpen(!isMenuOpen)}
-                  >
-                    <Menu className="h-7 w-7 text-slate-300 group-hover:text-slate-100 transition-colors" />
-                  </Button>
-                </motion.div>
-              )}
-               <Link href="/" className="font-bold text-lg text-emerald-400">
-                DrillShare
-              </Link>
+                  <Menu className="h-7 w-7 text-slate-300 group-hover:text-slate-100 transition-colors" />
+                </Button>
+              </motion.div>
+            )}
             </div>
             
             {loading ? (
@@ -256,38 +253,38 @@ export function Navbar({ demoMode = false, onShowSignupOverlay }: NavbarProps) {
               </div>
 
               <div className="flex-grow space-y-2">
-                {navigationItems.map((item, index) => (
-                  <motion.div key={item.href} variants={itemVariants}>
-                    {demoMode ? (
-                      <div
-                        onClick={onShowSignupOverlay}
+                  {navigationItems.map((item, index) => (
+                    <motion.div key={item.href} variants={itemVariants}>
+                      {demoMode ? (
+                        <div
+                          onClick={onShowSignupOverlay}
                         className="flex items-center gap-4 p-3 rounded-lg text-slate-200 hover:bg-slate-800 transition-colors cursor-pointer"
                       >
                         <div className={`w-12 h-12 rounded-lg ${item.gradient} flex items-center justify-center`}>
-                          {item.icon}
-                        </div>
+                                {item.icon}
+                            </div>
                         <div>
                           <p className="font-semibold">{item.title}</p>
                           <p className="text-xs text-slate-400">{item.description}</p>
                         </div>
-                      </div>
-                    ) : (
-                      <Link
-                        href={item.href}
-                        onClick={() => setIsMenuOpen(false)}
+                        </div>
+                      ) : (
+                        <Link
+                          href={item.href}
+                          onClick={() => setIsMenuOpen(false)}
                         className={`flex items-center gap-4 p-3 rounded-lg text-slate-200 hover:bg-slate-800 transition-colors ${isActive(item.href) ? 'bg-slate-800/50' : ''}`}
-                      >
+                          >
                         <div className={`w-12 h-12 rounded-lg ${item.gradient} flex items-center justify-center`}>
-                          {item.icon}
+                                {item.icon}
                         </div>
                         <div>
                           <p className="font-semibold">{item.title}</p>
                           <p className="text-xs text-slate-400">{item.description}</p>
-                        </div>
-                      </Link>
-                    )}
-                  </motion.div>
-                ))}
+                            </div>
+                        </Link>
+                      )}
+                    </motion.div>
+                  ))}
               </div>
             </motion.div>
           </>
