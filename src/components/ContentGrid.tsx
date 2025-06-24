@@ -441,9 +441,31 @@ export function ContentGrid({ onAddContent, onSelectContent, onEditContent }: Co
         </div>
       )}
 
+      {/* Desktop: Category Tabs */}
+      <div className="hidden md:flex items-center gap-2 mb-8">
+        {(Object.keys(categoryConfig) as Array<keyof typeof categoryConfig>).map((key) => {
+          if (key === 'favorites' && userContentItems.filter(c => c.favorite).length === 0) {
+            return null; // Don't show favorites if there are none
+          }
+          const category = categoryConfig[key];
+          const isActive = activeCategory === key;
+          return (
+            <Button
+              key={key}
+              onClick={() => handleCategorySelect(key as any)}
+              variant={isActive ? 'default' : 'ghost'}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full font-semibold text-base transition-all duration-200 ${isActive ? 'bg-slate-800 text-emerald-400' : 'text-slate-300 hover:bg-slate-700'}`}
+            >
+              <category.icon className={`w-5 h-5 ${isActive ? 'text-emerald-400' : 'text-slate-400'}`} />
+              <span>{category.title}</span>
+              <Badge variant="secondary" className="ml-2 bg-slate-700 text-slate-300">{getCategoryCount(key as any)}</Badge>
+            </Button>
+          );
+        })}
+      </div>
       {/* Main content area (search/filter + grid) */}
       <div className="flex-1 flex flex-col">
-        {/* Desktop: Search and filter bar above grid */}
+        {/* Desktop: Search bar above grid */}
         <div className="hidden md:flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 w-full">
           <div className="flex-1">
             <input 
@@ -453,53 +475,6 @@ export function ContentGrid({ onAddContent, onSelectContent, onEditContent }: Co
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-slate-800/50 border border-slate-700 rounded-lg pl-10 pr-4 py-2.5 text-sm text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
             />
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 transform ${
-                showFilters
-                  ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30 shadow-lg shadow-blue-500/10'
-                  : 'bg-slate-800/50 text-slate-300 border border-slate-700 hover:bg-blue-500/8 hover:border-blue-500/15 hover:text-blue-300 hover:shadow-md hover:shadow-blue-500/5 hover:scale-105'
-              }`}
-            >
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-              <span>Filters</span>
-              {(activeSkillLevel || showFavoritesOnly || activeTag || searchQuery) && (
-                <span className="ml-1 px-1.5 py-0.5 bg-blue-500 text-white text-xs rounded-full">
-                  {[activeSkillLevel, showFavoritesOnly && 'fav', activeTag, searchQuery && 'search'].filter(Boolean).length}
-                </span>
-              )}
-              <svg className={`h-4 w-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </Button>
-          </div>
-            </div>
-        {/* --- Mobile: Dropdown and Add Content button only --- */}
-        <div className="md:hidden flex flex-col gap-2 p-4 border-b border-slate-800">
-          <div className="flex items-center gap-2">
-            <Select value={activeCategory} onValueChange={v => handleCategorySelect(v as any)}>
-              <SelectTrigger className="w-full bg-slate-800 border-slate-700 text-white">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-slate-800 border-slate-700 text-white">
-                {(Object.keys(categoryConfig) as Array<keyof typeof categoryConfig>).map((key) => (
-                  <SelectItem key={key} value={key} className="flex items-center gap-2">
-                    <span>{categoryConfig[key].title}</span>
-                    <Badge variant="secondary" className="ml-2 bg-slate-700 text-slate-300">{getCategoryCount(key as any)}</Badge>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button
-              onClick={onAddContent}
-              className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
-            >
-              + Add Content
-            </Button>
           </div>
         </div>
         {/* Main content */}
@@ -569,40 +544,6 @@ export function ContentGrid({ onAddContent, onSelectContent, onEditContent }: Co
             </div>
           )}
         </div>
-      </div>
-
-      {/* Sidebar - Desktop Category Navigation */}
-      <div className="hidden md:block w-64 p-4 space-y-2 bg-slate-900 border-r border-slate-800 overflow-y-auto">
-        <div className="flex justify-between items-center mb-4">
-           <h3 className="text-sm font-semibold text-slate-400 px-2">Categories</h3>
-            <Button
-              onClick={onAddContent}
-              size="sm"
-              className="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs"
-            >
-              <PlusCircle className="h-3 w-3" />
-              Add
-            </Button>
-        </div>
-        {(Object.keys(categoryConfig) as Array<keyof typeof categoryConfig>).map((key) => {
-          if (key === 'favorites' && userContentItems.filter(c => c.favorite).length === 0) {
-            return null; // Don't show favorites if there are none
-          }
-          const category = categoryConfig[key];
-          const isActive = activeCategory === key;
-          return (
-            <Button
-              key={key}
-              onClick={() => setActiveCategory(key as any)}
-              variant="ghost"
-              className={`w-full justify-start items-center space-x-3 ${isActive ? 'bg-slate-800 text-emerald-400' : 'text-slate-300'}`}
-            >
-              <category.icon className={`w-5 h-5 ${isActive ? 'text-emerald-400' : 'text-slate-400'}`} />
-              <span>{category.title}</span>
-              <Badge variant="secondary" className="ml-auto bg-slate-700 text-slate-300">{getCategoryCount(key as any)}</Badge>
-            </Button>
-          );
-        })}
       </div>
 
       {isReordering && (
