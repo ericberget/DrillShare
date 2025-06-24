@@ -241,13 +241,13 @@ export function Navbar({ demoMode = false, onShowSignupOverlay }: NavbarProps) {
               exit="exit"
             >
               {/* Mobile: Vertical List */}
-              <div className="md:hidden px-2 py-4 bg-black">
+              <div className="md:hidden px-2 py-4">
                 <nav className="flex flex-col gap-1">
                   {navigationItems.map((item) => (
                     <Link
                       key={item.href}
                       href={item.href}
-                      className="flex items-center gap-3 py-3 px-4 rounded-lg transition-all hover:bg-emerald-700/30 active:bg-emerald-600/20 focus:bg-emerald-600/20"
+                      className="flex items-center gap-3 py-3 px-4 rounded-lg hover:bg-slate-800/80 transition-all"
                       onClick={() => setIsMenuOpen(false)}
                     >
                       <span className={`flex-shrink-0 w-5 h-5 ${item.gradient} rounded-md flex items-center justify-center`}>

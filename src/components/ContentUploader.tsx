@@ -605,29 +605,43 @@ export function ContentUploader({ isOpen, onClose, onDelete, existingContent }: 
                </div>
             </div>
           </div>
-          <div className="flex justify-between items-center gap-4 pt-4 mt-4 border-t border-slate-700">
-            <div>
-              {isEdit && (
+          <div className="flex justify-between gap-4 pt-4 mt-4">
+            <div className="flex gap-2">
+              {isEdit && existingContent && (
                 <Button
                   type="button"
-                  variant="ghost"
                   onClick={handleDelete}
                   disabled={isSubmitting}
-                  className="text-slate-400 hover:bg-slate-800 hover:text-slate-100"
+                  className="bg-white hover:bg-red-50 text-gray-600 hover:text-red-600 font-semibold shadow-none border border-gray-200 hover:border-red-300 flex items-center gap-2 transition-all duration-200"
                 >
-                  <Trash className="mr-2 h-4 w-4" /> Delete
+                  <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    width="16" 
+                    height="16" 
+                    viewBox="0 0 24 24" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    strokeWidth="2" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round"
+                  >
+                    <path d="M3 6h18"></path>
+                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                  </svg>
+                  Delete
                 </Button>
               )}
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleClose}
+                disabled={isSubmitting}
+                className="border-0 text-slate-500 hover:text-slate-800 hover:bg-slate-200 font-semibold opacity-50 hover:opacity-100 transition-opacity duration-200"
+              >
+                Cancel
+              </Button>
             </div>
-            <div className="flex items-center gap-4">
-            <Button
-              type="button"
-              onClick={handleClose}
-              disabled={isSubmitting}
-                className="border-slate-600 bg-slate-700 text-slate-300 hover:bg-slate-600"
-            >
-                {isEdit ? 'Close' : 'Cancel'}
-            </Button>
             <Button
               type="submit"
               className="bg-[#519872] hover:bg-[#417a5a] text-white font-semibold shadow-none border-0"
@@ -635,7 +649,6 @@ export function ContentUploader({ isOpen, onClose, onDelete, existingContent }: 
             >
               {isSubmitting ? 'Saving...' : isEdit ? 'Update' : 'Add'}
             </Button>
-            </div>
           </div>
         </form>
       </DialogContent>
