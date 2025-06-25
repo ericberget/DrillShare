@@ -51,553 +51,6 @@ const ThreeColumns = ({ className }: { className?: string }) => (
   </svg>
 );
 
-// New component for mobile view
-const MobilePracticePlanner = () => {
-  const { user } = useFirebase();
-  const [phases, setPhases] = useState<PracticePhase[]>(createDefaultPhases());
-  const [drills, setDrills] = useState(availableDrills);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [editingDrill, setEditingDrill] = useState<string | null>(null);
-  const [editingPhase, setEditingPhase] = useState<string | null>(null);
-  const [editingLibraryDrill, setEditingLibraryDrill] = useState<string | null>(null);
-  const [practiceDate, setPracticeDate] = useState(() => new Date().toISOString().split('T')[0]);
-  const [practiceTitle, setPracticeTitle] = useState('Practice Plan');
-  const [isSaved, setIsSaved] = useState(true);
-  const [isSharing, setIsSharing] = useState(false);
-  const [shareUrl, setShareUrl] = useState<string | null>(null);
-  const [templates, setTemplates] = useState<PracticeTemplate[]>([]);
-  const [showTemplates, setShowTemplates] = useState(false);
-  const [showSaveTemplate, setShowSaveTemplate] = useState(false);
-  const [templateName, setTemplateName] = useState('');
-  const [templateDescription, setTemplateDescription] = useState('');
-  const [showDrillLibrary, setShowDrillLibrary] = useState(false);
-  const [phaseToAddTo, setPhaseToAddTo] = useState<string | null>(null);
-  const [editingDrillId, setEditingDrillId] = useState<string | null>(null);
-  const [editingPhaseId, setEditingPhaseId] = useState<string | null>(null);
-  const [expandedDrillId, setExpandedDrillId] = useState<string | null>(null);
-
-  // Load saved data on mount
-  useEffect(() => {
-    const savedPhases = localStorage.getItem('practice-planner-phases');
-    const savedDrills = localStorage.getItem('practice-planner-drills');
-    const savedTitle = localStorage.getItem('practice-planner-title');
-    const savedDate = localStorage.getItem('practice-planner-date');
-
-    if (savedPhases) {
-      try {
-        setPhases(JSON.parse(savedPhases));
-      } catch (e) {
-        console.error('Error loading saved phases:', e);
-      }
-    }
-
-    if (savedDrills) {
-      try {
-        setDrills(JSON.parse(savedDrills));
-      } catch (e) {
-        console.error('Error loading saved drills:', e);
-      }
-    }
-
-    if (savedTitle) setPracticeTitle(savedTitle);
-    if (savedDate && !isNaN(Date.parse(savedDate))) {
-      setPracticeDate(savedDate);
-    } else {
-      setPracticeDate(new Date().toISOString().split('T')[0]);
-    }
-  }, []);
-
-  // Mark as unsaved when data changes
-  useEffect(() => {
-    setIsSaved(false);
-  }, [phases, drills, practiceTitle, practiceDate]);
-
-  // Save plan to local storage
-  const savePlan = () => {
-    try {
-      localStorage.setItem('practice-planner-phases', JSON.stringify(phases));
-      localStorage.setItem('practice-planner-drills', JSON.stringify(drills));
-      localStorage.setItem('practice-planner-title', practiceTitle);
-      localStorage.setItem('practice-planner-date', practiceDate);
-      setIsSaved(true);
-    } catch (e) {
-      console.error('Error saving plan:', e);
-      alert('Error saving plan. Please try again.');
-    }
-  };
-
-  // Filter drills based on search
-  const filteredDrills = drills
-    .filter(drill =>
-      drill.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      drill.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      drill.category.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    .sort((a, b) => {
-      if (a.isFavorite && !b.isFavorite) return -1;
-      if (!a.isFavorite && b.isFavorite) return 1;
-      return a.title.localeCompare(b.title);
-    });
-
-  const addDrillToPhase = (phaseId: string, drill: any) => {
-    const newDrill: PracticeDrill = {
-      id: `drill-${Date.now()}`,
-      title: drill.title,
-      duration: drill.duration,
-      notes: '',
-      focus: '',
-      isCustom: false,
-      isFavorite: drill.isFavorite,
-    };
-    setPhases(currentPhases =>
-      currentPhases.map(p =>
-        p.id === phaseId ? { ...p, drills: [...p.drills, newDrill] } : p
-      )
-    );
-    setShowDrillLibrary(false);
-    setPhaseToAddTo(null);
-  };
-
-  const removeDrill = (phaseId: string, drillId: string) => {
-    setPhases(currentPhases =>
-      currentPhases.map(p =>
-        p.id === phaseId
-          ? { ...p, drills: p.drills.filter(d => d.id !== drillId) }
-          : p
-      )
-    );
-  };
-  
-  const getTotalTime = () => {
-    return phases.reduce((total, phase) => {
-      const phaseTotal = phase.drills.reduce((sum, drill) => sum + (drill.duration || 0), 0);
-      return total + phaseTotal;
-    }, 0);
-  };
-
-  const updateDrillInPhase = (phaseId: string, drillId: string, updates: Partial<PracticeDrill>) => {
-    setPhases(currentPhases =>
-      currentPhases.map(phase =>
-        phase.id === phaseId
-          ? {
-              ...phase,
-              drills: phase.drills.map(drill =>
-                drill.id === drillId ? { ...drill, ...updates } : drill
-              ),
-            }
-          : phase
-      )
-    );
-  };
-
-  const loadTemplates = async () => {
-    if (!user) return;
-    const userTemplates = await practicePlanService.getUserTemplates(user.uid);
-    setTemplates(userTemplates);
-    setShowTemplates(true);
-  };
-
-  const loadTemplate = async (templateId: string) => {
-    if (!user) return;
-    const template = await practicePlanService.getTemplate(templateId);
-    if (template) {
-      setPhases(template.phases);
-      setPracticeTitle(template.name);
-      setShowTemplates(false);
-    } else {
-      alert('Template not found or error loading.');
-    }
-  };
-
-  const saveAsTemplate = async () => {
-    if (!user) {
-      alert('You must be signed in to save templates.');
-      return;
-    }
-    if (!templateName) {
-      alert('Please enter a name for your template.');
-      return;
-    }
-
-    const templateData = {
-      name: templateName,
-      description: templateDescription,
-      phases,
-      totalTime: getTotalTime(),
-      userId: user.uid,
-    };
-
-    try {
-      await practicePlanService.saveTemplate(templateData);
-      alert('Template saved successfully!');
-      setShowSaveTemplate(false);
-      setTemplateName('');
-      setTemplateDescription('');
-    } catch (error) {
-      alert('Error saving template. Please try again.');
-    }
-  };
-
-  // Drag and drop handler for drills within a phase
-  const handleDragEnd = (result: DropResult) => {
-    const { source, destination } = result;
-    if (!destination) return;
-    if (source.droppableId !== destination.droppableId) return;
-    const phaseId = source.droppableId;
-    setPhases(currentPhases =>
-      currentPhases.map(phase => {
-        if (phase.id !== phaseId) return phase;
-        const newDrills = Array.from(phase.drills);
-        const [removed] = newDrills.splice(source.index, 1);
-        newDrills.splice(destination.index, 0, removed);
-        return { ...phase, drills: newDrills };
-      })
-    );
-  };
-
-  const setPhaseLayout = (phaseId: string, layout: 'sequential' | 'two-column' | 'three-column') => {
-    setPhases(phases => phases.map(p => (p.id === phaseId ? { ...p, layout } : p)));
-  };
-
-  const saveAndShare = async () => {
-    if (!user) {
-      alert('Please sign in to share your practice plan.');
-      return;
-    }
-
-    setIsSharing(true);
-    try {
-      const planToSave = {
-        title: practiceTitle,
-        practiceDate: practiceDate,
-        phases,
-        totalTime: getTotalTime(),
-        userId: user.uid,
-      };
-      
-      const id = await practicePlanService.savePracticePlan(planToSave);
-      
-      const url = `${window.location.origin}/practice-plan/${id}`;
-      setShareUrl(url);
-      
-      // Copy to clipboard
-      await navigator.clipboard.writeText(url);
-      alert('Shareable link copied to clipboard!');
-
-    } catch (error) {
-      console.error('Error sharing plan:', error);
-      alert('Failed to create shareable link.');
-    } finally {
-      setIsSharing(false);
-    }
-  };
-
-  return (
-    <div className="p-4 bg-slate-900 text-white min-h-screen">
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-2">
-        <div className="relative flex items-center">
-          <Input
-            type="text"
-            value={practiceTitle}
-            onChange={e => setPracticeTitle(e.target.value)}
-            className="text-xl font-bold bg-transparent border-none focus:ring-0 p-0 text-white placeholder:text-slate-400 pr-8"
-            placeholder="Practice Plan Title"
-          />
-          <Edit3 className="absolute right-2 top-1/2 -translate-y-1/2 h-5 w-5 text-white/60 pointer-events-none" />
-        </div>
-        <div className="flex items-center gap-2">
-          <Input
-            type="date"
-            value={practiceDate}
-            onChange={e => setPracticeDate(e.target.value)}
-            className="w-auto bg-slate-800 border-slate-700 text-white px-2 py-1 rounded-md"
-          />
-          <button
-            onClick={() => setPracticeDate(new Date().toISOString().split('T')[0])}
-            className="bg-white text-blue-900 font-bold px-3 py-1 rounded shadow border border-blue-900/20 hover:bg-blue-50 transition text-xs"
-          >
-            Today
-          </button>
-        </div>
-        <div className="text-sm text-slate-400 sm:text-right">Total Time: {getTotalTime()} min</div>
-      </div>
-
-      <div className="flex items-center gap-2 mb-4">
-        <Button onClick={saveAndShare} className="bg-blue-600 hover:bg-blue-700 text-white font-semibold w-full" disabled={isSharing}>
-          <Share2 className="mr-2 h-4 w-4" />
-          {isSharing ? 'Sharing...' : 'Save & Share'}
-        </Button>
-      </div>
-      
-      <div className="space-y-4">
-        <DragDropContext onDragEnd={handleDragEnd}>
-          {phases.map(phase => (
-            <Card key={phase.id} className="bg-slate-800 border border-slate-700">
-              <CardHeader>
-                {editingPhaseId === phase.id ? (
-                  <Input
-                    value={phase.name}
-                    onChange={e => {
-                      const newName = e.target.value;
-                      setPhases(currentPhases =>
-                        currentPhases.map(p =>
-                          p.id === phase.id ? { ...p, name: newName } : p
-                        )
-                      );
-                    }}
-                    onBlur={() => setEditingPhaseId(null)}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter') setEditingPhaseId(null);
-                    }}
-                    className="bg-slate-600 border-slate-500 text-blue-300 font-oswald text-lg font-bold"
-                    autoFocus
-                  />
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <CardTitle
-                      className="text-lg text-emerald-400 font-oswald font-bold cursor-pointer"
-                      onClick={() => setEditingPhaseId(phase.id)}
-                    >
-                      {phase.name}
-                    </CardTitle>
-                    <Button size="icon" variant="ghost" onClick={() => setPhaseLayout(phase.id, 'sequential')} className={phase.layout === 'sequential' ? 'text-emerald-400' : 'text-slate-400'}>
-                      <List className="h-5 w-5" />
-                    </Button>
-                    <Button size="icon" variant="ghost" onClick={() => setPhaseLayout(phase.id, 'two-column')} className={phase.layout === 'two-column' ? 'text-emerald-400' : 'text-slate-400'}>
-                      <Columns className="h-5 w-5" />
-                    </Button>
-                    <Button size="icon" variant="ghost" onClick={() => setPhaseLayout(phase.id, 'three-column')} className={phase.layout === 'three-column' ? 'text-emerald-400' : 'text-slate-400'}>
-                      <ThreeColumns className="h-5 w-5" />
-                    </Button>
-                  </div>
-                )}
-              </CardHeader>
-              <CardContent>
-                <Droppable droppableId={phase.id} direction="vertical">
-                  {(provided) => (
-                    <div
-                      ref={provided.innerRef}
-                      {...provided.droppableProps}
-                      className={
-                        phase.layout === 'sequential'
-                          ? 'space-y-2'
-                          : phase.layout === 'two-column'
-                          ? 'grid grid-cols-2 gap-2'
-                          : 'grid grid-cols-3 gap-2'
-                      }
-                    >
-                      {phase.drills.map((drill, index) => (
-                        <Draggable key={drill.id} draggableId={drill.id} index={index}>
-                          {(provided) => {
-                            const isExpanded = expandedDrillId === drill.id;
-                            return (
-                              <div
-                                ref={provided.innerRef}
-                                {...provided.draggableProps}
-                                className={
-                                  (phase.layout === 'sequential'
-                                    ? 'bg-slate-700 rounded-md mb-2 transition-all duration-200 overflow-hidden'
-                                    : 'bg-slate-700 rounded-md mb-2 transition-all duration-200 overflow-hidden') +
-                                  (isExpanded ? ' shadow-lg ring-2 ring-emerald-400/30' : '')
-                                }
-                              >
-                                <div
-                                  className={
-                                    (phase.layout === 'sequential'
-                                      ? 'flex items-center gap-2 p-2 cursor-pointer'
-                                      : 'flex items-center gap-1 p-2 cursor-pointer')
-                                  }
-                                  onClick={() => setExpandedDrillId(isExpanded ? null : drill.id)}
-                                >
-                                  <div {...provided.dragHandleProps} className="cursor-grab p-1">
-                                    <GripVertical className="h-4 w-4 text-slate-400" />
-                                  </div>
-                                  {editingDrillId === drill.id ? (
-                                    <Input
-                                      value={drill.title}
-                                      onChange={(e) => updateDrillInPhase(phase.id, drill.id, { title: e.target.value })}
-                                      onBlur={() => setEditingDrillId(null)}
-                                      onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
-                                          setEditingDrillId(null);
-                                        }
-                                      }}
-                                      className={
-                                        phase.layout === 'sequential'
-                                          ? 'bg-slate-600 border-slate-500 text-white/50 font-bold text-base'
-                                          : 'bg-slate-600 border-slate-500 text-white/50 font-bold text-sm'
-                                      }
-                                      autoFocus
-                                    />
-                                  ) : (
-                                    <span
-                                      className={
-                                        'font-bold text-white/50 ' +
-                                        (phase.layout === 'sequential' ? 'text-base' : 'text-sm')
-                                      }
-                                      onClick={e => {
-                                        e.stopPropagation();
-                                        setEditingDrillId(drill.id);
-                                      }}
-                                    >
-                                      {drill.title}
-                                    </span>
-                                  )}
-                                </div>
-                                {/* Expanded content */}
-                                <div
-                                  className={
-                                    'transition-all duration-200' +
-                                    (isExpanded ? ' max-h-96 opacity-100 p-3' : ' max-h-0 opacity-0 p-0 pointer-events-none')
-                                  }
-                                  style={{ overflow: 'hidden' }}
-                                >
-                                  <div className="mb-2">
-                                    <label className="block text-xs text-slate-400 mb-1">Today's Focus</label>
-                                    <Textarea
-                                      value={drill.focus || ''}
-                                      onChange={e => updateDrillInPhase(phase.id, drill.id, { focus: e.target.value })}
-                                      placeholder="Add today's focus..."
-                                      className="bg-slate-800 border-slate-700 text-sm text-white min-h-[40px]"
-                                    />
-                                  </div>
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <label className="text-xs text-slate-400">Minutes</label>
-                                    <Input
-                                      type="number"
-                                      value={drill.duration}
-                                      onChange={e => updateDrillInPhase(phase.id, drill.id, { duration: parseInt(e.target.value, 10) || 0 })}
-                                      className="w-16 bg-slate-800 border-slate-700 text-white text-xs"
-                                    />
-                                  </div>
-                                  <Button
-                                    size="sm"
-                                    variant="destructive"
-                                    className="mt-2 w-full"
-                                    onClick={() => removeDrill(phase.id, drill.id)}
-                                  >
-                                    Delete Drill
-                                  </Button>
-                                </div>
-                              </div>
-                            );
-                          }}
-                        </Draggable>
-                      ))}
-                      {provided.placeholder}
-                    </div>
-                  )}
-                </Droppable>
-                <Button 
-                  className="w-1/3 mx-auto mt-4 bg-emerald-500/70 hover:bg-emerald-600/80 text-white font-normal"
-                  onClick={() => {
-                    setPhaseToAddTo(phase.id);
-                    setShowDrillLibrary(true);
-                  }}
-                >
-                  <Plus className="mr-1 h-3 w-3" /> Add Drill
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
-        </DragDropContext>
-      </div>
-
-      {showDrillLibrary && (
-        <div className="fixed inset-0 bg-slate-950 z-50 p-4 flex flex-col">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold">Drill Library</h2>
-            <Button variant="ghost" size="icon" onClick={() => setShowDrillLibrary(false)}>
-              <X className="h-6 w-6" />
-            </Button>
-          </div>
-          <Input
-            type="text"
-            placeholder="Search drills..."
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            className="bg-slate-800 border-slate-700 rounded-md px-4 py-2 text-slate-200 placeholder:text-slate-500 mb-4"
-          />
-          <div className="flex-1 overflow-y-auto space-y-2">
-            {filteredDrills.map(drill => (
-              <div key={drill.id} className="flex justify-between items-center p-3 bg-slate-800 rounded-md">
-                <div>
-                  <div className="font-semibold">{drill.title}</div>
-                  <div className="text-sm text-slate-400">{drill.description}</div>
-                </div>
-                <Button 
-                  size="sm" 
-                  className="bg-emerald-600 hover:bg-emerald-700"
-                  onClick={() => addDrillToPhase(phaseToAddTo!, drill)}
-                >
-                  Add
-                </Button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Load Template Modal */}
-      {showTemplates && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-800 rounded-lg p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-white">Load Template</h2>
-              <Button onClick={() => setShowTemplates(false)} size="sm" variant="ghost" className="text-slate-400 hover:text-white">
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-            {templates.length === 0 ? (
-              <div className="text-center py-8 text-slate-400">No templates found.</div>
-            ) : (
-              <div className="space-y-3">
-                {templates.map((template) => (
-                  <div key={template.id} className="bg-slate-700 rounded-lg p-4 hover:bg-slate-600 transition-colors cursor-pointer" onClick={() => loadTemplate(template.id!)}>
-                    <h3 className="font-medium text-white">{template.name}</h3>
-                    <p className="text-slate-400 text-sm mt-1">{template.description}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Save Template Modal */}
-      {showSaveTemplate && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-800 rounded-lg p-6 w-full max-w-md">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-white">Save as Template</h2>
-              <Button onClick={() => setShowSaveTemplate(false)} size="sm" variant="ghost" className="text-slate-400 hover:text-white">
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-            <div className="space-y-4">
-              <Input
-                value={templateName}
-                onChange={(e) => setTemplateName(e.target.value)}
-                placeholder="Template Name (e.g., Game Day Prep)"
-                className="bg-slate-700 border-slate-600"
-              />
-              <Textarea
-                value={templateDescription}
-                onChange={(e) => setTemplateDescription(e.target.value)}
-                placeholder="Description (optional)"
-                className="bg-slate-700 border-slate-600"
-              />
-              <Button onClick={saveAsTemplate} className="w-full bg-blue-600 hover:bg-blue-700">
-                Save Template
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
 interface PracticeDrill {
   id: string;
   title: string;
@@ -700,7 +153,7 @@ const createDefaultPhases = (): PracticePhase[] => [
   }
 ];
 
-const DesktopPracticePlanner = () => {
+export default function PracticePlannerPage() {
   const { user } = useFirebase();
   const [phases, setPhases] = useState<PracticePhase[]>(createDefaultPhases());
   const [drills, setDrills] = useState(availableDrills); // Make drills editable
@@ -718,7 +171,6 @@ const DesktopPracticePlanner = () => {
   const [showSaveTemplate, setShowSaveTemplate] = useState(false); // Show save template modal
   const [templateName, setTemplateName] = useState(''); // Template name input
   const [templateDescription, setTemplateDescription] = useState(''); // Template description input
-  const [expandedDrillId, setExpandedDrillId] = useState<string | null>(null);
 
   // Load saved data on mount
   useEffect(() => {
@@ -796,253 +248,560 @@ const DesktopPracticePlanner = () => {
         id: `drill-${Date.now()}`,
         title: drill.title,
         duration: drill.duration,
-        notes: '',
-        focus: '', // Initialize focus field
+        notes: drill.description,
+        focus: '', // Empty focus for coach to fill
         isCustom: false,
-        isFavorite: drill.isFavorite, // Carry over favorite status
+        isFavorite: false
       };
-    const newPhases = [...phases];
-      const phaseIndex = newPhases.findIndex(p => p.id === destination.droppableId);
-      newPhases[phaseIndex].drills.splice(destination.index, 0, newDrill);
-      setPhases(newPhases);
-    } else {
-      // Reordering within a phase
-      const phaseId = source.droppableId;
-      const phaseIndex = phases.findIndex(p => p.id === phaseId);
-      const newPhases = [...phases];
-      const [movedDrill] = newPhases[phaseIndex].drills.splice(source.index, 1);
-      newPhases[phaseIndex].drills.splice(destination.index, 0, movedDrill);
-    setPhases(newPhases);
+
+      setPhases(prev => prev.map(phase => 
+        phase.id === destination.droppableId
+          ? { ...phase, drills: [...phase.drills, newDrill] }
+          : phase
+      ));
+      return;
     }
+
+    // Moving between phases or within phase
+    const sourcePhase = phases.find(p => p.id === source.droppableId);
+    const destPhase = phases.find(p => p.id === destination.droppableId);
+    
+    if (!sourcePhase) return;
+
+    const newPhases = [...phases];
+    const sourceDrills = [...sourcePhase.drills];
+    const [movedDrill] = sourceDrills.splice(source.index, 1);
+
+    if (source.droppableId === destination.droppableId) {
+      // Moving within same phase
+      sourceDrills.splice(destination.index, 0, movedDrill);
+      const phaseIndex = newPhases.findIndex(p => p.id === source.droppableId);
+      newPhases[phaseIndex].drills = sourceDrills;
+    } else {
+      // Moving between phases
+      if (!destPhase) return;
+      const destDrills = [...destPhase.drills];
+      destDrills.splice(destination.index, 0, movedDrill);
+      
+      const sourceIndex = newPhases.findIndex(p => p.id === source.droppableId);
+      const destIndex = newPhases.findIndex(p => p.id === destination.droppableId);
+      
+      newPhases[sourceIndex].drills = sourceDrills;
+      newPhases[destIndex].drills = destDrills;
+    }
+
+    setPhases(newPhases);
   };
 
   const updateDrill = (phaseId: string, drillId: string, updates: Partial<PracticeDrill>) => {
-    setPhases(currentPhases =>
-      currentPhases.map(phase =>
+    setPhases(prev => prev.map(phase =>
       phase.id === phaseId
         ? {
             ...phase,
             drills: phase.drills.map(drill =>
               drill.id === drillId ? { ...drill, ...updates } : drill
-              ),
+            )
           }
         : phase
-      )
-    );
+    ));
   };
 
   const removeDrill = (phaseId: string, drillId: string) => {
-    setPhases(currentPhases =>
-      currentPhases.map(phase =>
+    setPhases(prev => prev.map(phase =>
       phase.id === phaseId
         ? { ...phase, drills: phase.drills.filter(drill => drill.id !== drillId) }
         : phase
-      )
-    );
+    ));
   };
 
   const addCustomDrill = (phaseId: string) => {
     const newDrill: PracticeDrill = {
-      id: `custom-drill-${Date.now()}`,
-      title: 'New Custom Drill',
+      id: `custom-${Date.now()}`,
+      title: 'Custom Drill',
       duration: 10,
-      notes: 'Add notes here',
-      focus: 'Add today\'s focus',
+      notes: '',
+      focus: '',
       isCustom: true,
-      isFavorite: false,
+      isFavorite: false
     };
-    setPhases(currentPhases =>
-      currentPhases.map(phase =>
-        phase.id === phaseId ? { ...phase, drills: [...phase.drills, newDrill] } : phase
-      )
-    );
+
+    setPhases(prev => prev.map(phase =>
+      phase.id === phaseId
+        ? { ...phase, drills: [...phase.drills, newDrill] }
+        : phase
+    ));
+    setEditingDrill(newDrill.id);
   };
 
   const addPhase = () => {
+    const phaseNumber = phases.length;
+    
     const newPhase: PracticePhase = {
       id: `phase-${Date.now()}`,
-      name: 'New Practice Phase',
+      name: `Practice Phase ${phaseNumber}`,
       drills: [],
       color: 'bg-slate-700/50 border-slate-500/50 text-white',
       isCustom: true,
       layout: 'sequential',
-      duration: 20
+      duration: 0
     };
-    setPhases([...phases, newPhase]);
+
+    setPhases(prev => [...prev, newPhase]);
+    setEditingPhase(newPhase.id);
   };
 
   const removePhase = (phaseId: string) => {
-    setPhases(phases.filter(phase => phase.id !== phaseId));
+    setPhases(prev => prev.filter(phase => phase.id !== phaseId));
   };
 
   const updatePhaseName = (phaseId: string, name: string) => {
-    setPhases(phases.map(p => (p.id === phaseId ? { ...p, name } : p)));
+    setPhases(prev => prev.map(phase =>
+      phase.id === phaseId ? { ...phase, name } : phase
+    ));
   };
 
   const setPhaseLayout = (phaseId: string, layout: 'sequential' | 'two-column' | 'three-column') => {
-    setPhases(phases => phases.map(p => (p.id === phaseId ? { ...p, layout } : p)));
+    setPhases(prev => prev.map(phase =>
+      phase.id === phaseId ? { ...phase, layout } : phase
+    ));
   };
 
   const updatePhaseDuration = (phaseId: string, duration: number) => {
-    setPhases(phases.map(p => (p.id === phaseId ? { ...p, duration } : p)));
+    setPhases(prev => prev.map(phase =>
+      phase.id === phaseId ? { ...phase, duration } : phase
+    ));
   };
 
   const getTotalTime = () => {
-    return phases.reduce((total, phase) => total + phase.drills.reduce((sum, drill) => sum + drill.duration, 0), 0);
+    return phases.reduce((total, phase) => total + phase.duration, 0);
   };
 
   const saveAndShare = async () => {
     if (!user) {
-      alert('Please sign in to share your practice plan.');
+      alert('Please sign in to save and share practice plans');
       return;
     }
 
     setIsSharing(true);
     try {
-      const planToSave = {
+      // Filter out phases with no drills for cleaner sharing
+      const filteredPhases = phases.filter(phase => phase.drills.length > 0);
+      
+      const practicePlanId = await practicePlanService.savePracticePlan({
         title: practiceTitle,
-        practiceDate: practiceDate,
-        phases,
+        practiceDate,
+        phases: filteredPhases,
         totalTime: getTotalTime(),
         userId: user.uid,
-      };
-      
-      const id = await practicePlanService.savePracticePlan(planToSave);
-      
-      const url = `${window.location.origin}/practice-plan/${id}`;
-      setShareUrl(url);
+      });
+
+      const shareableUrl = `${window.location.origin}/practice-plan/${practicePlanId}`;
+      setShareUrl(shareableUrl);
       
       // Copy to clipboard
-      await navigator.clipboard.writeText(url);
-      alert('Shareable link copied to clipboard!');
+      await navigator.clipboard.writeText(shareableUrl);
+      alert('Practice plan saved and URL copied to clipboard!');
       
     } catch (error) {
-      console.error('Error sharing plan:', error);
-      alert('Failed to create shareable link.');
+      console.error('Error saving practice plan:', error);
+      alert('Failed to save practice plan. Please try again.');
     } finally {
       setIsSharing(false);
     }
   };
 
+  // Template functions
   const loadTemplates = async () => {
-    if (!user) return;
+    if (!user) {
+      console.log('No user found in loadTemplates');
+      return;
+    }
+    try {
+      console.log('Loading templates for user:', user);
       const userTemplates = await practicePlanService.getUserTemplates(user.uid);
+      console.log('Loaded templates:', userTemplates);
       setTemplates(userTemplates);
-    setShowTemplates(true);
-  };
-
-  const loadTemplate = async (templateId: string) => {
-    if (!user) return;
-    const template = await practicePlanService.getTemplate(templateId);
-    if (template) {
-      setPhases(template.phases);
-      // setDrills(template.drills);
-      setPracticeTitle(template.name); // Optionally set title from template
-      setShowTemplates(false);
-    } else {
-      alert('Template not found or error loading.');
+    } catch (error) {
+      console.error('Error loading templates:', error);
     }
   };
 
   const saveAsTemplate = async () => {
     if (!user) {
-      alert('You must be signed in to save templates.');
-      return;
-    }
-    if (!templateName) {
-      alert('Please enter a name for your template.');
+      alert('Please sign in to save templates');
       return;
     }
 
+    if (!templateName.trim()) {
+      alert('Please enter a template name');
+      return;
+    }
+
+    try {
+      // Filter out phases with no drills for cleaner templates
+      const filteredPhases = phases.filter(phase => phase.drills.length > 0);
       const templateData = {
         name: templateName,
         description: templateDescription,
-      phases,
+        phases: filteredPhases,
         totalTime: getTotalTime(),
         userId: user.uid,
       };
-
-    try {
+      console.log('Saving template with data:', templateData);
       await practicePlanService.saveTemplate(templateData);
-      alert('Template saved successfully!');
-      setShowSaveTemplate(false);
+
       setTemplateName('');
       setTemplateDescription('');
+      setShowSaveTemplate(false);
+      loadTemplates(); // Refresh templates list
+      alert('Template saved successfully!');
     } catch (error) {
-      alert('Error saving template. Please try again.');
+      console.error('Error saving template:', error);
+      alert('Failed to save template. Please try again.');
     }
   };
 
+  const loadTemplate = async (templateId: string) => {
+    try {
+      const template = await practicePlanService.getTemplate(templateId);
+      if (template) {
+        setPhases(template.phases);
+        setPracticeTitle(template.name);
+        setShowTemplates(false);
+        setIsSaved(false); // Mark as unsaved since it's a new practice based on template
+      }
+    } catch (error) {
+      console.error('Error loading template:', error);
+      alert('Failed to load template. Please try again.');
+    }
+  };
+
+  // Load templates when user is available
+  useEffect(() => {
+    if (user) {
+      loadTemplates();
+    }
+  }, [user]);
+
+  // Drill management functions
   const addNewDrill = () => {
     const newDrill = {
-      id: `new-drill-${Date.now()}`,
+      id: `custom-drill-${Date.now()}`,
       title: 'New Drill',
       category: 'custom',
-      duration: 10,
-      description: 'A new custom drill',
+      duration: 15,
+      description: 'Custom drill description',
       isFavorite: false
     };
-    setDrills([...drills, newDrill]);
+    setDrills(prev => [...prev, newDrill]);
+    setEditingLibraryDrill(newDrill.id);
   };
 
   const updateLibraryDrill = (drillId: string, updates: Partial<typeof availableDrills[0]>) => {
-    setDrills(drills.map(d => d.id === drillId ? { ...d, ...updates } : d));
+    setDrills(prev => prev.map(drill =>
+      drill.id === drillId ? { ...drill, ...updates } : drill
+    ));
   };
 
   const deleteLibraryDrill = (drillId: string) => {
-    setDrills(drills.filter(d => d.id !== drillId));
+    setDrills(prev => prev.filter(drill => drill.id !== drillId));
   };
 
   const toggleDrillFavorite = (drillId: string) => {
-    setDrills(drills.map(d => d.id === drillId ? { ...d, isFavorite: !d.isFavorite } : d));
+    setDrills(prev => prev.map(drill =>
+      drill.id === drillId ? { ...drill, isFavorite: !drill.isFavorite } : drill
+    ));
   };
 
   return (
+    <ProtectedRoute>
+      <div
+        className="min-h-screen w-full relative text-white"
+        style={{
+          backgroundImage: "url('/bg-baseballfield.jpg')",
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+        }}
+      >
+        <header
+          className="w-full border-b border-slate-800/30 flex items-center justify-center"
+          style={{
+            backgroundImage: "url('/bgtexture.jpg')",
+            backgroundRepeat: "repeat-x",
+            backgroundSize: "auto 100%",
+            backgroundPosition: "center",
+            minHeight: '180px',
+          }}
+        >
+          <img 
+            src="/practiceTitle.png" 
+            alt="Practice Planner" 
+            className="h-12 md:h-16 lg:h-20 xl:h-24 mb-0"
+            style={{ marginTop: 0 }}
+          />
+        </header>
+        <div className="container mx-auto px-4 py-6">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-4">
+              <Input
+                value={practiceTitle}
+                onChange={(e) => setPracticeTitle(e.target.value)}
+                className="text-2xl font-bold bg-transparent border-none text-white p-0 h-auto"
+              />
+              <Input
+                type="date"
+                value={practiceDate}
+                onChange={(e) => setPracticeDate(e.target.value)}
+                className="bg-slate-800 border-slate-600"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button 
+                onClick={() => setShowTemplates(true)} 
+                variant="ghost" 
+                size="sm" 
+                className="text-slate-500 hover:text-slate-300 hover:bg-slate-800 h-9"
+              >
+                <FolderOpen className="h-4 w-4 mr-2" />
+                Load Template
+              </Button>
+              <Button 
+                onClick={() => setShowSaveTemplate(true)} 
+                variant="ghost" 
+                size="sm" 
+                className="text-slate-500 hover:text-slate-300 hover:bg-slate-800 h-9"
+              >
+                <BookOpen className="h-4 w-4 mr-2" />
+                Save as Template
+              </Button>
+              <Button 
+                onClick={savePlan} 
+                size="sm" 
+                className={cn(
+                  "h-9",
+                  isSaved ? "bg-green-700 hover:bg-green-800 text-white" : "bg-green-600 hover:bg-green-700 text-white"
+                )}
+              >
+                <Save className="h-4 w-4 mr-2" />
+                {isSaved ? 'Saved' : 'Save'}
+              </Button>
+              <Button 
+                onClick={saveAndShare} 
+                disabled={isSharing}
+                size="sm" 
+                className="bg-blue-600 hover:bg-blue-700 text-white h-9"
+              >
+                {isSharing ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Share2 className="h-4 w-4 mr-2" />
+                    Save & Share
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+
+          {/* Share URL Display */}
+          {shareUrl && (
+            <div className="mb-6 p-4 bg-emerald-900/20 border border-emerald-500/30 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <p className="text-emerald-400 font-medium mb-1">Practice Plan Saved!</p>
+                  <p className="text-slate-300 text-sm mb-2">Share this URL with your team:</p>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={shareUrl}
+                      readOnly
+                      className="bg-slate-800 border-slate-600 text-slate-200 text-sm"
+                    />
+                    <Button
+                      onClick={() => navigator.clipboard.writeText(shareUrl)}
+                      size="sm"
+                      variant="outline"
+                      className="border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10"
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      onClick={() => window.open(shareUrl, '_blank')}
+                      size="sm"
+                      variant="outline"
+                      className="border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                <Button
+                  onClick={() => setShareUrl(null)}
+                  size="sm"
+                  variant="ghost"
+                  className="text-slate-400 hover:text-white"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+
+          <div className="text-sm text-slate-400 mb-6">
+            Total Time: {getTotalTime()} minutes
+          </div>
+
           <DragDropContext onDragEnd={handleDragEnd}>
-    <div className="flex h-[calc(100vh-60px)] bg-slate-900 text-white">
-      {/* Left Sidebar: Drill Gallery */}
-      <div className="w-1/4 bg-slate-800/50 p-4 overflow-y-auto border-r border-slate-700">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-emerald-400">Drill Library</h2>
-          <Button onClick={addNewDrill} size="sm" className="bg-emerald-600 hover:bg-emerald-700">
-            <Plus className="mr-1 h-4 w-4" /> New
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+              {/* Drill Gallery */}
+              <div className="lg:col-span-1">
+                <Card className="h-fit mt-2"
+                  style={{
+                    backgroundImage: "linear-gradient(rgba(13,21,41,0.85), rgba(13,21,41,0.85)), url('/bg-5.jpg')",
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat',
+                    borderColor: 'rgba(100,116,139,0.2)',
+                    backgroundClip: 'padding-box',
+                  }}
+                >
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-xl font-oswald text-emerald-400">Drills and Skills Library</CardTitle>
+                      <Button
+                        onClick={addNewDrill}
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 w-8 p-0 text-slate-400 hover:text-white"
+                        title="Add new drill"
+                      >
+                        <Plus className="h-4 w-4" />
                       </Button>
                     </div>
-        <div className="relative mb-4">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
                       <Input
-            type="text"
                         placeholder="Search drills..."
                         value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            className="w-full bg-slate-900 border-slate-700 rounded-md pl-10 pr-4 py-2 text-slate-200 placeholder:text-slate-500"
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10 bg-slate-700 border-slate-600"
                       />
                     </div>
-        <Droppable droppableId="gallery">
+                  </CardHeader>
+                  <CardContent className="p-3">
+                    <Droppable droppableId="gallery" isDropDisabled>
                       {(provided) => (
-            <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2">
+                        <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-2">
                           {filteredDrills.map((drill, index) => (
                             <Draggable key={drill.id} draggableId={drill.id} index={index}>
-                  {(provided) => (
-                    <Card
+                              {(provided, snapshot) => (
+                                <div
                                   ref={provided.innerRef}
                                   {...provided.draggableProps}
                                   {...provided.dragHandleProps}
-                      className="bg-slate-700/80 p-3 rounded-lg shadow-sm hover:bg-slate-600/80 transition-colors cursor-pointer"
-                    >
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className="font-semibold text-slate-100">{drill.title}</h3>
-                          <p className="text-sm text-slate-400">{drill.description}</p>
+                                  className={cn(
+                                    "group p-3 bg-slate-700/50 rounded-lg border border-slate-600 cursor-grab active:cursor-grabbing transition-all",
+                                    snapshot.isDragging && "bg-slate-600 shadow-lg"
+                                  )}
+                                >
+                                  <div className="flex items-center justify-between mb-1">
+                                    <div className="flex items-center gap-1">
+                                      <GripVertical className="h-4 w-4 text-slate-400" />
+                                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <Button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setEditingLibraryDrill(drill.id);
+                                          }}
+                                          size="sm"
+                                          variant="ghost"
+                                          className="h-4 w-4 p-0 text-teal-500/70 hover:text-teal-400"
+                                          title="Edit drill"
+                                        >
+                                          <Edit3 className="h-3 w-3" />
+                                        </Button>
+                                        <Button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            deleteLibraryDrill(drill.id);
+                                          }}
+                                          size="sm"
+                                          variant="ghost"
+                                          className="h-4 w-4 p-0 text-teal-500/50 hover:text-teal-400/70"
+                                          title="Delete drill"
+                                        >
+                                          <X className="h-3 w-3" />
+                                        </Button>
                                       </div>
-                        <div className="flex flex-col items-end gap-1">
-                           <span className="text-xs text-slate-400">{drill.duration} min</span>
-                           <button onClick={() => toggleDrillFavorite(drill.id)} className="focus:outline-none">
-                            <Star className={`h-4 w-4 ${drill.isFavorite ? 'text-yellow-400 fill-current' : 'text-slate-500'}`} />
-                           </button>
                                     </div>
+                                    <Button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleDrillFavorite(drill.id);
+                                      }}
+                                      size="sm"
+                                      variant="ghost"
+                                      className="h-5 w-5 p-0"
+                                    >
+                                      <Star 
+                                        className={cn(
+                                          "h-3 w-3 transition-colors",
+                                          drill.isFavorite 
+                                            ? "fill-teal-500/70 text-teal-500/70" 
+                                            : "text-slate-500 hover:text-teal-400/60"
+                                        )} 
+                                      />
+                                    </Button>
                                   </div>
-                    </Card>
+                                  {editingLibraryDrill === drill.id ? (
+                                    <div className="space-y-2">
+                                      <Input
+                                        value={drill.title}
+                                        onChange={(e) => updateLibraryDrill(drill.id, { title: e.target.value })}
+                                        className="h-6 text-sm bg-slate-600 border-slate-500"
+                                        placeholder="Drill name"
+                                        autoFocus
+                                      />
+                                      <Textarea
+                                        value={drill.description}
+                                        onChange={(e) => updateLibraryDrill(drill.id, { description: e.target.value })}
+                                        className="h-16 text-xs bg-slate-600 border-slate-500 resize-none"
+                                        placeholder="Drill description"
+                                      />
+                                      <div className="flex gap-1">
+                                        <Button
+                                          onClick={() => setEditingLibraryDrill(null)}
+                                          size="sm"
+                                          className="h-6 px-2 text-xs bg-green-600 hover:bg-green-700"
+                                        >
+                                          Save
+                                        </Button>
+                                        <Button
+                                          onClick={() => {
+                                            setEditingLibraryDrill(null);
+                                            if (drill.id.startsWith('custom-drill-')) {
+                                              deleteLibraryDrill(drill.id);
+                                            }
+                                          }}
+                                          size="sm"
+                                          variant="ghost"
+                                          className="h-6 px-2 text-xs text-slate-400 hover:text-white"
+                                        >
+                                          Cancel
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div>
+                                      <h4 className="font-medium text-sm text-white mb-1">{drill.title}</h4>
+                                      <p className="text-xs text-slate-400 line-clamp-2">{drill.description}</p>
+                                    </div>
+                                  )}
+                                </div>
                               )}
                             </Draggable>
                           ))}
@@ -1050,216 +809,413 @@ const DesktopPracticePlanner = () => {
                         </div>
                       )}
                     </Droppable>
+                  </CardContent>
+                </Card>
               </div>
 
-      {/* Main Content: Practice Plan */}
-      <main className="w-3/4 p-6 overflow-y-auto">
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center gap-4">
+              {/* Practice Phases */}
+              <div className="lg:col-span-3">
+                <div className="space-y-6">
+                  {phases.map((phase) => (
+                    <Card key={phase.id} className={cn("border-2", phase.color)}
+                      style={{
+                        backgroundImage: "linear-gradient(rgba(13,21,41,0.85), rgba(13,21,41,0.85)), url('/bg-5.jpg')",
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        backgroundRepeat: 'no-repeat',
+                        borderRadius: '0.75rem',
+                        borderWidth: 2,
+                        borderColor: 'rgba(100,116,139,0.2)', // subtle border
+                      }}
+                    >
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2 flex-1">
+                            {editingPhase === phase.id ? (
                               <Input
-              type="text"
-              value={practiceTitle}
-              onChange={e => setPracticeTitle(e.target.value)}
-              className="text-2xl font-bold bg-transparent border-none focus:ring-0 p-0"
-            />
+                                value={phase.name}
+                                onChange={(e) => updatePhaseName(phase.id, e.target.value)}
+                                className="text-lg font-semibold bg-slate-700 border-slate-500"
+                                autoFocus
+                                onBlur={() => setEditingPhase(null)}
+                                onKeyDown={(e) => e.key === 'Enter' && setEditingPhase(null)}
+                              />
+                            ) : (
+                              <div className="flex flex-col">
+                                <CardTitle 
+                                  className="text-xl font-oswald text-emerald-400 cursor-pointer hover:text-emerald-300 transition-colors flex items-center gap-2 group"
+                                  onClick={() => setEditingPhase(phase.id)}
+                                >
+                                  {phase.name}
+                                  <Edit3 className="h-4 w-4 opacity-0 group-hover:opacity-50 transition-opacity" />
+                                  <Button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      removePhase(phase.id);
+                                    }}
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-6 w-6 p-0 text-slate-400 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    title="Remove this phase"
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </Button>
+                                </CardTitle>
+                                <div className="flex items-center gap-1 mt-1">
+                                  <Clock className="h-3 w-3 text-slate-400" />
                                   <Input
-              type="date"
-              value={practiceDate}
-              onChange={e => setPracticeDate(e.target.value)}
-              className="bg-slate-800 border-slate-700 rounded-md"
-            />
+                                    type="number"
+                                    value={phase.duration}
+                                    onChange={(e) => updatePhaseDuration(phase.id, parseInt(e.target.value) || 0)}
+                                    className="h-6 w-8 text-xs text-center bg-slate-700/50 border-none text-slate-400 px-1 focus:bg-slate-700 focus:border-slate-500 focus:px-2 transition-all rounded [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                  />
+                                  <span className="text-xs text-slate-400">min</span>
                                 </div>
-          <div className="flex items-center gap-2">
-             <Button onClick={savePlan} variant="outline" className="bg-white text-slate-800 border-slate-300 hover:bg-slate-100">
-              {isSaved ? 'Saved' : 'Save'}
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex gap-1">
+                            {/* Sequential Layout Button */}
+                            <Button
+                              onClick={() => setPhaseLayout(phase.id, 'sequential')}
+                              size="sm"
+                              variant="ghost"
+                              className={cn(
+                                "h-8 w-8 p-0 transition-colors",
+                                phase.layout === 'sequential' 
+                                  ? "text-blue-400 bg-blue-500/20 hover:bg-blue-500/30" 
+                                  : "text-slate-400 hover:text-white"
+                              )}
+                              title="Sequential layout - drills happen one after another"
+                            >
+                              <List className="h-4 w-4" />
                             </Button>
-            <Button onClick={saveAndShare} className="bg-blue-600 hover:bg-blue-700">
-              <Share2 className="mr-2 h-4 w-4" /> Share
+                            
+                            {/* Two Column Layout Button */}
+                            <Button
+                              onClick={() => setPhaseLayout(phase.id, 'two-column')}
+                              size="sm"
+                              variant="ghost"
+                              className={cn(
+                                "h-8 w-8 p-0 transition-colors",
+                                phase.layout === 'two-column' 
+                                  ? "text-blue-400 bg-blue-500/20 hover:bg-blue-500/30" 
+                                  : "text-slate-400 hover:text-white"
+                              )}
+                              title="Two simultaneous stations"
+                            >
+                              <Columns className="h-4 w-4" />
                             </Button>
-            <Button onClick={loadTemplates} variant="outline" className="bg-white text-slate-800 border-slate-300 hover:bg-slate-100">
-              <BookOpen className="mr-2 h-4 w-4" /> Templates
-            </Button>
-            <Button onClick={() => setShowSaveTemplate(true)} className="bg-emerald-600 hover:bg-emerald-700">
-              <Save className="mr-2 h-4 w-4" /> Save as Template
+                            
+                            {/* Three Column Layout Button */}
+                            <Button
+                              onClick={() => setPhaseLayout(phase.id, 'three-column')}
+                              size="sm"
+                              variant="ghost"
+                              className={cn(
+                                "h-8 w-8 p-0 transition-colors",
+                                phase.layout === 'three-column' 
+                                  ? "text-blue-400 bg-blue-500/20 hover:bg-blue-500/30" 
+                                  : "text-slate-400 hover:text-white"
+                              )}
+                              title="Three simultaneous stations"
+                            >
+                              <ThreeColumns className="h-4 w-4" />
                             </Button>
                           </div>
                         </div>
-
-        <div className="mb-4 text-right text-lg font-semibold">
-          Total Time: {getTotalTime()} minutes
-        </div>
-
-        {phases.map(phase => (
-          <Droppable key={phase.id} droppableId={phase.id}>
+                      </CardHeader>
+                      <CardContent className="p-3">
+                        <Droppable droppableId={phase.id}>
                           {(provided, snapshot) => (
-              <Card
+                            <div
                               ref={provided.innerRef}
                               {...provided.droppableProps}
-                className={`mb-6 rounded-xl shadow-lg transition-all duration-300 ${phase.color} ${snapshot.isDraggingOver ? 'border-emerald-400/80 ring-2 ring-emerald-400/50' : ''}`}
-              >
-                <CardHeader className="flex flex-row justify-between items-center p-4">
-                  <div className="flex items-center gap-2">
-                    {editingPhase === phase.id ? (
-                      <Input
-                        value={phase.name}
-                        onChange={e => updatePhaseName(phase.id, e.target.value)}
-                        onBlur={() => setEditingPhase(null)}
-                        onKeyDown={e => e.key === 'Enter' && setEditingPhase(null)}
-                        className="text-xl font-bold bg-slate-700/50 border-none p-1"
-                        autoFocus
-                      />
-                    ) : (
-                      <CardTitle className="text-xl font-bold cursor-pointer" onClick={() => setEditingPhase(phase.id)}>
-                        {phase.name}
-                      </CardTitle>
-                    )}
-                    <span className="text-sm text-slate-300">({phase.drills.reduce((sum, drill) => sum + drill.duration, 0)} min)</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                     <Button variant="ghost" size="icon" onClick={() => setPhaseLayout(phase.id, 'sequential')} className={phase.layout === 'sequential' ? 'text-emerald-400' : ''}><List className="h-5 w-5"/></Button>
-                     <Button variant="ghost" size="icon" onClick={() => setPhaseLayout(phase.id, 'two-column')} className={phase.layout === 'two-column' ? 'text-emerald-400' : ''}><Columns className="h-5 w-5"/></Button>
-                     <Button variant="ghost" size="icon" onClick={() => setPhaseLayout(phase.id, 'three-column')} className={phase.layout === 'three-column' ? 'text-emerald-400' : ''}><ThreeColumns className="h-5 w-5"/></Button>
-                    <Button variant="ghost" size="icon" onClick={() => addCustomDrill(phase.id)}><Plus className="h-5 w-5"/></Button>
-                    <Button variant="ghost" size="icon" onClick={() => removePhase(phase.id)}><Trash2 className="h-5 w-5 text-red-500"/></Button>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-4">
-                  <div className={cn(
-                    "grid gap-4",
-                    {
-                      "grid-cols-1": phase.layout === 'sequential',
-                      "grid-cols-2": phase.layout === 'two-column',
-                      "grid-cols-3": phase.layout === 'three-column'
-                    }
-                  )}>
+                              className={cn(
+                                "min-h-[120px] p-2 rounded-lg transition-colors",
+                                snapshot.isDraggingOver && "bg-slate-700/30",
+                                phase.layout === 'two-column' ? "grid grid-cols-2 gap-4" : 
+                                phase.layout === 'three-column' ? "grid grid-cols-3 gap-4" : "space-y-2"
+                              )}
+                            >
                               {phase.drills.map((drill, index) => (
-                      <Draggable key={drill.id} draggableId={drill.id} index={index}>
-                        {(provided) => {
-                          const isExpanded = expandedDrillId === drill.id;
-                          return (
+                                <div key={drill.id} className={phase.layout === 'sequential' ? "" : phase.layout === 'two-column' ? "" : ""}>
+                                  <Draggable draggableId={drill.id} index={index}>
+                                    {(provided, snapshot) => (
                                       <div
                                         ref={provided.innerRef}
                                         {...provided.draggableProps}
-                              className={
-                                (phase.layout === 'sequential'
-                                  ? 'bg-slate-700 rounded-md mb-2 transition-all duration-200 overflow-hidden'
-                                  : 'bg-slate-700 rounded-md mb-2 transition-all duration-200 overflow-hidden') +
-                                (isExpanded ? ' shadow-lg ring-2 ring-emerald-400/30' : '')
-                              }
-                            >
-                              <div
-                                className={
-                                  (phase.layout === 'sequential'
-                                    ? 'flex items-center gap-2 p-2 cursor-pointer'
-                                    : 'flex items-center gap-1 p-2 cursor-pointer')
-                                }
-                                onClick={() => setExpandedDrillId(isExpanded ? null : drill.id)}
-                              >
-                                <div {...provided.dragHandleProps} className="cursor-grab p-1">
-                                  <GripVertical className="h-4 w-4 text-slate-400" />
+                                        className={cn(
+                                          "bg-slate-800/80 rounded-lg border border-slate-600 transition-all mb-2",
+                                          snapshot.isDragging && "shadow-lg bg-slate-700"
+                                        )}
+                                      >
+                                        <div className="p-3">
+                                          <div className="flex items-start justify-between mb-2">
+                                            <div className="flex items-center gap-2 flex-1">
+                                              <div {...provided.dragHandleProps}>
+                                                <GripVertical className="h-4 w-4 text-slate-400 cursor-grab" />
                                               </div>
                                               {editingDrill === drill.id ? (
                                                 <Input
                                                   value={drill.title}
                                                   onChange={(e) => updateDrill(phase.id, drill.id, { title: e.target.value })}
+                                                  className="h-6 text-sm bg-slate-700 border-slate-500 flex-1"
+                                                  autoFocus
                                                   onBlur={() => setEditingDrill(null)}
-                                    onKeyDown={(e) => {
-                                      if (e.key === 'Enter') {
-                                        setEditingDrill(null);
-                                      }
-                                    }}
-                                    className={
-                                      phase.layout === 'sequential'
-                                        ? 'bg-slate-600 border-slate-500 text-white/50 font-bold text-base'
-                                        : 'bg-slate-600 border-slate-500 text-white/50 font-bold text-sm'
-                                    }
-                                    autoFocus
+                                                  onKeyDown={(e) => e.key === 'Enter' && setEditingDrill(null)}
                                                 />
                                               ) : (
-                                  <span
-                                    className={
-                                      'font-bold text-white/50 ' +
-                                      (phase.layout === 'sequential' ? 'text-base' : 'text-sm')
-                                    }
-                                    onClick={e => {
-                                      e.stopPropagation();
-                                      setEditingDrill(drill.id);
-                                    }}
+                                                <h4 
+                                                  className="font-medium text-sm cursor-pointer hover:text-blue-400 flex-1"
+                                                  onClick={() => setEditingDrill(drill.id)}
                                                 >
                                                   {drill.title}
-                                  </span>
+                                                </h4>
                                               )}
                                             </div>
-                              {/* Expanded content */}
-                              <div
-                                className={
-                                  'transition-all duration-200' +
-                                  (isExpanded ? ' max-h-96 opacity-100 p-3' : ' max-h-0 opacity-0 p-0 pointer-events-none')
-                                }
-                                style={{ overflow: 'hidden' }}
-                              >
-                                <div className="mb-2">
-                                  <label className="block text-xs text-slate-400 mb-1">Today's Focus</label>
+                                            <Button
+                                              onClick={() => removeDrill(phase.id, drill.id)}
+                                              size="sm"
+                                              variant="ghost"
+                                              className="h-6 w-6 p-0 text-slate-400 hover:text-red-400 ml-2"
+                                            >
+                                              <X className="h-3 w-3" />
+                                            </Button>
+                                          </div>
+
                                           <Textarea
-                                    value={drill.focus || ''}
-                                    onChange={e => updateDrill(phase.id, drill.id, { focus: e.target.value })}
-                                    placeholder="Add today's focus..."
-                                    className="bg-slate-800 border-slate-700 text-sm text-white min-h-[40px]"
+                                            placeholder="Today's focus..."
+                                            value={drill.focus}
+                                            onChange={(e) => updateDrill(phase.id, drill.id, { focus: e.target.value })}
+                                            className="h-8 text-[11px] bg-slate-700/30 border-slate-200/10 resize-none px-2 py-1 text-slate-400 placeholder:text-slate-500/70 focus:bg-slate-700/40 transition-all"
                                           />
                                         </div>
-                                <div className="flex items-center gap-2 mb-2">
-                                  <label className="text-xs text-slate-400">Minutes</label>
-                                  <Input
-                                    type="number"
-                                    value={drill.duration}
-                                    onChange={e => updateDrill(phase.id, drill.id, { duration: parseInt(e.target.value, 10) || 0 })}
-                                    className="w-16 bg-slate-800 border-slate-700 text-white text-xs"
-                                  />
                                       </div>
+                                    )}
+                                  </Draggable>
+                                  
+                                  {/* Inline Add Button - only show in sequential mode */}
+                                  {phase.layout === 'sequential' && (
+                                    <div className="flex justify-center py-1 group">
                                       <Button
+                                        onClick={() => addCustomDrill(phase.id)}
                                         size="sm"
-                                  variant="destructive"
-                                  className="mt-2 w-full"
-                                  onClick={() => removeDrill(phase.id, drill.id)}
+                                        variant="ghost"
+                                        className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-600/50 hover:bg-slate-500/50 rounded-full"
                                       >
-                                  Delete Drill
+                                        <Plus className="h-3 w-3" />
                                       </Button>
                                     </div>
+                                  )}
                                 </div>
-                          );
-                        }}
-                      </Draggable>
-                    ))}
+                              ))}
+                              {provided.placeholder}
+                              
+                              {/* Empty state - clickable to add drill */}
+                              {phase.drills.length === 0 && (
+                                <div 
+                                  className={cn(
+                                    "text-center text-slate-500 text-sm py-8 cursor-pointer hover:bg-slate-700/20 rounded-lg transition-colors border-2 border-dashed border-slate-600 hover:border-slate-500",
+                                    phase.layout === 'two-column' && "col-span-2",
+                                    phase.layout === 'three-column' && "col-span-3"
+                                  )}
+                                  onClick={() => addCustomDrill(phase.id)}
+                                >
+                                  <div className="flex flex-col items-center gap-2">
+                                    <Plus className="h-6 w-6 text-slate-400" />
+                                    <span>Click to add drill or drag from list</span>
+                                    {phase.layout === 'two-column' && (
+                                      <span className="text-xs text-slate-600">Two simultaneous stations</span>
+                                    )}
+                                    {phase.layout === 'three-column' && (
+                                      <span className="text-xs text-slate-600">Three simultaneous stations</span>
+                                    )}
                                   </div>
-                  {provided.placeholder}
+                                </div>
+                              )}
+                              
+                              {/* Add button at the end when there are drills */}
+                              {phase.drills.length > 0 && (
+                                <div className={cn(
+                                  "flex justify-center py-2",
+                                  phase.layout === 'two-column' && "col-span-2",
+                                  phase.layout === 'three-column' && "col-span-3"
+                                )}>
+                                  <Button
+                                    onClick={() => addCustomDrill(phase.id)}
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-8 px-3 text-slate-400 hover:text-white hover:bg-slate-600/50 border border-dashed border-slate-600 hover:border-slate-500"
+                                  >
+                                    <Plus className="h-3 w-3 mr-1" />
+                                    Add Drill
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </Droppable>
                       </CardContent>
                     </Card>
-            )}
-          </Droppable>
-        ))}
-        <Button onClick={addPhase} className="w-full mt-4 bg-emerald-800/50 hover:bg-emerald-700/50 border-dashed border-2 border-emerald-600/50">
-          <Plus className="mr-2 h-4 w-4"/> Add New Phase
+                  ))}
+                  
+                  {/* Add Phase Button */}
+                  <div className="flex justify-center">
+                    <Button 
+                      onClick={addPhase} 
+                      variant="outline" 
+                      size="lg" 
+                      className="text-blue-400 border-slate-600 hover:bg-slate-700 hover:text-blue-300 border-dashed"
+                    >
+                      <Plus className="h-5 w-5 mr-2" />
+                      Add Practice Phase
                     </Button>
-      </main>
+                  </div>
+                </div>
+              </div>
             </div>
           </DragDropContext>
+        </div>
+
+        {/* Load Template Modal */}
+        {showTemplates && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-slate-800 rounded-lg p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-white">Load Template</h2>
+                <Button
+                  onClick={() => setShowTemplates(false)}
+                  size="sm"
+                  variant="ghost"
+                  className="text-slate-400 hover:text-white"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              
+              {templates.length === 0 ? (
+                <div className="text-center py-8">
+                  <BookOpen className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+                  <p className="text-slate-400">No templates saved yet.</p>
+                  <p className="text-slate-500 text-sm">Create a practice plan and save it as a template to get started.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {templates.map((template) => (
+                    <div
+                      key={template.id}
+                      className="bg-slate-700 rounded-lg p-4 hover:bg-slate-600 transition-colors cursor-pointer"
+                      onClick={() => loadTemplate(template.id!)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <h3 className="font-medium text-white">{template.name}</h3>
+                          {template.description && (
+                            <p className="text-slate-400 text-sm mt-1">{template.description}</p>
+                          )}
+                          <div className="flex items-center gap-4 mt-2 text-xs text-slate-500">
+                            <span>{template.phases.length} phases</span>
+                            <span>{template.totalTime} minutes</span>
+                            <span>
+                              {template.createdAt && new Date(template.createdAt.toDate()).toLocaleDateString()}
+                            </span>
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          className="bg-blue-600 hover:bg-blue-700 text-white"
+                        >
+                          Load
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Save Template Modal */}
+        {showSaveTemplate && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-slate-800 rounded-lg p-6 w-full max-w-md">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-white">Save as Template</h2>
+                <Button
+                  onClick={() => {
+                    setShowSaveTemplate(false);
+                    setTemplateName('');
+                    setTemplateDescription('');
+                  }}
+                  size="sm"
+                  variant="ghost"
+                  className="text-slate-400 hover:text-white"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Template Name *
+                  </label>
+                  <Input
+                    value={templateName}
+                    onChange={(e) => setTemplateName(e.target.value)}
+                    placeholder="e.g., Standard Practice, Game Day Prep"
+                    className="bg-slate-700 border-slate-600"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Description (optional)
+                  </label>
+                  <Textarea
+                    value={templateDescription}
+                    onChange={(e) => setTemplateDescription(e.target.value)}
+                    placeholder="Brief description of when to use this template..."
+                    className="bg-slate-700 border-slate-600 h-20"
+                  />
+                </div>
+                
+                <div className="bg-slate-700 rounded-lg p-3">
+                  <p className="text-slate-300 text-sm mb-2">Template will include:</p>
+                  <ul className="text-slate-400 text-xs space-y-1">
+                    <li>• {phases.filter(p => p.drills.length > 0).length} phases with drills</li>
+                    <li>• {getTotalTime()} minutes total time</li>
+                    <li>• All drill configurations and layouts</li>
+                  </ul>
+                </div>
+                
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    onClick={() => {
+                      setShowSaveTemplate(false);
+                      setTemplateName('');
+                      setTemplateDescription('');
+                    }}
+                    variant="outline"
+                    className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={saveAsTemplate}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                    disabled={!templateName.trim()}
+                  >
+                    Save Template
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </ProtectedRoute>
   );
-}
-
-export default function PracticePlannerPage() {
-  const [isMobileView, setIsMobileView] = useState(false);
-
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobileView(window.innerWidth < 768);
-    };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  if (isMobileView) {
-    return <MobilePracticePlanner />;
-  }
-  return <DesktopPracticePlanner />;
 } 
