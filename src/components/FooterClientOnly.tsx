@@ -29,7 +29,7 @@ export function FooterClientOnly() {
               className="h-12 opacity-90"
             />
             <p className="text-slate-400 text-sm">
-              Coaching tools for baseball players and coaches.
+              Coaching Tools for the love of the game.
             </p>
           </div>
           {/* Quick Links */}

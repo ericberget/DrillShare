@@ -14,7 +14,7 @@ import { useStorage } from '@/hooks/useStorage';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useFirebase } from '@/contexts/FirebaseContext';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Trash } from 'lucide-react';
+import { Trash, Image as ImageIcon } from 'lucide-react';
 
 interface ContentUploaderProps {
   isOpen: boolean;
@@ -532,8 +532,8 @@ export function ContentUploader({ isOpen, onClose, onDelete, existingContent }: 
                         className="absolute inset-0 opacity-0 cursor-pointer"
                         disabled={isSubmitting}
                       />
-                      <div className="text-center">
-                        <div className="text-3xl mb-2">🖼️</div>
+                      <div className="text-center flex flex-col items-center">
+                        <ImageIcon className="mb-2 w-10 h-10 text-emerald-400 drop-shadow-lg" />
                         <div className="text-sm text-slate-400">Click to upload custom thumbnail</div>
                       </div>
                     </div>

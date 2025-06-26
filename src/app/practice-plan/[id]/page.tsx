@@ -259,7 +259,7 @@ export default function SharedPracticePlanPage() {
         <div className="text-center mt-12 pt-8 border-t border-slate-800">
           <Link href="https://www.drillshare.us" target="_blank" rel="noopener noreferrer">
             <p className="text-slate-300 text-sm hover:text-white transition-colors">
-              Coaching Tools for Baseball Players and Coaches
+              Coaching Tools for the love of the game.
             </p>
           </Link>
         </div>

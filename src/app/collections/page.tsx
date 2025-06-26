@@ -373,7 +373,7 @@ function CollectionDialog({
   const [showVideoSelector, setShowVideoSelector] = useState(false);
   const [selectedTag, setSelectedTag] = useState<string>('all');
 
-  // Reset form data when dialog opens or initialData changes
+  // Reset form data when dialog opens (not when contentItems/initialData change while open)
   useEffect(() => {
     if (isOpen) {
       const newFormData = {
@@ -383,22 +383,19 @@ function CollectionDialog({
         hasPassword: initialData?.hasPassword || false,
         password: initialData?.password || ''
       };
-      
       setFormData(newFormData);
-      
       // Update selected videos based on the form data
       const newSelectedVideos = contentItems.filter(item => 
         newFormData.videos.includes(item.id)
       );
       setSelectedVideos(newSelectedVideos);
-      
       // Reset other states
       setSearchTerm('');
       setShowVideoSelector(false);
       setIsSubmitting(false);
       setSelectedTag('all');
     }
-  }, [isOpen, initialData, contentItems]);
+  }, [isOpen]);
 
   // Get all unique tags from content items
   const getAllTags = () => {
