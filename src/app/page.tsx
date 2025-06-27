@@ -8,6 +8,7 @@ import { useFirebase } from '@/contexts/FirebaseContext';
 import Link from 'next/link';
 import { ArrowRight, FileVideo, Upload, User, Settings, Zap, Book, Shield, Check, X, Share2, Eye, ChevronLeft, ChevronRight, Play } from 'lucide-react';
 import Image from 'next/image';
+import clsx from 'clsx';
 
 export default function HomePage() {
   const { user, loading } = useFirebase();
@@ -17,6 +18,7 @@ export default function HomePage() {
   const [selectedTutorial, setSelectedTutorial] = useState<null | { title: string; videoUrl: string }>(null);
   // Carousel state
   const [activeIndex, setActiveIndex] = useState(0);
+  const [showVideoModal, setShowVideoModal] = useState(false);
 
   useEffect(() => {
     if (!loading && user) {
@@ -82,18 +84,65 @@ export default function HomePage() {
             {/* App Preview Section */}
             <div className="relative animate-fade-in opacity-0 px-4" style={{ marginBottom: "-5% md:-10%", animationDelay: '0.8s', animationFillMode: 'forwards' }}>
               <div className="relative flex justify-center items-center">
-                <div className="bg-white rounded-3xl p-2 md:p-6 w-full md:w-[350%] mx-auto" style={{ maxWidth: 1800, boxShadow: '0 8px 48px 0 rgba(0,0,0,0.35), 0 1.5px 8px 0 rgba(0,0,0,0.18)' }}>
-                  <video
-                    src="/tutorial-videos/QuickTour.mp4"
-                    controls
-                    className="w-full h-auto rounded-2xl bg-black"
-                    poster="/ThumbTour.jpg"
-                    style={{ aspectRatio: '16/9', maxHeight: 900 }}
-                  >
-                    Your browser does not support the video tag.
-                  </video>
+                <div
+                  className="bg-white rounded-3xl p-2 md:p-6 w-full md:w-[350%] mx-auto cursor-pointer group"
+                  style={{ maxWidth: 1800, boxShadow: '0 8px 48px 0 rgba(0,0,0,0.35), 0 1.5px 8px 0 rgba(0,0,0,0.18)' }}
+                  onClick={() => setShowVideoModal(true)}
+                  tabIndex={0}
+                  role="button"
+                  aria-label="Play Quick Tour video"
+                >
+                  <div className="relative w-full aspect-video rounded-2xl overflow-hidden">
+                    <img
+                      src="/ThumbTour.jpg"
+                      alt="Quick Tour Preview"
+                      className="w-full h-full object-cover rounded-2xl"
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <button
+                        className="bg-white/80 hover:bg-white text-emerald-700 rounded-full p-6 shadow-lg transition-all duration-200 group-hover:scale-110"
+                        tabIndex={-1}
+                        aria-label="Play video"
+                      >
+                        <Play className="w-14 h-14" />
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
+              {/* Video Modal Overlay */}
+              {showVideoModal && (
+                <div
+                  className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 animate-fade-in"
+                  onClick={() => setShowVideoModal(false)}
+                  role="dialog"
+                  aria-modal="true"
+                >
+                  <button
+                    onClick={() => setShowVideoModal(false)}
+                    className="absolute top-6 right-8 text-white hover:text-emerald-400 text-4xl font-bold focus:outline-none z-50"
+                    aria-label="Close"
+                    style={{ zIndex: 100 }}
+                  >
+                    ×
+                  </button>
+                  <div
+                    className="bg-white animate-smooth-scale-in"
+                    style={{ borderRadius: '24px', border: '30px solid white', boxShadow: '0 8px 40px rgba(0,0,0,0.25)', animationDuration: '0.7s' }}
+                    onClick={e => e.stopPropagation()}
+                  >
+                    <div className="aspect-video bg-slate-700 rounded-xl overflow-hidden">
+                      <video
+                        src="/tutorial-videos/QuickTour.mp4"
+                        controls
+                        autoPlay
+                        className="w-full h-full rounded-xl"
+                        style={{ maxHeight: '70vh' }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
