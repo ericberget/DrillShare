@@ -67,11 +67,11 @@ service cloud.firestore {
     // Allow any authenticated user to create analytics data.
     // Only admins can read, update, or delete analytics data.
     match /{path=**}/pageViews/{pageViewId} {
-      allow write: if isAuthenticated();
+      allow write: if true;
       allow read: if isAdmin();
     }
     match /{path=**}/userSessions/{sessionId} {
-      allow write: if isAuthenticated();
+      allow write: if true;
       allow read: if isAdmin();
     }
   }

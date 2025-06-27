@@ -615,7 +615,7 @@ export function ContentUploader({ isOpen, onClose, onDelete, existingContent }: 
                   className="bg-white hover:bg-red-50 text-gray-600 hover:text-red-600 font-semibold shadow-none border border-gray-200 hover:border-red-300 flex items-center gap-2 transition-all duration-200"
                 >
                   <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
+                    xmlns="`http://www.w3.org/2000/svg" 
                     width="16" 
                     height="16" 
                     viewBox="0 0 24 24" 

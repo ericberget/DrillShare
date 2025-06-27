@@ -375,8 +375,8 @@ export default function AdminAnalyticsPage() {
                             <div key={pageView.id} className="p-3 bg-slate-800 rounded-lg">
                               <div className="flex items-center justify-between mb-2">
                                 <span className="text-slate-300 font-medium">{formatPath(pageView.path)}</span>
-                                <Badge variant="outline" className="text-xs">
-                                  {pageView.deviceType}
+                                <Badge variant="outline" className="text-xs flex items-center gap-1">
+                                  {getDeviceIcon(pageView.deviceType)}
                                 </Badge>
                               </div>
                               <div className="text-slate-500 text-sm space-y-1">

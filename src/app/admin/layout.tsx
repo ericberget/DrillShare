@@ -83,44 +83,45 @@ export default function AdminLayout({
                 </Button>
               </div>
 
-              <nav className="p-4 space-y-2">
-                {adminNavItems.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = pathname === item.href;
-                  
-                  return (
-                    <Link key={item.href} href={item.href}>
-                      <Card className={`cursor-pointer transition-all duration-200 hover:bg-slate-800 ${
-                        isActive ? 'bg-emerald-600/20 border-emerald-600/50' : 'bg-slate-800/50 border-slate-700'
-                      }`}>
-                        <CardContent className="p-4">
-                          <div className="flex items-center space-x-3">
-                            <Icon className={`h-5 w-5 ${
-                              isActive ? 'text-emerald-400' : 'text-slate-400'
-                            }`} />
-                            <div>
-                              <div className={`font-medium ${
-                                isActive ? 'text-emerald-400' : 'text-white'
-                              }`}>
-                                {item.title}
-                              </div>
-                              <div className="text-xs text-slate-500">
-                                {item.description}
+              <nav className="p-4">
+                <div className="flex flex-col space-y-6">
+                  {adminNavItems.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = pathname === item.href;
+                    return (
+                      <Link key={item.href} href={item.href}>
+                        <Card className={`cursor-pointer transition-all duration-200 hover:bg-slate-800 ${
+                          isActive ? 'bg-emerald-600/20 border-emerald-600/50' : 'bg-slate-800/50 border-slate-700'
+                        }`}>
+                          <CardContent className="p-4">
+                            <div className="flex items-center space-x-3">
+                              <Icon className={`h-5 w-5 ${
+                                isActive ? 'text-emerald-400' : 'text-slate-400'
+                              }`} />
+                              <div>
+                                <div className={`font-medium ${
+                                  isActive ? 'text-emerald-400' : 'text-white'
+                                }`}>
+                                  {item.title}
+                                </div>
+                                <div className="text-xs text-slate-500">
+                                  {item.description}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </Link>
-                  );
-                })}
+                          </CardContent>
+                        </Card>
+                      </Link>
+                    );
+                  })}
+                </div>
               </nav>
             </div>
 
             {/* Back to site */}
             <div className="mt-auto p-4">
               <Link href="/">
-                <Button variant="outline" className="w-full border-slate-700 text-slate-300 hover:bg-slate-800">
+                <Button variant="outline" className="w-full border-emerald-700 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-900">
                   <Home className="h-4 w-4 mr-2" />
                   Back to Site
                 </Button>
