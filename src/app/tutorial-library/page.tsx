@@ -9,122 +9,46 @@ import { Play, Clock, Users, Star } from 'lucide-react';
 export default function TutorialLibraryPage() {
   const [selectedVideo, setSelectedVideo] = useState<any>(null);
 
-  const tutorialVideos = {
-    'getting-started': [
-      {
-        id: 'tutorial-my-library',
-        title: 'My Library Overview',
-        description: 'Complete walkthrough of the My Library feature and how to organize your content',
-        duration: 'TBD', // You can update this with the actual duration
-        difficulty: 'Beginner',
-        thumbnail: '/thumbnail-1.jpg',
-        videoUrl: '/tutorial-videos/Tutorial_myLibrary.mp4'
-      },
-      {
-        id: 'tutorial-1',
-        title: 'Getting Started with DrillShare',
-        description: 'Learn the basics of navigating DrillShare and setting up your account',
-        duration: '5:30',
-        difficulty: 'Beginner',
-        thumbnail: '/tutorial-thumbnails/getting-started.jpg',
-        videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ'
-      },
-      {
-        id: 'tutorial-2',
-        title: 'Adding Your First Video',
-        description: 'Step-by-step guide to adding YouTube videos to your library',
-        duration: '3:45',
-        difficulty: 'Beginner',
-        thumbnail: '/tutorial-thumbnails/first-video.jpg',
-        videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ'
-      },
-      {
-        id: 'tutorial-3',
-        title: 'Understanding Tags and Categories',
-        description: 'How to organize your content with effective tagging strategies',
-        duration: '4:20',
-        difficulty: 'Beginner',
-        thumbnail: '/tutorial-thumbnails/tags-categories.jpg',
-        videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ'
-      }
-    ],
-    'collections': [
-      {
-        id: 'tutorial-4',
-        title: 'Creating Your First Collection',
-        description: 'Learn how to group related videos into shareable collections',
-        duration: '6:15',
-        difficulty: 'Intermediate',
-        thumbnail: '/thumbnail-collections.jpg',
-        videoUrl: '/tutorial-videos/collectionsTutorial.mp4'
-      },
-      {
-        id: 'tutorial-5',
-        title: 'Sharing Collections with Your Team',
-        description: 'How to share collections with players and coaching staff',
-        duration: '4:50',
-        difficulty: 'Intermediate',
-        thumbnail: '/tutorial-thumbnails/sharing-collections.jpg',
-        videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ'
-      }
-    ],
-    'player-analysis': [
-      {
-        id: 'tutorial-6',
-        title: 'Player Analysis Basics',
-        description: 'Introduction to uploading and analyzing player videos',
-        duration: '7:30',
-        difficulty: 'Intermediate',
-        thumbnail: '/tutorial-thumbnails/player-analysis.jpg',
-        videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ'
-      },
-      {
-        id: 'tutorial-7',
-        title: 'Advanced Analysis Features',
-        description: 'Using advanced tools for detailed player performance analysis',
-        duration: '9:45',
-        difficulty: 'Advanced',
-        thumbnail: '/tutorial-thumbnails/advanced-analysis.jpg',
-        videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ'
-      }
-    ],
-    'tips-tricks': [
-      {
-        id: 'tutorial-8',
-        title: 'Power User Tips',
-        description: 'Advanced tips and tricks to maximize your DrillShare experience',
-        duration: '8:20',
-        difficulty: 'Advanced',
-        thumbnail: '/tutorial-thumbnails/power-tips.jpg',
-        videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ'
-      },
-      {
-        id: 'tutorial-9',
-        title: 'Keyboard Shortcuts',
-        description: 'Learn time-saving keyboard shortcuts for faster navigation',
-        duration: '3:15',
-        difficulty: 'Intermediate',
-        thumbnail: '/tutorial-thumbnails/shortcuts.jpg',
-        videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ'
-      }
-    ]
-  };
+  const tutorialVideos = [
+    {
+      id: 'tutorial-my-library',
+      title: 'My Library Overview',
+      description: 'Complete walkthrough of the My Library feature and how to organize your content',
+      duration: 'TBD',
+      difficulty: 'Beginner',
+      thumbnail: '/thumbnail-1.jpg',
+      videoUrl: '/tutorial-videos/Tutorial_myLibrary.mp4'
+    },
+    {
+      id: 'tutorial-collections',
+      title: 'Creating Your First Collection',
+      description: 'Learn how to group related videos into shareable collections',
+      duration: '6:15',
+      difficulty: 'Intermediate',
+      thumbnail: '/thumbnail-collections.jpg',
+      videoUrl: '/tutorial-videos/collectionsTutorial.mp4'
+    },
+    {
+      id: 'tutorial-in-action-filmroom',
+      title: 'In Action: Film Room',
+      description: 'See the Film Room in action—analyzing and breaking down player videos.',
+      duration: 'TBD',
+      difficulty: 'Intermediate',
+      thumbnail: '/tutorial-videos/thumbnail-in-action-filmroom.jpg',
+      videoUrl: '/tutorial-videos/InAction-FilmRoom.mp4'
+    },
+    {
+      id: 'tutorial-in-action-practiceplanner',
+      title: 'In Action: Practice Planner',
+      description: 'Watch how to create and organize a practice plan step by step.',
+      duration: 'TBD',
+      difficulty: 'Intermediate',
+      thumbnail: '/tutorial-videos/thumbnail-in-action-practiceplanner.jpg',
+      videoUrl: '/tutorial-videos/InAction-PracticePlanner.mp4'
+    }
+  ];
 
-  // Combine all videos from all categories into a single array
-  const allTutorialsRaw = Object.values(tutorialVideos).flat();
-  const collectionIndex = allTutorialsRaw.findIndex(v => v.videoUrl === '/tutorial-videos/collectionsTutorial.mp4');
-  let allTutorials = allTutorialsRaw;
-  if (collectionIndex > -1) {
-    const [collectionTutorial] = allTutorialsRaw.splice(collectionIndex, 1);
-    allTutorials = [allTutorialsRaw[0], collectionTutorial, ...allTutorialsRaw.slice(1)];
-  }
-
-  // After defining allTutorials, update the thumbnail for the collections tutorial
-  allTutorials = allTutorials.map(tut =>
-    tut.videoUrl === '/tutorial-videos/collectionsTutorial.mp4'
-      ? { ...tut, thumbnail: '/thumbnail-collections.jpg' }
-      : tut
-  );
+  const allTutorials = tutorialVideos;
 
   const VideoCard = ({ video }: { video: any }) => (
     <Card 
@@ -170,7 +94,7 @@ export default function TutorialLibraryPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-slate-950">
+      <div className="min-h-screen" style={{ backgroundColor: '#131a29', backgroundImage: "url('/bg-baseballfield-green.jpg')", backgroundSize: 'cover', backgroundRepeat: 'no-repeat', backgroundPosition: 'top center' }}>
         <div className="container mx-auto px-4 py-8">
           {/* Header */}
           <div className="mb-8">
