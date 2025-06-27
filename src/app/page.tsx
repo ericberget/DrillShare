@@ -74,7 +74,7 @@ export default function HomePage() {
               <p>Gather, Organize, and Share Your Baseball Training Videos</p>
             </div>
             <div className="flex gap-4 justify-center mb-12 md:mb-16 animate-fade-in opacity-0 px-4" style={{ animationDelay: '0.6s', animationFillMode: 'forwards' }}>
-              <Link href="/demo">
+              <Link href="/auth/signup">
                 <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white text-base md:text-lg px-6 md:px-8 py-4 md:py-6 transform transition-all duration-200 hover:scale-105">
                   Get Started - It's free <ArrowRight className="ml-2 h-5 md:h-6 w-5 md:w-6" />
                 </Button>
@@ -213,7 +213,7 @@ export default function HomePage() {
               DrillShare is still warming up—new features and improvements are rolling out all the time. If you have ideas or spot something weird, let us know!
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center px-4">
-              <Link href="/demo">
+              <Link href="/auth/signup">
                 <Button size="lg" className="bg-white hover:bg-slate-100 text-emerald-700 border border-emerald-700 font-bold text-base md:text-lg px-6 md:px-8 py-4 md:py-6 w-full sm:w-auto hover-scale animate-slide-up stagger-2 transition-all duration-200">
                   Sign Up <ArrowRight className="ml-2 h-4 md:h-5 w-4 md:w-5" />
                 </Button>
