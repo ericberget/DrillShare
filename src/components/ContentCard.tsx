@@ -52,7 +52,7 @@ export function ContentCard({
 
   return (
     <Card 
-      className={`group cursor-pointer h-full flex flex-col rounded-xl border-2 hover:border-drillhub-500/30 shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-1 relative overflow-hidden ${
+      className={`group cursor-pointer h-full flex flex-col rounded-xl border-2 hover:border-drillhub-500/30 shadow-xl transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 relative overflow-hidden ${
         content.isSample 
           ? 'bg-slate-800/50 border-drillhub-700/30 hover:bg-slate-700/50' 
           : 'bg-slate-900/30 border-slate-700/50 hover:bg-slate-800/40'
@@ -172,7 +172,8 @@ export function ContentCard({
           <div className="text-sm font-medium text-[#2EBFA5] line-clamp-2 opacity-50 group-hover:opacity-100 transition-opacity duration-200">
             {content.description}
           </div>
-          <div className="flex flex-wrap gap-1.5 mt-auto mb-4">
+          {/* Tags restored, Add to My Library button only if showAddButton */}
+          <div className="flex flex-wrap gap-1.5 mt-auto mb-4 w-full">
             {content.tags.slice(0, 3).map(tag => (
               <Badge
                 key={tag}

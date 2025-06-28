@@ -10,7 +10,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from './ui/dropdown-menu'
-import { Menu, User, Settings, LogOut, Video, FolderOpen, Home, Film, Users, Zap, GraduationCap } from 'lucide-react'
+import { Menu, User, Settings, LogOut, Video, FolderOpen, Home, Film, Users, Zap, GraduationCap, Star } from 'lucide-react'
 import { useFirebase } from '@/contexts/FirebaseContext'
 import { useAuth } from '@/hooks/useAuth'
 import { useRouter, usePathname } from 'next/navigation'
@@ -70,6 +70,13 @@ export function Navbar({ demoMode = false, onShowSignupOverlay }: NavbarProps) {
       title: "Film Room",
       description: "Review and analyze player video footage",
       gradient: "bg-gradient-to-br from-purple-600 to-purple-700"
+    },
+    {
+      href: "/staff-picks",
+      icon: <Star className="w-6 h-6 text-white" />,
+      title: "Staff Picks",
+      description: "Handpicked videos by our staff for you to try",
+      gradient: "bg-gradient-to-br from-yellow-500 to-yellow-600"
     },
     {
       href: "/tutorial-library",
