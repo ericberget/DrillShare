@@ -34,7 +34,7 @@ async function fixShareLinks() {
         const shareIdMatch = data.shareLink.match(/\/share\/collections\/(.+)$/);
         if (shareIdMatch) {
           const shareId = shareIdMatch[1];
-          const newShareLink = `https://drillshare.netlify.app/share/collections/${shareId}`;
+          const newShareLink = `https://drillshare.us/share/collections/${shareId}`;
           
           console.log(`New link: ${newShareLink}`);
           

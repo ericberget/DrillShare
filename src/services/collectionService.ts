@@ -45,7 +45,7 @@ export const createCollection = async (
     
     // Final fallback to production URL if we're still missing it
     if (!baseUrl || baseUrl.includes('localhost')) {
-      baseUrl = 'https://drillshare.netlify.app';
+      baseUrl = 'https://drillshare.us';
     }
     
     const shareLink = `${baseUrl}/share/collections/${shareId}`;

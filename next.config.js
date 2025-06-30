@@ -16,7 +16,7 @@ const nextConfig = {
   },
   experimental: {
     serverActions: {
-      allowedOrigins: ['localhost:3005', 'drillshare.netlify.app'],
+      allowedOrigins: ['localhost:3005', 'drillshare.us'],
       bodySizeLimit: '2mb'
     },
   },
