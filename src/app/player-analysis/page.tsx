@@ -17,6 +17,10 @@ import { collection, addDoc, deleteDoc, doc, getDocs, query, where, orderBy, upd
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { VideoAnnotationCanvas } from '@/components/VideoAnnotationCanvas';
 import VideoControlBar from '@/components/VideoControlBar';
+import { useCollections } from '@/contexts/CollectionContext';
+import { Collection, CollectionCreationData } from '@/types/content';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 
 // Helper function to extract YouTube video ID from URL
 const extractYouTubeId = (url: string): string | null => {
@@ -152,6 +156,12 @@ const PlayerAnalysisPage = () => {
   const videoContainerRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
+  const { collections, addCollection, updateCollection, deleteCollection } = useCollections();
+  const [isCreateCollectionDialogOpen, setIsCreateCollectionDialogOpen] = useState(false);
+  const [isEditCollectionDialogOpen, setIsEditCollectionDialogOpen] = useState(false);
+  const [currentCollection, setCurrentCollection] = useState<Collection | null>(null);
+  const [copiedLink, setCopiedLink] = useState<string | null>(null);
+
   // Load videos from Firestore
   useEffect(() => {
     const loadVideos = async () => {
@@ -194,14 +204,14 @@ const PlayerAnalysisPage = () => {
     const hash = window.location.hash?.substring(1) || '';
     
     // If hash is one of our valid tabs, set it as active
-    if (hash === 'upload' || hash === 'myvideos') {
+    if (hash === 'upload' || hash === 'myvideos' || hash === 'collections') {
       setActiveTab(hash);
     }
     
     // Listen for hash changes
     const handleHashChange = () => {
       const newHash = window.location.hash?.substring(1) || '';
-      if (newHash === 'upload' || newHash === 'myvideos') {
+      if (newHash === 'upload' || newHash === 'myvideos' || newHash === 'collections') {
         setActiveTab(newHash);
       }
     };
@@ -213,6 +223,7 @@ const PlayerAnalysisPage = () => {
   // Update URL hash when tab changes
   const handleTabChange = (value: string) => {
     setActiveTab(value);
+    // Update URL hash
     window.location.hash = value;
   };
   
@@ -1068,6 +1079,21 @@ const PlayerAnalysisPage = () => {
     };
   }, []);
 
+  // Function to copy share link to clipboard
+  const copyShareLink = (shareLink: string, collectionId: string) => {
+    navigator.clipboard.writeText(shareLink);
+    setCopiedLink(collectionId);
+    setTimeout(() => setCopiedLink(null), 2000);
+  };
+
+  // Get the player analysis videos for a collection
+  const getCollectionVideos = (collectionId: string): PlayerAnalysisVideo[] => {
+    const collection = collections.find(c => c.id === collectionId);
+    if (!collection) return [];
+    
+    return savedVideos.filter(video => collection.videos.includes(video.id));
+  };
+
   return (
     <div className="min-h-screen bg-[#0D1529] text-slate-100">
       {/* Header */}
@@ -1094,48 +1120,14 @@ const PlayerAnalysisPage = () => {
             {/* Navigation and Upload Button Row */}
             <div className="flex items-center justify-between w-full order-2 md:order-1 md:mt-8 md:-mb-16">
               <div className="flex items-center gap-2 md:gap-4">
-                {activeTab === 'upload' && selectedVideo ? (
-                  <button 
-                    onClick={() => {
-                      setSelectedVideo(null);
-                      setNotes('');
-                      setSelectedPlayer('');
-                      setOrientation('landscape');
-                      setVideoType('upload');
-                      setVideoSrc('');
-                      setYoutubeUrl('');
-                      setFile(null);
-                      handleTabChange('myvideos');
-                    }}
-                    className="flex items-center gap-2 md:gap-4 text-slate-400 hover:text-slate-300 opacity-50 hover:opacity-100 transition-all text-sm md:text-base"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="md:w-6 md:h-6">
-                      <path d="m12 19-7-7 7-7"/>
-                      <path d="M19 12H5"/>
-                    </svg>
-                    <span className="font-medium">Back to My Videos</span>
-                  </button>
-                ) : (
-                  <Link href="/" className="flex items-center gap-2 md:gap-4 text-slate-400 hover:text-slate-300 opacity-50 hover:opacity-100 transition-all text-sm md:text-base">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="md:w-6 md:h-6">
-                      <path d="m12 19-7-7 7-7"/>
-                      <path d="M19 12H5"/>
-                    </svg>
-                    <span className="font-medium">Back to DrillShare</span>
-                  </Link>
-                )}
+                <Link href="/" className="flex items-center gap-2 md:gap-4 text-slate-400 hover:text-slate-300 opacity-50 hover:opacity-100 transition-all text-sm md:text-base">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="md:w-6 md:h-6">
+                    <path d="m12 19-7-7 7-7"/>
+                    <path d="M19 12H5"/>
+                  </svg>
+                  <span className="font-medium">Back to DrillShare</span>
+                </Link>
               </div>
-              <Button 
-                onClick={() => handleTabChange('upload')}
-                className="bg-white hover:bg-slate-100 text-slate-900 flex items-center gap-2 text-sm md:text-base"
-                size="sm"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="md:w-4 md:h-4">
-                  <path d="M12 5v14M5 12h14"/>
-                </svg>
-                <span className="hidden sm:inline">Upload Video</span>
-                <span className="sm:hidden">Upload</span>
-              </Button>
             </div>
           </div>
         </div>
@@ -1144,6 +1136,27 @@ const PlayerAnalysisPage = () => {
       {/* Main content */}
       <main className="container mx-auto py-8 px-4">
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+          <TabsList className="grid w-full grid-cols-3 mb-8 bg-slate-800/50 border border-slate-700/50">
+            <TabsTrigger 
+              value="myvideos" 
+              className="data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-400"
+            >
+              My Videos
+            </TabsTrigger>
+            <TabsTrigger 
+              value="upload" 
+              className="data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-400"
+            >
+              Upload
+            </TabsTrigger>
+            <TabsTrigger 
+              value="collections" 
+              className="data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-400"
+            >
+              Collections
+            </TabsTrigger>
+          </TabsList>
+          
           <TabsContent value="upload" className="mt-0">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Upload Section */}
@@ -1613,6 +1626,195 @@ const PlayerAnalysisPage = () => {
               </div>
             )}
           </TabsContent>
+          
+          <TabsContent value="collections" className="mt-0">
+            {/* Collections Header */}
+            <div className="flex justify-between items-center mb-8">
+              <h2 className="text-2xl font-bold text-white">Video Collections</h2>
+              <Button
+                onClick={() => {
+                  setCurrentCollection(null);
+                  setIsCreateCollectionDialogOpen(true);
+                }}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+                  <path d="M12 5v14M5 12h14"/>
+                </svg>
+                Create Collection
+              </Button>
+            </div>
+            
+            {collections.length === 0 ? (
+              <div className="text-center py-16">
+                <div className="mb-6">
+                  <div className="mx-auto bg-slate-800/50 rounded-full w-20 h-20 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400">
+                      <path d="M19 9V7a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h2"/>
+                      <rect width="10" height="10" x="12" y="12" rx="2"/>
+                      <path d="m16 16 4 4"/>
+                    </svg>
+                  </div>
+                </div>
+                <h3 className="text-2xl font-semibold text-white mb-3">Create Your First Collection</h3>
+                <p className="text-slate-400 mb-8 max-w-md mx-auto">
+                  Group your player analysis videos into collections that you can easily share with fellow coaches, 
+                  staff, or players for collaborative analysis.
+                </p>
+                <Button
+                  onClick={() => {
+                    setCurrentCollection(null);
+                    setIsCreateCollectionDialogOpen(true);
+                  }}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                  size="lg"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+                    <path d="M12 5v14M5 12h14"/>
+                  </svg>
+                  Create Your First Collection
+                </Button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {collections.map(collection => {
+                  const collectionVideos = getCollectionVideos(collection.id);
+                  
+                  return (
+                    <Card key={collection.id} className="bg-slate-800/50 border-slate-700/50 hover:border-slate-500/50 shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                      <CardHeader>
+                        <CardTitle className="text-white flex justify-between items-start">
+                          <div className="truncate flex-1 pr-2">{collection.name}</div>
+                          <div className="flex space-x-1 flex-shrink-0">
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              className="h-8 w-8 text-slate-400 hover:text-white hover:bg-slate-600/80"
+                              onClick={() => {
+                                setCurrentCollection(collection);
+                                setIsEditCollectionDialogOpen(true);
+                              }}
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                              </svg>
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              className="h-8 w-8 text-slate-400 hover:text-white hover:bg-red-600/80"
+                              onClick={() => {
+                                if (window.confirm('Are you sure you want to delete this collection?')) {
+                                  deleteCollection(collection.id);
+                                }
+                              }}
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="3 6 5 6 21 6"/>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                              </svg>
+                            </Button>
+                          </div>
+                        </CardTitle>
+                        <CardDescription className="text-slate-400">
+                          {collection.description ? (
+                            <p className="text-sm text-slate-300 line-clamp-2">{collection.description}</p>
+                          ) : (
+                            <p className="text-sm text-slate-500 italic">No description</p>
+                          )}
+                        </CardDescription>
+                      </CardHeader>
+                      
+                      <CardContent className="text-slate-300">
+                        <div className="mb-4">
+                          <div className="text-sm mb-4 font-semibold flex items-center">
+                            <div className="bg-slate-600/30 h-6 px-3 rounded-full flex items-center text-slate-300">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
+                                <path d="M19 9V7a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h2"/>
+                                <rect width="10" height="10" x="12" y="12" rx="2"/>
+                                <path d="m16 16 4 4"/>
+                              </svg>
+                              {collectionVideos.length} video{collectionVideos.length !== 1 ? 's' : ''}
+                            </div>
+                          </div>
+                          
+                          {/* Video thumbnails */}
+                          {collectionVideos.length > 0 && (
+                            <div className="grid grid-cols-3 gap-2 mb-4">
+                              {collectionVideos.slice(0, 3).map(video => {
+                                const youtubeId = video.videoType === 'youtube' ? video.youtubeVideoId : null;
+                                const thumbnailUrl = video.thumbnailUrl || (youtubeId ? `https://img.youtube.com/vi/${youtubeId}/0.jpg` : null);
+                                
+                                return (
+                                  <div key={video.id} className="relative aspect-video bg-slate-700/50 rounded overflow-hidden group">
+                                    {thumbnailUrl ? (
+                                      <img 
+                                        src={thumbnailUrl}
+                                        alt={video.playerName}
+                                        className="w-full h-full object-cover"
+                                      />
+                                    ) : (
+                                      <div className="w-full h-full flex items-center justify-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400">
+                                          <path d="M19 9V7a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h2"/>
+                                          <rect width="10" height="10" x="12" y="12" rx="2"/>
+                                          <path d="m16 16 4 4"/>
+                                        </svg>
+                                      </div>
+                                    )}
+                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                          {collectionVideos.length > 3 && (
+                            <p className="text-xs text-slate-500 text-center">
+                              +{collectionVideos.length - 3} more video{collectionVideos.length - 3 !== 1 ? 's' : ''}
+                            </p>
+                          )}
+                        </div>
+                      </CardContent>
+                      
+                      <CardFooter className="pt-0">
+                        <div className="flex gap-2 w-full">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-600 hover:text-white hover:border-slate-500"
+                            onClick={() => {
+                              // Open collection in a new tab
+                              window.open(collection.shareLink, '_blank');
+                            }}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
+                              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                              <polyline points="15 3 21 3 21 9"/>
+                              <line x1="10" y1="14" x2="21" y2="3"/>
+                            </svg>
+                            View
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="border-slate-600 text-slate-300 hover:bg-slate-600 hover:text-white hover:border-slate-500"
+                            onClick={() => copyShareLink(collection.shareLink, collection.id)}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
+                              <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+                              <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/>
+                            </svg>
+                            {copiedLink === collection.id ? 'Copied!' : 'Share'}
+                          </Button>
+                        </div>
+                      </CardFooter>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </TabsContent>
         </Tabs>
       </main>
       
@@ -1877,8 +2079,493 @@ const PlayerAnalysisPage = () => {
           </Card>
         </div>
       )}
+      
+      {/* Create Collection Dialog */}
+      <CollectionDialog 
+        isOpen={isCreateCollectionDialogOpen} 
+        onClose={() => setIsCreateCollectionDialogOpen(false)}
+        onSave={async (formData) => {
+          try {
+            await addCollection({ ...formData, type: 'filmroom' });
+            setIsCreateCollectionDialogOpen(false);
+          } catch (error) {
+            console.error('Error creating collection:', error);
+            throw error;
+          }
+        }}
+        videos={savedVideos}
+        isEdit={false}
+      />
+      
+      {/* Edit Collection Dialog */}
+      {currentCollection && (
+        <CollectionDialog 
+          isOpen={isEditCollectionDialogOpen} 
+          onClose={() => {
+            setIsEditCollectionDialogOpen(false);
+            setCurrentCollection(null);
+          }}
+          onSave={async (formData) => {
+            try {
+              const updatedCollection = {
+                ...currentCollection,
+                name: formData.name,
+                description: formData.description,
+                videos: formData.videos,
+                hasPassword: formData.hasPassword,
+                password: formData.password,
+                type: 'filmroom',
+              };
+              await updateCollection(updatedCollection);
+              setIsEditCollectionDialogOpen(false);
+              setCurrentCollection(null);
+            } catch (error) {
+              console.error('Error updating collection:', error);
+              throw error;
+            }
+          }}
+          videos={savedVideos}
+          isEdit={true}
+          initialData={currentCollection}
+        />
+      )}
     </div>
   );
 };
+
+// Collection Dialog Component
+interface CollectionDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (formData: any) => Promise<any>;
+  videos: PlayerAnalysisVideo[];
+  isEdit: boolean;
+  initialData?: Collection;
+}
+
+interface FormData {
+  name: string;
+  description: string;
+  videos: string[];
+  hasPassword: boolean;
+  password: string;
+}
+
+function CollectionDialog({ 
+  isOpen, 
+  onClose, 
+  onSave, 
+  videos, 
+  isEdit, 
+  initialData 
+}: CollectionDialogProps) {
+  const [formData, setFormData] = useState<FormData>({
+    name: '',
+    description: '',
+    videos: [],
+    hasPassword: false,
+    password: ''
+  });
+  
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedVideos, setSelectedVideos] = useState<PlayerAnalysisVideo[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showVideoSelector, setShowVideoSelector] = useState(false);
+  const [selectedPlayer, setSelectedPlayer] = useState<string>('all');
+
+  // Reset form data when dialog opens
+  useEffect(() => {
+    if (isOpen) {
+      const newFormData = {
+        name: initialData?.name || '',
+        description: initialData?.description || '',
+        videos: initialData?.videos || [],
+        hasPassword: initialData?.hasPassword || false,
+        password: initialData?.password || ''
+      };
+      setFormData(newFormData);
+      // Update selected videos based on the form data
+      const newSelectedVideos = videos.filter(video => 
+        newFormData.videos.includes(video.id)
+      );
+      setSelectedVideos(newSelectedVideos);
+      // Reset other states
+      setSearchTerm('');
+      setShowVideoSelector(false);
+      setIsSubmitting(false);
+      setSelectedPlayer('all');
+    }
+  }, [isOpen, initialData, videos]);
+
+  // Get all unique player names
+  const getAllPlayers = () => {
+    const playersSet = new Set<string>();
+    videos.forEach(video => {
+      if (video.category && video.category !== 'hitting' && video.category !== 'pitching') {
+        playersSet.add(video.category);
+      }
+    });
+    return Array.from(playersSet).sort();
+  };
+
+  // Filter videos based on search term and player
+  const filteredVideos = videos.filter(video => {
+    const matchesSearch = !searchTerm || 
+      video.playerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      video.notes?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesPlayer = selectedPlayer === 'all' || video.category === selectedPlayer;
+    return matchesSearch && matchesPlayer;
+  });
+  
+  // Handle form submission
+  const handleSubmit = async () => {
+    if (!formData.name.trim()) {
+      alert('Please enter a name for the collection');
+      return;
+    }
+    
+    if (formData.videos.length === 0) {
+      alert('Please select at least one video for the collection');
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
+    try {
+      await onSave(formData);
+      onClose();
+    } catch (error: any) {
+      console.error('Error saving collection:', error);
+      alert('Failed to save collection. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  
+  // Toggle video selection
+  const toggleVideoSelection = (video: PlayerAnalysisVideo) => {
+    const isSelected = formData.videos.includes(video.id);
+    
+    if (isSelected) {
+      // Remove video
+      setFormData({
+        ...formData,
+        videos: formData.videos.filter(id => id !== video.id)
+      });
+      setSelectedVideos(selectedVideos.filter(v => v.id !== video.id));
+    } else {
+      // Add video
+      setFormData({
+        ...formData,
+        videos: [...formData.videos, video.id]
+      });
+      setSelectedVideos([...selectedVideos, video]);
+    }
+  };
+  
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-4xl bg-slate-900/95 backdrop-blur-md border-slate-700 text-slate-100">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-bold text-slate-400">
+            {isEdit ? 'Edit Collection' : 'Create New Collection'}
+          </DialogTitle>
+        </DialogHeader>
+        
+        <div className="grid grid-cols-1 gap-6 mt-4">
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name" className="text-slate-300">Collection Name</Label>
+              <Input 
+                id="name"
+                value={formData.name}
+                onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="Enter collection name"
+                className="bg-slate-800 border-slate-700 text-slate-200 placeholder:text-slate-500"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="description" className="text-slate-300">Description / Notes</Label>
+              <Textarea 
+                id="description"
+                value={formData.description}
+                onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="Add notes or instructions for this collection..."
+                className="bg-slate-800 border-slate-700 text-slate-200 placeholder:text-slate-500 min-h-[100px]"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label className="text-slate-300">Videos</Label>
+              
+              {selectedVideos.length === 0 ? (
+                <div className="bg-slate-800 border border-slate-700 rounded-md p-6 text-center">
+                  <p className="text-slate-400 mb-4">No videos selected</p>
+                  <Button
+                    variant="outline" 
+                    className="bg-slate-600 hover:bg-slate-700 text-white border-slate-500"
+                    onClick={() => setShowVideoSelector(true)}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+                      <path d="M12 5v14M5 12h14"/>
+                    </svg>
+                    Select Videos
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm text-slate-400">{selectedVideos.length} video{selectedVideos.length !== 1 ? 's' : ''} selected</span>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="h-8 bg-slate-600 hover:bg-slate-700 text-white border-slate-500"
+                      onClick={() => setShowVideoSelector(true)}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4L16.5 3.5z"/>
+                      </svg>
+                      Edit Selection
+                    </Button>
+                  </div>
+                  
+                  <div className="bg-slate-800 border border-slate-700 rounded-md p-3 max-h-[200px] overflow-y-auto">
+                    <div className="space-y-2">
+                      {selectedVideos.map(video => {
+                        const youtubeId = video.videoType === 'youtube' ? video.youtubeVideoId : null;
+                        const thumbnailUrl = video.thumbnailUrl || (youtubeId ? `https://img.youtube.com/vi/${youtubeId}/0.jpg` : null);
+                        
+                        return (
+                          <div key={video.id} className="flex items-center gap-3 bg-slate-700/40 rounded px-3 py-2">
+                            <div className="w-12 h-8 bg-slate-600 rounded overflow-hidden flex-shrink-0">
+                              {thumbnailUrl ? (
+                                <img 
+                                  src={thumbnailUrl}
+                                  alt={video.playerName}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center">
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400">
+                                    <path d="M19 9V7a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h2"/>
+                                    <rect width="10" height="10" x="12" y="12" rx="2"/>
+                                    <path d="m16 16 4 4"/>
+                                  </svg>
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-sm text-slate-200 truncate">{video.playerName || 'Untitled'}</div>
+                              <div className="text-xs text-slate-400 truncate">{video.category}</div>
+                            </div>
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              className="h-6 w-6 text-slate-400 hover:text-red-500 flex-shrink-0"
+                              onClick={() => toggleVideoSelection(video)}
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="3 6 5 6 21 6"/>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                              </svg>
+                            </Button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <div className="space-y-2 pt-2">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="hasPassword"
+                  checked={formData.hasPassword}
+                  onChange={e => setFormData(prev => ({ ...prev, hasPassword: e.target.checked }))}
+                  className="rounded border-slate-700 bg-slate-800 text-emerald-500"
+                />
+                <Label htmlFor="hasPassword" className="text-slate-300">Password Protection</Label>
+              </div>
+              
+              {formData.hasPassword && (
+                <div className="pl-6 space-y-2">
+                  <Label htmlFor="password" className="text-slate-300">Password</Label>
+                  <Input 
+                    id="password"
+                    type="password"
+                    value={formData.password || ''}
+                    onChange={e => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                    placeholder="Enter password"
+                    className="bg-slate-800 border-slate-700 text-slate-200 placeholder:text-slate-500"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+          
+          <div className="pt-4 flex justify-end space-x-2">
+            <Button variant="outline" onClick={onClose} className="border-slate-600 text-slate-300">
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSubmit} 
+              className="bg-slate-600 hover:bg-slate-700 text-white"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Saving...' : isEdit ? 'Update Collection' : 'Create Collection'}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+      
+      {/* Video Selector Dialog */}
+      <Dialog open={showVideoSelector} onOpenChange={setShowVideoSelector}>
+        <DialogContent className="max-w-6xl h-[85vh] flex flex-col bg-slate-900/95 backdrop-blur-md border-slate-700 text-slate-100">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold text-slate-400">
+              Select Videos for Collection
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="flex gap-4 mb-4">
+            <div className="flex-1">
+              <Input 
+                placeholder="Search videos by player name or notes..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className="bg-slate-800 border-slate-700 text-slate-200 placeholder:text-slate-500"
+              />
+            </div>
+            <div className="w-48">
+              <select
+                value={selectedPlayer}
+                onChange={e => setSelectedPlayer(e.target.value)}
+                className="w-full h-10 px-3 bg-slate-800 border border-slate-700 text-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-500"
+              >
+                <option value="all">All Players</option>
+                {getAllPlayers().map(player => (
+                  <option key={player} value={player}>{player}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredVideos.map(video => {
+                const isSelected = formData.videos.includes(video.id);
+                const youtubeId = video.videoType === 'youtube' ? video.youtubeVideoId : null;
+                const thumbnailUrl = video.thumbnailUrl || (youtubeId ? `https://img.youtube.com/vi/${youtubeId}/0.jpg` : null);
+                
+                return (
+                  <div 
+                    key={video.id} 
+                    className={`cursor-pointer rounded-lg overflow-hidden transition-all duration-200 ${
+                      isSelected 
+                        ? 'bg-slate-700/50 border-2 border-slate-500 shadow-lg' 
+                        : 'bg-slate-800 border border-slate-700 hover:border-slate-600 hover:shadow-md'
+                    }`}
+                    onClick={() => toggleVideoSelection(video)}
+                  >
+                    <div className="relative aspect-video bg-slate-700">
+                      {thumbnailUrl ? (
+                        <img 
+                          src={thumbnailUrl}
+                          alt={video.playerName}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-500">
+                            <path d="M19 9V7a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h2"/>
+                            <rect width="10" height="10" x="12" y="12" rx="2"/>
+                            <path d="m16 16 4 4"/>
+                          </svg>
+                        </div>
+                      )}
+                      
+                      {/* Selection overlay */}
+                      <div className="absolute top-2 left-2">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          readOnly
+                          className="w-4 h-4 rounded border-slate-600 text-slate-500 bg-slate-800/80"
+                        />
+                      </div>
+                      
+                      {/* Selected overlay */}
+                      {isSelected && (
+                        <div className="absolute inset-0 bg-slate-500/20 flex items-center justify-center">
+                          <div className="w-8 h-8 bg-slate-600 rounded-full flex items-center justify-center">
+                            <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="p-3">
+                      <h4 className="text-sm font-medium text-slate-200 mb-1 line-clamp-2">{video.playerName || 'Untitled'}</h4>
+                      <div className="flex items-center justify-between text-xs text-slate-400">
+                        <span>{video.category}</span>
+                        <span>{video.videoType === 'youtube' ? 'YouTube' : 'Upload'}</span>
+                      </div>
+                      {video.notes && (
+                        <p className="text-xs text-slate-500 mt-1 line-clamp-2">{video.notes}</p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+              
+              {filteredVideos.length === 0 && (
+                <div className="col-span-3 text-center py-12 text-slate-400">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-4 text-slate-600">
+                    <path d="M19 9V7a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h2"/>
+                    <rect width="10" height="10" x="12" y="12" rx="2"/>
+                    <path d="m16 16 4 4"/>
+                  </svg>
+                  <p className="text-lg mb-2">No videos found</p>
+                  <p className="text-sm">Try adjusting your search or player filter.</p>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          <div className="pt-4 border-t border-slate-700 flex justify-between items-center">
+            <div className="text-sm text-slate-400">
+              {formData.videos.length} video{formData.videos.length !== 1 ? 's' : ''} selected
+              {selectedPlayer !== 'all' && (
+                <span className="ml-2 text-slate-500">• Filtered by: {selectedPlayer}</span>
+              )}
+            </div>
+            <div className="flex space-x-2">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowVideoSelector(false)} 
+                className="border-slate-600 text-slate-300"
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={() => setShowVideoSelector(false)} 
+                className="bg-slate-600 hover:bg-slate-700 text-white"
+              >
+                Confirm Selection ({formData.videos.length})
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </Dialog>
+  );
+}
 
 export default PlayerAnalysisPage; 

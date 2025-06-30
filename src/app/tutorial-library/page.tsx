@@ -30,20 +30,20 @@ export default function TutorialLibraryPage() {
     },
     {
       id: 'tutorial-in-action-filmroom',
-      title: 'In Action: Film Room',
+      title: 'Film Room',
       description: 'See the Film Room in action—analyzing and breaking down player videos.',
       duration: 'TBD',
       difficulty: 'Intermediate',
-      thumbnail: '/tutorial-videos/thumbnail-in-action-filmroom.jpg',
+      thumbnail: '/thumb-filmroom.jpg',
       videoUrl: '/tutorial-videos/InAction-FilmRoom.mp4'
     },
     {
       id: 'tutorial-in-action-practiceplanner',
-      title: 'In Action: Practice Planner',
+      title: 'Practice Planner',
       description: 'Watch how to create and organize a practice plan step by step.',
       duration: 'TBD',
       difficulty: 'Intermediate',
-      thumbnail: '/tutorial-videos/thumbnail-in-action-practiceplanner.jpg',
+      thumbnail: '/thumb-prac.jpg',
       videoUrl: '/tutorial-videos/InAction-PracticePlanner.mp4'
     }
   ];
@@ -52,7 +52,7 @@ export default function TutorialLibraryPage() {
 
   const VideoCard = ({ video }: { video: any }) => (
     <Card 
-      className="bg-slate-800/50 border-slate-700/50 hover:bg-slate-800/70 cursor-pointer transition-all duration-200 hover:border-slate-600/50"
+      className="bg-white border-slate-200 hover:bg-slate-50 cursor-pointer transition-all duration-200 hover:border-slate-300 font-sans text-[#1a2341]"
       onClick={() => setSelectedVideo(video)}
     >
       <CardHeader className="pb-3">
@@ -77,10 +77,10 @@ export default function TutorialLibraryPage() {
             {video.duration}
           </div>
         </div>
-        <CardTitle className="text-lg text-slate-100 line-clamp-2">{video.title}</CardTitle>
+        <CardTitle className="text-lg text-[#1a2341] font-bold line-clamp-2">{video.title}</CardTitle>
       </CardHeader>
       <CardContent className="pt-0">
-        <p className="text-slate-400 text-sm mb-3 line-clamp-2">{video.description}</p>
+        <p className="text-[#1a2341] text-sm mb-3 line-clamp-2 opacity-80">{video.description}</p>
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-1 text-slate-400 text-xs">
             <Clock className="w-3 h-3" />
@@ -94,7 +94,7 @@ export default function TutorialLibraryPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen" style={{ backgroundColor: '#131a29', backgroundImage: "url('/bg-baseballfield-green.jpg')", backgroundSize: 'cover', backgroundRepeat: 'no-repeat', backgroundPosition: 'top center' }}>
+      <div className="min-h-screen" style={{ backgroundColor: '#202236', backgroundImage: "url('/bg-navybaseball.jpg')", backgroundSize: 'cover', backgroundRepeat: 'no-repeat', backgroundPosition: 'top center' }}>
         <div className="container mx-auto px-4 py-8">
           {/* Header */}
           <div className="mb-8">

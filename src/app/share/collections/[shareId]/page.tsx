@@ -6,13 +6,24 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ContentItem } from '@/types/content';
+import { ContentItem, PlayerAnalysisVideo } from '@/types/content';
 import { getCollectionByShareLink } from '@/services/collectionService';
 import { getContentItemsByIds } from '@/services/contentService';
 import { formatTimestamp } from '@/lib/utils';
 import { Lock, Loader2, Video, Play, ChevronLeft, ChevronRight, Copy, Check, Clock, ArrowRight, Eye } from 'lucide-react';
 import Image from 'next/image';
 import { ContentDetails } from '@/components/ContentDetails';
+import { getFirestore, collection as firestoreCollection, getDocs, query, where } from 'firebase/firestore';
+
+// Add a function to fetch PlayerAnalysisVideo by IDs
+async function getPlayerAnalysisVideosByIds(ids: string[]): Promise<PlayerAnalysisVideo[]> {
+  if (!ids || ids.length === 0) return [];
+  const db = getFirestore();
+  const videosRef = firestoreCollection(db, 'playerAnalysisVideos');
+  const q = query(videosRef, where('__name__', 'in', ids));
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as PlayerAnalysisVideo[];
+}
 
 export default function SharedCollectionPage() {
   const params = useParams();
@@ -20,7 +31,7 @@ export default function SharedCollectionPage() {
   const shareLink = `${window.location.origin}/share/collections/${shareId}`;
   
   const [collection, setCollection] = useState<any>(null);
-  const [collectionVideos, setCollectionVideos] = useState<ContentItem[]>([]);
+  const [collectionVideos, setCollectionVideos] = useState<(ContentItem | PlayerAnalysisVideo)[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isVideosLoading, setIsVideosLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -45,9 +56,12 @@ export default function SharedCollectionPage() {
 
     try {
       setIsVideosLoading(true);
-      console.log('Loading videos for collection:', collection.videos);
-      const videos = await getContentItemsByIds(collection.videos);
-      console.log('Loaded videos:', videos);
+      let videos = [];
+      if (collection.type === 'filmroom') {
+        videos = await getPlayerAnalysisVideosByIds(collection.videos);
+      } else {
+        videos = await getContentItemsByIds(collection.videos);
+      }
       setCollectionVideos(videos);
     } catch (error) {
       console.error('Error loading collection videos:', error);
@@ -165,51 +179,79 @@ export default function SharedCollectionPage() {
   };
 
   // Video Card Component
-  const VideoCard = ({ video }: { video: ContentItem }) => {
-    const youtubeId = getYouTubeVideoId(video.url);
-    const thumbnailUrl = video.thumbnailUrl || (youtubeId ? `https://img.youtube.com/vi/${youtubeId}/0.jpg` : null);
-    
+  const VideoCard = ({ video }: { video: ContentItem | PlayerAnalysisVideo }) => {
+    // Type guard for ContentItem
+    const isContentItem = (v: any): v is ContentItem => 'title' in v && 'url' in v;
+    // Type guard for PlayerAnalysisVideo
+    const isPlayerAnalysisVideo = (v: any): v is PlayerAnalysisVideo => 'playerName' in v && 'videoUrl' in v;
+
+    let title = '';
+    let description = '';
+    let thumbnailUrl = '';
+    let category = '';
+    let skillLevel = '';
+    let tags: string[] = [];
+
+    if (isContentItem(video)) {
+      title = video.title;
+      description = video.description || '';
+      category = video.category;
+      skillLevel = video.skillLevel;
+      tags = video.tags;
+      const youtubeId = video.youtubeId;
+      thumbnailUrl = video.thumbnailUrl || (youtubeId ? `https://img.youtube.com/vi/${youtubeId}/0.jpg` : '');
+    } else if (isPlayerAnalysisVideo(video)) {
+      title = video.playerName || 'Untitled';
+      description = video.notes || '';
+      category = video.category;
+      skillLevel = '';
+      tags = [];
+      thumbnailUrl = video.thumbnailUrl || '';
+    }
+
     return (
       <Card 
         className="bg-slate-800/50 border-slate-700/50 hover:bg-slate-800/70 cursor-pointer transition-all duration-200 hover:border-slate-600/50"
-        onClick={() => handleContentSelection(video)}
+        onClick={() => handleContentSelection(video as ContentItem)}
       >
         <CardHeader className="pb-3">
           <div className="aspect-video bg-slate-700 rounded-lg mb-3 flex items-center justify-center relative overflow-hidden">
             {thumbnailUrl ? (
               <img 
                 src={thumbnailUrl}
-                alt={video.title}
+                alt={title}
                 className="w-full h-full object-cover"
               />
             ) : (
               <div className="absolute inset-0 bg-gradient-to-br from-slate-600 to-slate-800"></div>
             )}
             <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-200">
-              <Play className="w-12 h-12 text-white relative z-10" />
+              <svg className="w-12 h-12 text-white relative z-10" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M8 5v14l11-7z" />
+              </svg>
             </div>
           </div>
-          <CardTitle className="text-lg text-slate-100 line-clamp-2">{video.title}</CardTitle>
+          <CardTitle className="text-lg text-slate-100 line-clamp-2">{title}</CardTitle>
         </CardHeader>
         <CardContent className="pt-0">
-          <p className="text-slate-400 text-sm mb-3 line-clamp-2">{video.description}</p>
+          <p className="text-slate-400 text-sm mb-3 line-clamp-2">{description}</p>
           <div className="flex items-center justify-between mb-3">
-            <Badge className={getSkillLevelColor(video.skillLevel)}>
-              {video.skillLevel}
-            </Badge>
+            {skillLevel && (
+              <Badge className="bg-slate-700 text-slate-300">{skillLevel}</Badge>
+            )}
             <Badge variant="secondary" className="bg-slate-700 text-slate-300">
-              {video.category}
+              {category}
             </Badge>
           </div>
           <div className="flex gap-1 flex-wrap">
-            {video.tags.slice(0, 2).map((tag: string) => (
+            {tags && tags.slice(0, 2).map((tag: string) => (
               <Badge key={tag} variant="secondary" className="text-xs bg-slate-700 text-slate-300">
                 {tag}
               </Badge>
             ))}
-            {video.tags.length > 2 && (
+            {tags && tags.length > 2 && (
               <Badge variant="secondary" className="text-xs bg-slate-700 text-slate-300">
-                +{video.tags.length - 2}
+                +{tags.length - 2}
               </Badge>
             )}
           </div>
