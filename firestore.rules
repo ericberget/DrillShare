@@ -32,7 +32,7 @@ service cloud.firestore {
 
     // Player Analysis Videos rules
     match /playerAnalysisVideos/{videoId} {
-      allow read: if isAuthenticated() && (resource == null || isOwner(resource.data.userId));
+      allow read: if true; // Anyone can read
       allow create: if isAuthenticated() && isOwner(request.resource.data.userId);
       allow update, delete: if isAuthenticated() && isOwner(resource.data.userId);
     }
