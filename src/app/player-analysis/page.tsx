@@ -1094,6 +1094,40 @@ const PlayerAnalysisPage = () => {
     return savedVideos.filter(video => collection.videos.includes(video.id));
   };
 
+  const [previewCurrentTime, setPreviewCurrentTime] = useState(0);
+  const [previewDuration, setPreviewDuration] = useState(0);
+  const [previewIsPlaying, setPreviewIsPlaying] = useState(false);
+  const previewVideoRef = useRef<HTMLVideoElement>(null);
+
+  const handlePreviewPlayPause = () => {
+    if (!previewVideoRef.current) return;
+    if (previewIsPlaying) {
+      previewVideoRef.current.pause();
+    } else {
+      previewVideoRef.current.play();
+    }
+    setPreviewIsPlaying(!previewIsPlaying);
+  };
+
+  const handlePreviewSeek = (time: number) => {
+    if (previewVideoRef.current) {
+      previewVideoRef.current.currentTime = time;
+      setPreviewCurrentTime(time);
+    }
+  };
+
+  const handlePreviewTimeUpdate = () => {
+    if (previewVideoRef.current) {
+      setPreviewCurrentTime(previewVideoRef.current.currentTime);
+    }
+  };
+
+  const handlePreviewLoadedMetadata = () => {
+    if (previewVideoRef.current) {
+      setPreviewDuration(previewVideoRef.current.duration);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#0D1529] text-slate-100">
       {/* Header */}
@@ -1473,13 +1507,26 @@ const PlayerAnalysisPage = () => {
                       )
                     ) : (
                       videoSrc ? (
-                        <video
-                          ref={videoRef}
-                          src={videoSrc}
-                          className={`w-full h-full ${orientation === 'vertical' ? 'object-contain' : 'object-cover'}`}
-                          controls
-                          onTimeUpdate={handleTimeUpdate}
-                        />
+                        <>
+                          <video
+                            ref={previewVideoRef}
+                            src={videoSrc}
+                            className={`w-full h-full ${orientation === 'vertical' ? 'object-contain' : 'object-cover'}`}
+                            onTimeUpdate={handlePreviewTimeUpdate}
+                            onLoadedMetadata={handlePreviewLoadedMetadata}
+                            onPlay={() => setPreviewIsPlaying(true)}
+                            onPause={() => setPreviewIsPlaying(false)}
+                            playsInline
+                          />
+                          <VideoControlBar
+                            videoRef={previewVideoRef}
+                            currentTime={previewCurrentTime}
+                            duration={previewDuration}
+                            isPlaying={previewIsPlaying}
+                            onPlayPause={handlePreviewPlayPause}
+                            onSeek={handlePreviewSeek}
+                          />
+                        </>
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
                           <p className="text-slate-400">Upload a video to preview</p>
