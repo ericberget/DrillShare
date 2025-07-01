@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,6 +14,7 @@ import { Lock, Loader2, Video, Play, ChevronLeft, ChevronRight, Copy, Check, Clo
 import Image from 'next/image';
 import { ContentDetails } from '@/components/ContentDetails';
 import { getFirestore, collection as firestoreCollection, getDocs, query, where } from 'firebase/firestore';
+import VideoControlBar from '@/components/VideoControlBar';
 
 // Add a function to fetch PlayerAnalysisVideo by IDs
 async function getPlayerAnalysisVideosByIds(ids: string[]): Promise<PlayerAnalysisVideo[]> {
@@ -209,27 +210,94 @@ export default function SharedCollectionPage() {
       thumbnailUrl = video.thumbnailUrl || '';
     }
 
+    const [currentTime, setCurrentTime] = useState(0);
+    const [duration, setDuration] = useState(0);
+    const [isPlaying, setIsPlaying] = useState(false);
+    const videoRef = useRef<HTMLVideoElement>(null);
+
+    const handlePlayPause = () => {
+      if (!videoRef.current) return;
+      if (isPlaying) {
+        videoRef.current.pause();
+      } else {
+        videoRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    };
+
+    const handleSeek = (time: number) => {
+      if (videoRef.current) {
+        videoRef.current.currentTime = time;
+        setCurrentTime(time);
+      }
+    };
+
+    const handleTimeUpdate = () => {
+      if (videoRef.current) {
+        setCurrentTime(videoRef.current.currentTime);
+      }
+    };
+
+    const handleLoadedMetadata = () => {
+      if (videoRef.current) {
+        setDuration(videoRef.current.duration);
+      }
+    };
+
     return (
       <Card 
         className="bg-slate-800/50 border-slate-700/50 hover:bg-slate-800/70 cursor-pointer transition-all duration-200 hover:border-slate-600/50"
         onClick={() => handleContentSelection(video as ContentItem)}
       >
         <CardHeader className="pb-3">
-          <div className="aspect-video bg-slate-700 rounded-lg mb-3 flex items-center justify-center relative overflow-hidden">
-            {thumbnailUrl ? (
-              <img 
-                src={thumbnailUrl}
-                alt={title}
-                className="w-full h-full object-cover"
-              />
+          <div className="aspect-[9/16] bg-slate-700 rounded-lg mb-3 flex flex-col items-center justify-center relative overflow-hidden">
+            {isContentItem(video) && video.url ? (
+              <>
+                <video
+                  ref={videoRef}
+                  src={video.url}
+                  className="w-full h-full object-cover rounded-lg bg-black"
+                  style={{ maxHeight: '400px' }}
+                  onTimeUpdate={handleTimeUpdate}
+                  onLoadedMetadata={handleLoadedMetadata}
+                  onPlay={() => setIsPlaying(true)}
+                  onPause={() => setIsPlaying(false)}
+                  playsInline
+                />
+                <VideoControlBar
+                  videoRef={videoRef}
+                  currentTime={currentTime}
+                  duration={duration}
+                  isPlaying={isPlaying}
+                  onPlayPause={handlePlayPause}
+                  onSeek={handleSeek}
+                />
+              </>
+            ) : isPlayerAnalysisVideo(video) && video.videoUrl ? (
+              <>
+                <video
+                  ref={videoRef}
+                  src={video.videoUrl}
+                  className="w-full h-full object-cover rounded-lg bg-black"
+                  style={{ maxHeight: '400px' }}
+                  onTimeUpdate={handleTimeUpdate}
+                  onLoadedMetadata={handleLoadedMetadata}
+                  onPlay={() => setIsPlaying(true)}
+                  onPause={() => setIsPlaying(false)}
+                  playsInline
+                />
+                <VideoControlBar
+                  videoRef={videoRef}
+                  currentTime={currentTime}
+                  duration={duration}
+                  isPlaying={isPlaying}
+                  onPlayPause={handlePlayPause}
+                  onSeek={handleSeek}
+                />
+              </>
             ) : (
               <div className="absolute inset-0 bg-gradient-to-br from-slate-600 to-slate-800"></div>
             )}
-            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-200">
-              <svg className="w-12 h-12 text-white relative z-10" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M8 5v14l11-7z" />
-              </svg>
-            </div>
           </div>
           <CardTitle className="text-lg text-slate-100 line-clamp-2">{title}</CardTitle>
         </CardHeader>
