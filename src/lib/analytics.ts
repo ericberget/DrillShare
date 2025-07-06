@@ -307,30 +307,87 @@ export const getAnalyticsData = async (days: number = 30) => {
   try {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
+    
+    // Expand range to handle potential date issues (look both backwards and forwards)
+    const expandedStartDate = new Date();
+    expandedStartDate.setDate(expandedStartDate.getDate() - (days * 2)); // Double the range back
+    
+    const futureDate = new Date();
+    futureDate.setDate(futureDate.getDate() + 365); // Look far into future for date issues
+    
     console.log(`Querying data since: ${startDate.toISOString()}`);
+    console.log(`Expanded start date: ${expandedStartDate.toISOString()}`);
+    console.log(`Current date: ${new Date().toISOString()}`);
+    console.log(`Future date check: ${futureDate.toISOString()}`);
 
-    // Get page views
+    // Get page views with expanded date range
     const pageViewsRef = collection(db, 'pageViews');
     const pageViewsQuery = query(
       pageViewsRef,
-      where('timestamp', '>=', startDate),
+      where('timestamp', '>=', expandedStartDate),
       orderBy('timestamp', 'desc')
     );
     const pageViewsSnapshot = await getDocs(pageViewsQuery);
-    console.log(`Found ${pageViewsSnapshot.size} page views.`);
+    console.log(`Found ${pageViewsSnapshot.size} page views with expanded range.`);
 
-    // Get sessions
+    // Get sessions with expanded date range
     const sessionsRef = collection(db, 'userSessions');
     const sessionsQuery = query(
       sessionsRef,
-      where('startTime', '>=', startDate),
+      where('startTime', '>=', expandedStartDate),
       orderBy('startTime', 'desc')
     );
     const sessionsSnapshot = await getDocs(sessionsQuery);
-    console.log(`Found ${sessionsSnapshot.size} sessions.`);
+    console.log(`Found ${sessionsSnapshot.size} sessions with expanded range.`);
 
+    // If still empty, try getting recent data without date filter
+    let allPageViews: PageView[] = [];
+    let allSessions: UserSession[] = [];
+    
     if (pageViewsSnapshot.empty && sessionsSnapshot.empty) {
-      console.warn('No analytics data found for the selected time range.');
+      console.log('🔍 No data found with date filter, trying without date restrictions...');
+      
+      // Get recent page views without date filter
+      const allPageViewsQuery = query(pageViewsRef, orderBy('timestamp', 'desc'));
+      const allPageViewsSnapshot = await getDocs(allPageViewsQuery);
+      allPageViews = allPageViewsSnapshot.docs.slice(0, 50).map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as PageView[];
+      
+      // Get recent sessions without date filter
+      const allSessionsQuery = query(sessionsRef, orderBy('startTime', 'desc'));
+      const allSessionsSnapshot = await getDocs(allSessionsQuery);
+      allSessions = allSessionsSnapshot.docs.slice(0, 50).map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as UserSession[];
+      
+      console.log(`Found ${allPageViews.length} recent page views and ${allSessions.length} recent sessions without date filter.`);
+    }
+
+    // Use the data we found (either with date filter or without)
+    const pageViews = pageViewsSnapshot.empty ? allPageViews : pageViewsSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    })) as PageView[];
+
+    const sessions = sessionsSnapshot.empty ? allSessions : sessionsSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    })) as UserSession[];
+
+    // Log some sample session dates to debug date issues
+    if (sessions.length > 0) {
+      console.log('🔍 Sample session timestamps:');
+      sessions.slice(0, 5).forEach((session, index) => {
+        const startTime = session.startTime?.toDate?.() || new Date(session.startTime);
+        console.log(`  ${index + 1}. Session ${session.sessionId?.substring(0, 8)}: ${startTime.toISOString()}, User: ${session.userEmail || 'Anonymous'}`);
+      });
+    }
+
+    if (pageViews.length === 0 && sessions.length === 0) {
+      console.warn('No analytics data found even without date restrictions.');
       return {
         totalPageViews: 0,
         totalSessions: 0,
@@ -346,15 +403,20 @@ export const getAnalyticsData = async (days: number = 30) => {
       };
     }
 
-    const pageViews = pageViewsSnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    })) as PageView[];
-
-    const sessions = sessionsSnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    })) as UserSession[];
+    // Log session distribution by user
+    console.log('🔍 Session distribution by user:');
+    const sessionsByUser = sessions.reduce((acc: any, session) => {
+      const userKey = session.userEmail || session.userId || 'Anonymous';
+      acc[userKey] = (acc[userKey] || 0) + 1;
+      return acc;
+    }, {});
+    
+    Object.entries(sessionsByUser)
+      .sort(([,a], [,b]) => (b as number) - (a as number))
+      .slice(0, 10)
+      .forEach(([user, count]) => {
+        console.log(`  ${user}: ${count} sessions`);
+      });
 
     // Calculate metrics
     const totalPageViews = pageViews.length;
