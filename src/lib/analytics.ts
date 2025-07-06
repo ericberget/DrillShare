@@ -344,4 +344,104 @@ export const setUserAnalytics = (userId: string, userEmail: string) => {
       user_email: userEmail
     });
   }
+};
+
+// Get user analytics data for admin dashboard
+export const getUserAnalyticsData = async (days: number = 30) => {
+  console.log(`Fetching user analytics data for the last ${days} days...`);
+  
+  try {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+    console.log(`Querying user data since: ${startDate.toISOString()}`);
+
+    // Get page views
+    const pageViewsRef = collection(db, 'pageViews');
+    const pageViewsQuery = query(
+      pageViewsRef,
+      where('timestamp', '>=', startDate),
+      orderBy('timestamp', 'desc')
+    );
+    const pageViewsSnapshot = await getDocs(pageViewsQuery);
+    console.log(`Found ${pageViewsSnapshot.size} page views for user analytics.`);
+
+    // Get sessions
+    const sessionsRef = collection(db, 'userSessions');
+    const sessionsQuery = query(
+      sessionsRef,
+      where('startTime', '>=', startDate),
+      orderBy('startTime', 'desc')
+    );
+    const sessionsSnapshot = await getDocs(sessionsQuery);
+    console.log(`Found ${sessionsSnapshot.size} sessions for user analytics.`);
+
+    const pageViews = pageViewsSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    })) as PageView[];
+
+    const sessions = sessionsSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    })) as UserSession[];
+
+    // Aggregate user data
+    const userPageViews: { [key: string]: number } = {};
+    const userSessions: { [key: string]: number } = {};
+    const userLastActivity: { [key: string]: any } = {};
+    const userEmails: { [key: string]: string } = {};
+
+    // Process page views
+    pageViews.forEach(pv => {
+      if (pv.userId) {
+        userPageViews[pv.userId] = (userPageViews[pv.userId] || 0) + 1;
+        if (pv.userEmail) {
+          userEmails[pv.userId] = pv.userEmail;
+        }
+        if (!userLastActivity[pv.userId] || pv.timestamp > userLastActivity[pv.userId]) {
+          userLastActivity[pv.userId] = pv.timestamp;
+        }
+      }
+    });
+
+    // Process sessions
+    sessions.forEach(session => {
+      if (session.userId) {
+        userSessions[session.userId] = (userSessions[session.userId] || 0) + 1;
+        if (session.userEmail) {
+          userEmails[session.userId] = session.userEmail;
+        }
+      }
+    });
+
+    // Calculate unique users
+    const uniqueUsers = new Set([
+      ...Object.keys(userPageViews),
+      ...Object.keys(userSessions)
+    ]).size;
+
+    // Calculate anonymous users (sessions without userId)
+    const anonymousUsers = sessions.filter(s => !s.userId).length;
+
+    // Get active users (users with activity in the time range)
+    const activeUsers = Object.keys(userLastActivity).length;
+
+    console.log('Successfully processed user analytics data.');
+    return {
+      totalUniqueUsers: uniqueUsers,
+      activeUsers,
+      anonymousUsers,
+      userPageViews,
+      userSessions,
+      userLastActivity,
+      userEmails,
+      totalPageViews: pageViews.length,
+      totalSessions: sessions.length,
+      recentPageViews: pageViews.slice(0, 10),
+      recentSessions: sessions.slice(0, 10)
+    };
+  } catch (error) {
+    console.error('Error fetching user analytics data:', error);
+    throw error;
+  }
 }; 
