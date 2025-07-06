@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, Users, Eye, Clock, TrendingUp, Monitor, Smartphone, Tablet, Globe, Calendar, BarChart3, Activity } from 'lucide-react';
+import { Loader2, Users, Eye, Clock, TrendingUp, Monitor, Smartphone, Tablet, Globe, Calendar, BarChart3, Activity, Filter, FilterX } from 'lucide-react';
 import Link from 'next/link';
 import { getAnalyticsData, PageView, UserSession } from '@/lib/analytics';
 import { AdminProtectedRoute } from '@/components/AdminProtectedRoute';
@@ -37,6 +37,10 @@ export default function AdminAnalyticsPage() {
   const [timeRange, setTimeRange] = useState(90);
   const [debugData, setDebugData] = useState<any>(null);
   const [debugging, setDebugging] = useState(false);
+  const [hideAdminSessions, setHideAdminSessions] = useState(true);
+  const [hideAdminPageViews, setHideAdminPageViews] = useState(true);
+  
+  const adminEmail = 'berget3333@gmail.com';
 
   const fetchAnalyticsData = async (days: number) => {
     setLoading(true);
@@ -71,6 +75,17 @@ export default function AdminAnalyticsPage() {
 
   const refreshData = async () => {
     await fetchAnalyticsData(timeRange);
+  };
+
+  // Filter functions
+  const getFilteredSessions = (sessions: UserSession[]) => {
+    if (!hideAdminSessions) return sessions;
+    return sessions.filter(session => session.userEmail !== adminEmail);
+  };
+
+  const getFilteredPageViews = (pageViews: PageView[]) => {
+    if (!hideAdminPageViews) return pageViews;
+    return pageViews.filter(pageView => pageView.userEmail !== adminEmail);
   };
 
   useEffect(() => {
@@ -415,26 +430,72 @@ export default function AdminAnalyticsPage() {
                     {/* Recent Page Views */}
                     <Card className="bg-slate-900 border-slate-700">
                       <CardHeader>
-                        <CardTitle className="text-white">Recent Page Views</CardTitle>
-                        <CardDescription className="text-slate-400">Latest visitor activity</CardDescription>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <CardTitle className="text-white">Recent Page Views</CardTitle>
+                            <CardDescription className="text-slate-400">
+                              Latest visitor activity
+                              {data.recentPageViews && (
+                                <span className="ml-2 text-xs">
+                                  ({getFilteredPageViews(data.recentPageViews).length}/{data.recentPageViews.length} shown)
+                                </span>
+                              )}
+                            </CardDescription>
+                          </div>
+                          <Button
+                            onClick={() => setHideAdminPageViews(!hideAdminPageViews)}
+                            variant="ghost"
+                            size="sm"
+                            className="text-slate-400 hover:text-white"
+                          >
+                            {hideAdminPageViews ? (
+                              <>
+                                <Filter className="w-4 h-4 mr-2" />
+                                Hide Admin
+                              </>
+                            ) : (
+                              <>
+                                <FilterX className="w-4 h-4 mr-2" />
+                                Show All
+                              </>
+                            )}
+                          </Button>
+                        </div>
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-3 max-h-96 overflow-y-auto">
-                          {data.recentPageViews.map((pageView) => (
-                            <div key={pageView.id} className="p-3 bg-slate-800 rounded-lg">
-                              <div className="flex items-center justify-between mb-2">
-                                <span className="text-slate-300 font-medium">{formatPath(pageView.path)}</span>
-                                <Badge variant="outline" className="text-xs flex items-center gap-1">
-                                  {getDeviceIcon(pageView.deviceType)}
-                                </Badge>
-                              </div>
-                              <div className="text-slate-500 text-sm space-y-1">
-                                <div>User: {pageView.userEmail || 'Anonymous'}</div>
-                                <div>Browser: {pageView.browser} on {pageView.os}</div>
-                                <div>Time: {formatDate(pageView.timestamp)}</div>
-                              </div>
+                          {getFilteredPageViews(data.recentPageViews).length === 0 ? (
+                            <div className="text-center py-8 text-slate-500">
+                              {hideAdminPageViews ? (
+                                <>
+                                  <Eye className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                                  <p>No non-admin page views found</p>
+                                  <p className="text-sm">Click "Show All" to see admin activity</p>
+                                </>
+                              ) : (
+                                <>
+                                  <Eye className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                                  <p>No recent page views</p>
+                                </>
+                              )}
                             </div>
-                          ))}
+                          ) : (
+                            getFilteredPageViews(data.recentPageViews).map((pageView) => (
+                              <div key={pageView.id} className="p-3 bg-slate-800 rounded-lg">
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="text-slate-300 font-medium">{formatPath(pageView.path)}</span>
+                                  <Badge variant="outline" className="text-xs flex items-center gap-1">
+                                    {getDeviceIcon(pageView.deviceType)}
+                                  </Badge>
+                                </div>
+                                <div className="text-slate-500 text-sm space-y-1">
+                                  <div>User: {pageView.userEmail || 'Anonymous'}</div>
+                                  <div>Browser: {pageView.browser} on {pageView.os}</div>
+                                  <div>Time: {formatDate(pageView.timestamp)}</div>
+                                </div>
+                              </div>
+                            ))
+                          )}
                         </div>
                       </CardContent>
                     </Card>
@@ -442,30 +503,76 @@ export default function AdminAnalyticsPage() {
                     {/* Recent Sessions */}
                     <Card className="bg-slate-900 border-slate-700">
                       <CardHeader>
-                        <CardTitle className="text-white">Recent Sessions</CardTitle>
-                        <CardDescription className="text-slate-400">Latest user sessions</CardDescription>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <CardTitle className="text-white">Recent Sessions</CardTitle>
+                            <CardDescription className="text-slate-400">
+                              Latest user sessions
+                              {data.recentSessions && (
+                                <span className="ml-2 text-xs">
+                                  ({getFilteredSessions(data.recentSessions).length}/{data.recentSessions.length} shown)
+                                </span>
+                              )}
+                            </CardDescription>
+                          </div>
+                          <Button
+                            onClick={() => setHideAdminSessions(!hideAdminSessions)}
+                            variant="ghost"
+                            size="sm"
+                            className="text-slate-400 hover:text-white"
+                          >
+                            {hideAdminSessions ? (
+                              <>
+                                <Filter className="w-4 h-4 mr-2" />
+                                Hide Admin
+                              </>
+                            ) : (
+                              <>
+                                <FilterX className="w-4 h-4 mr-2" />
+                                Show All
+                              </>
+                            )}
+                          </Button>
+                        </div>
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-3 max-h-96 overflow-y-auto">
-                          {data.recentSessions.map((session) => (
-                            <div key={session.id} className="p-3 bg-slate-800 rounded-lg">
-                              <div className="flex items-center justify-between mb-2">
-                                <span className="text-slate-300 font-medium">
-                                  {session.userEmail || 'Anonymous'}
-                                </span>
-                                <Badge variant="outline" className="text-xs">
-                                  {session.pageViews} views
-                                </Badge>
-                              </div>
-                              <div className="text-slate-500 text-sm space-y-1">
-                                <div>Device: {session.deviceType} ({session.browser})</div>
-                                <div>Started: {formatDate(session.startTime)}</div>
-                                {session.endTime && (
-                                  <div>Ended: {formatDate(session.endTime)}</div>
-                                )}
-                              </div>
+                          {getFilteredSessions(data.recentSessions).length === 0 ? (
+                            <div className="text-center py-8 text-slate-500">
+                              {hideAdminSessions ? (
+                                <>
+                                  <Users className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                                  <p>No non-admin sessions found</p>
+                                  <p className="text-sm">Click "Show All" to see admin activity</p>
+                                </>
+                              ) : (
+                                <>
+                                  <Users className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                                  <p>No recent sessions</p>
+                                </>
+                              )}
                             </div>
-                          ))}
+                          ) : (
+                            getFilteredSessions(data.recentSessions).map((session) => (
+                              <div key={session.id} className="p-3 bg-slate-800 rounded-lg">
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="text-slate-300 font-medium">
+                                    {session.userEmail || 'Anonymous'}
+                                  </span>
+                                  <Badge variant="outline" className="text-xs">
+                                    {session.pageViews} views
+                                  </Badge>
+                                </div>
+                                <div className="text-slate-500 text-sm space-y-1">
+                                  <div>Device: {session.deviceType} ({session.browser})</div>
+                                  <div>Started: {formatDate(session.startTime)}</div>
+                                  {session.endTime && (
+                                    <div>Ended: {formatDate(session.endTime)}</div>
+                                  )}
+                                </div>
+                              </div>
+                            ))
+                          )}
                         </div>
                       </CardContent>
                     </Card>
