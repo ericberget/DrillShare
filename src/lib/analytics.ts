@@ -90,20 +90,111 @@ const generateSessionId = () => {
 // Get location data
 const getLocationData = async () => {
   try {
-    const response = await fetch('/api/analytics/location');
+    // Try to get location from our API first
+    const response = await fetch('/api/analytics/location', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      // Add timeout
+      signal: AbortSignal.timeout(10000)
+    });
+    
     if (!response.ok) {
-      return { ipAddress: 'Unknown', country: 'Unknown', city: 'Unknown' };
+      console.warn('Location API returned non-OK status:', response.status);
+      return await getFallbackLocation();
     }
+    
     const data = await response.json();
-    return {
-      ipAddress: data.ip,
-      country: data.country,
-      city: data.city,
-    };
+    
+    // Check if we got valid location data
+    if (data.city && data.country && data.city !== 'Unknown' && data.country !== 'Unknown') {
+      console.log('Successfully got location data:', data);
+      return {
+        ipAddress: data.ip || 'Unknown',
+        country: data.country,
+        city: data.city,
+      };
+    } else {
+      console.warn('Got unknown location from API, trying fallback');
+      return await getFallbackLocation();
+    }
   } catch (error) {
     console.error('Error fetching location data:', error);
-    return { ipAddress: 'Unknown', country: 'Unknown', city: 'Unknown' };
+    return await getFallbackLocation();
   }
+};
+
+// Fallback location detection using browser APIs and timezone
+const getFallbackLocation = async (): Promise<{ ipAddress: string; country: string; city: string }> => {
+  try {
+    // Try to get location from timezone
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    console.log('Detected timezone:', timezone);
+    
+    // Basic timezone to location mapping
+    const timezoneMap: { [key: string]: { country: string; city: string } } = {
+      'America/New_York': { country: 'United States', city: 'New York' },
+      'America/Chicago': { country: 'United States', city: 'Chicago' },
+      'America/Denver': { country: 'United States', city: 'Denver' },
+      'America/Los_Angeles': { country: 'United States', city: 'Los Angeles' },
+      'America/Phoenix': { country: 'United States', city: 'Phoenix' },
+      'Europe/London': { country: 'United Kingdom', city: 'London' },
+      'Europe/Paris': { country: 'France', city: 'Paris' },
+      'Europe/Berlin': { country: 'Germany', city: 'Berlin' },
+      'Asia/Tokyo': { country: 'Japan', city: 'Tokyo' },
+      'Asia/Shanghai': { country: 'China', city: 'Shanghai' },
+      'Australia/Sydney': { country: 'Australia', city: 'Sydney' },
+    };
+    
+    if (timezone && timezoneMap[timezone]) {
+      const location = timezoneMap[timezone];
+      console.log('Using timezone-based location:', location);
+      return {
+        ipAddress: 'Unknown',
+        country: location.country,
+        city: location.city,
+      };
+    }
+    
+    // Try to detect country from language settings
+    const language = navigator.language || 'en-US';
+    const countryCode = language.split('-')[1];
+    
+    const countryMap: { [key: string]: { country: string; city: string } } = {
+      'US': { country: 'United States', city: 'Unknown City' },
+      'GB': { country: 'United Kingdom', city: 'Unknown City' },
+      'CA': { country: 'Canada', city: 'Unknown City' },
+      'AU': { country: 'Australia', city: 'Unknown City' },
+      'DE': { country: 'Germany', city: 'Unknown City' },
+      'FR': { country: 'France', city: 'Unknown City' },
+      'ES': { country: 'Spain', city: 'Unknown City' },
+      'IT': { country: 'Italy', city: 'Unknown City' },
+      'JP': { country: 'Japan', city: 'Unknown City' },
+      'KR': { country: 'South Korea', city: 'Unknown City' },
+    };
+    
+    if (countryCode && countryMap[countryCode]) {
+      const location = countryMap[countryCode];
+      console.log('Using language-based location:', location);
+      return {
+        ipAddress: 'Unknown',
+        country: location.country,
+        city: location.city,
+      };
+    }
+    
+  } catch (error) {
+    console.error('Error in fallback location detection:', error);
+  }
+  
+  // Final fallback
+  console.log('Using final fallback location');
+  return { 
+    ipAddress: 'Unknown', 
+    country: 'Unknown', 
+    city: 'Unknown' 
+  };
 };
 
 // Track page view
@@ -297,16 +388,26 @@ export const getAnalyticsData = async (days: number = 30) => {
 
     // Location counts
     const locationCounts = sessions.reduce((acc: any, s) => {
-      if (s.country && s.city) {
+      if (s.country && s.city && s.country !== 'Unknown' && s.city !== 'Unknown') {
         const location = `${s.city}, ${s.country}`;
         acc[location] = (acc[location] || 0) + 1;
       }
       return acc;
     }, {});
     
+    // Also count unknown locations separately
+    const unknownLocationCount = sessions.filter(s => 
+      !s.country || !s.city || s.country === 'Unknown' || s.city === 'Unknown'
+    ).length;
+    
     const topLocations = Object.entries(locationCounts)
       .map(([location, count]) => ({ location, count: count as number }))
       .sort((a, b) => b.count - a.count);
+
+    // Add unknown locations at the end if there are any
+    if (unknownLocationCount > 0) {
+      topLocations.push({ location: 'Unknown Location', count: unknownLocationCount });
+    }
 
     // Daily data
     const dailyData = pageViews.reduce((acc: any, pv) => {
