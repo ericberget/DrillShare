@@ -359,8 +359,34 @@ export const getAnalyticsData = async (days: number = 30) => {
     // Calculate metrics
     const totalPageViews = pageViews.length;
     const totalSessions = sessions.length;
-    const uniqueUsers = new Set(sessions.map(s => s.userId).filter(Boolean)).size;
-    const anonymousUsers = sessions.filter(s => !s.userId).length;
+    
+    // Get unique users from both pageViews and sessions
+    const userIdsFromPageViews = new Set(pageViews.map(pv => pv.userId).filter(Boolean));
+    const userIdsFromSessions = new Set(sessions.map(s => s.userId).filter(Boolean));
+    const allUniqueUserIds = new Set([...userIdsFromPageViews, ...userIdsFromSessions]);
+    const uniqueUsers = allUniqueUserIds.size;
+    
+    // Count anonymous activity more comprehensively
+    const anonymousPageViews = pageViews.filter(pv => !pv.userId).length;
+    const anonymousSessions = sessions.filter(s => !s.userId).length;
+    
+    // Get unique anonymous sessions by sessionId
+    const anonymousSessionIds = new Set(
+      sessions
+        .filter(s => !s.userId && s.sessionId)
+        .map(s => s.sessionId)
+    );
+    const anonymousUsers = anonymousSessionIds.size;
+
+    console.log(`🔍 Analytics Debug:`);
+    console.log(`  - Total Page Views: ${totalPageViews}`);
+    console.log(`  - Total Sessions: ${totalSessions}`);
+    console.log(`  - Unique User IDs from PageViews: ${userIdsFromPageViews.size}`);
+    console.log(`  - Unique User IDs from Sessions: ${userIdsFromSessions.size}`);
+    console.log(`  - Combined Unique Users: ${uniqueUsers}`);
+    console.log(`  - Anonymous Page Views: ${anonymousPageViews}`);
+    console.log(`  - Anonymous Sessions: ${anonymousSessions}`);
+    console.log(`  - Unique Anonymous Users: ${anonymousUsers}`);
 
     // Top pages
     const pageCounts = pageViews.reduce((acc: any, pv) => {
@@ -543,6 +569,112 @@ export const getUserAnalyticsData = async (days: number = 30) => {
     };
   } catch (error) {
     console.error('Error fetching user analytics data:', error);
+    throw error;
+  }
+};
+
+// Debug function to investigate user analytics issues
+export const debugAnalyticsData = async (days: number = 90) => {
+  console.log(`🔍 DEBUG: Fetching analytics data for the last ${days} days...`);
+  
+  try {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+
+    // Get sessions
+    const sessionsRef = collection(db, 'userSessions');
+    const sessionsQuery = query(
+      sessionsRef,
+      where('startTime', '>=', startDate),
+      orderBy('startTime', 'desc')
+    );
+    const sessionsSnapshot = await getDocs(sessionsQuery);
+
+    const sessions = sessionsSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    })) as UserSession[];
+
+    console.log(`🔍 DEBUG: Found ${sessions.length} total sessions`);
+
+    // Analyze userId distribution
+    const userIdCounts: { [key: string]: number } = {};
+    const sessionIdCounts: { [key: string]: number } = {};
+    let sessionsWithUserId = 0;
+    let sessionsWithoutUserId = 0;
+    let uniqueSessionIds = new Set();
+    let uniqueUserIds = new Set();
+
+    sessions.forEach(session => {
+      // Count by userId
+      if (session.userId) {
+        sessionsWithUserId++;
+        uniqueUserIds.add(session.userId);
+        const userKey = session.userEmail || session.userId;
+        userIdCounts[userKey] = (userIdCounts[userKey] || 0) + 1;
+      } else {
+        sessionsWithoutUserId++;
+      }
+
+      // Count by sessionId
+      if (session.sessionId) {
+        uniqueSessionIds.add(session.sessionId);
+        sessionIdCounts[session.sessionId] = (sessionIdCounts[session.sessionId] || 0) + 1;
+      }
+    });
+
+    console.log(`🔍 DEBUG: Sessions with userId: ${sessionsWithUserId}`);
+    console.log(`🔍 DEBUG: Sessions without userId: ${sessionsWithoutUserId}`);
+    console.log(`🔍 DEBUG: Unique userIds: ${uniqueUserIds.size}`);
+    console.log(`🔍 DEBUG: Unique sessionIds: ${uniqueSessionIds.size}`);
+
+    // Show top users
+    console.log(`🔍 DEBUG: Top users by session count:`);
+    Object.entries(userIdCounts)
+      .sort(([,a], [,b]) => b - a)
+      .slice(0, 10)
+      .forEach(([user, count], index) => {
+        console.log(`  ${index + 1}. ${user}: ${count} sessions`);
+      });
+
+    // Show sessionId distribution (check for duplicates)
+    const duplicateSessionIds = Object.entries(sessionIdCounts)
+      .filter(([,count]) => count > 1)
+      .sort(([,a], [,b]) => b - a);
+
+    if (duplicateSessionIds.length > 0) {
+      console.log(`🔍 DEBUG: Duplicate sessionIds found:`);
+      duplicateSessionIds.slice(0, 5).forEach(([sessionId, count]) => {
+        console.log(`  ${sessionId}: ${count} sessions`);
+      });
+    } else {
+      console.log(`🔍 DEBUG: No duplicate sessionIds found`);
+    }
+
+    // Sample some sessions for inspection
+    console.log(`🔍 DEBUG: Sample sessions:`);
+    sessions.slice(0, 5).forEach((session, index) => {
+      console.log(`  ${index + 1}. userId: ${session.userId || 'null'}, sessionId: ${session.sessionId}, email: ${session.userEmail || 'null'}`);
+    });
+
+    return {
+      totalSessions: sessions.length,
+      sessionsWithUserId,
+      sessionsWithoutUserId,
+      uniqueUserIds: uniqueUserIds.size,
+      uniqueSessionIds: uniqueSessionIds.size,
+      userIdCounts,
+      duplicateSessionIds: duplicateSessionIds.length,
+      sampleSessions: sessions.slice(0, 5).map(s => ({
+        userId: s.userId,
+        sessionId: s.sessionId,
+        userEmail: s.userEmail,
+        startTime: s.startTime,
+        pageViews: s.pageViews
+      }))
+    };
+  } catch (error) {
+    console.error('🔍 DEBUG: Error in debug function:', error);
     throw error;
   }
 }; 

@@ -34,28 +34,47 @@ export default function AdminAnalyticsPage() {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [timeRange, setTimeRange] = useState(30);
+  const [timeRange, setTimeRange] = useState(90);
+  const [debugData, setDebugData] = useState<any>(null);
+  const [debugging, setDebugging] = useState(false);
 
-  const fetchData = async () => {
+  const fetchAnalyticsData = async (days: number) => {
     setLoading(true);
     setError(null);
-    
     try {
-      const analyticsData = await getAnalyticsData(timeRange);
-      if (analyticsData) {
-        setData(analyticsData);
-      } else {
-        setError('Failed to fetch analytics data');
-      }
+      const analyticsData = await getAnalyticsData(days);
+      setData(analyticsData);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      setError(err instanceof Error ? err.message : 'Failed to fetch analytics data');
     } finally {
       setLoading(false);
     }
   };
 
+  const runDebug = async () => {
+    setDebugging(true);
+    try {
+      const response = await fetch(`/api/debug-analytics?days=${timeRange}`);
+      const result = await response.json();
+      if (result.success) {
+        setDebugData(result.data);
+        console.log('🔍 Debug Results:', result.data);
+      } else {
+        console.error('🔍 Debug Error:', result.error);
+      }
+    } catch (err) {
+      console.error('🔍 Debug Request Error:', err);
+    } finally {
+      setDebugging(false);
+    }
+  };
+
+  const refreshData = async () => {
+    await fetchAnalyticsData(timeRange);
+  };
+
   useEffect(() => {
-    fetchData();
+    fetchAnalyticsData(timeRange);
   }, [timeRange]);
 
   const formatDate = (timestamp: any) => {
@@ -104,19 +123,49 @@ export default function AdminAnalyticsPage() {
           </div>
 
           {/* Time Range Selector */}
-          <div className="mb-6">
-            <div className="flex gap-2">
-              {[7, 30, 90].map((days) => (
-                <Button
-                  key={days}
-                  variant={timeRange === days ? 'default' : 'outline'}
-                  onClick={() => setTimeRange(days)}
-                  className={timeRange === days ? 'bg-emerald-600 hover:bg-emerald-700' : 'border-slate-700 text-slate-300 hover:bg-slate-800'}
-                >
-                  {days} days
-                </Button>
-              ))}
+          <div className="flex items-center gap-4 mb-6">
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={() => setTimeRange(7)}
+                variant={timeRange === 7 ? "default" : "outline"}
+                size="sm"
+              >
+                7 days
+              </Button>
+              <Button
+                onClick={() => setTimeRange(30)}
+                variant={timeRange === 30 ? "default" : "outline"}
+                size="sm"
+              >
+                30 days
+              </Button>
+              <Button
+                onClick={() => setTimeRange(90)}
+                variant={timeRange === 90 ? "default" : "outline"}
+                size="sm"
+              >
+                90 days
+              </Button>
             </div>
+            <Button
+              onClick={runDebug}
+              disabled={debugging}
+              variant="secondary"
+              size="sm"
+              className="ml-auto"
+            >
+              {debugging ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Debugging...
+                </>
+              ) : (
+                <>
+                  <BarChart3 className="w-4 h-4 mr-2" />
+                  Debug Analytics
+                </>
+              )}
+            </Button>
           </div>
 
           {error && (
@@ -424,6 +473,35 @@ export default function AdminAnalyticsPage() {
                 </TabsContent>
               </Tabs>
             </>
+          )}
+
+          {debugData && (
+            <Alert className="mb-6 bg-blue-900 border-blue-700">
+              <BarChart3 className="h-4 w-4" />
+              <AlertDescription>
+                <strong>Debug Results:</strong>
+                <div className="mt-2 text-sm space-y-1">
+                  <div>Total Sessions: {debugData.totalSessions}</div>
+                  <div>Sessions with User ID: {debugData.sessionsWithUserId}</div>
+                  <div>Sessions without User ID: {debugData.sessionsWithoutUserId}</div>
+                  <div>Unique User IDs: {debugData.uniqueUserIds}</div>
+                  <div>Unique Session IDs: {debugData.uniqueSessionIds}</div>
+                  <div>Duplicate Sessions: {debugData.duplicateSessionIds}</div>
+                  {debugData.sampleSessions && debugData.sampleSessions.length > 0 && (
+                    <div className="mt-2">
+                      <strong>Sample Sessions:</strong>
+                      <div className="mt-1 text-xs font-mono">
+                        {debugData.sampleSessions.map((session: any, index: number) => (
+                          <div key={index}>
+                            {index + 1}. User: {session.userId || 'null'}, Session: {session.sessionId?.substring(0, 8)}..., Email: {session.userEmail || 'null'}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </AlertDescription>
+            </Alert>
           )}
         </div>
       </div>
